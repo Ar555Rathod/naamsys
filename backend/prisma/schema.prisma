@@ -1,0 +1,344 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password_hash String
+  role          Role     @default(Operator)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+
+  audit_logs AuditLog[]
+}
+
+enum Role {
+  Admin
+  Manager
+  Operator
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  user_id   Int
+  user      User     @relation(fields: [user_id], references: [id])
+  action    String
+  module    String
+  record_id String?
+  old_value String?  @db.Text
+  new_value String?  @db.Text
+  timestamp DateTime @default(now())
+}
+
+model LocationDistrict {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  code    String   @unique
+  talukas LocationTaluka[]
+}
+
+model LocationTaluka {
+  id          Int              @id @default(autoincrement())
+  name        String
+  code        String
+  district_id Int
+  district    LocationDistrict @relation(fields: [district_id], references: [id])
+  villages    LocationVillage[]
+}
+
+model LocationVillage {
+  id        Int            @id @default(autoincrement())
+  name      String
+  code      String
+  taluka_id Int
+  taluka    LocationTaluka @relation(fields: [taluka_id], references: [id])
+}
+
+model ConfigGst {
+  id             Int      @id @default(autoincrement())
+  name           String
+  rate           Float
+  effective_from DateTime
+}
+
+model ConfigTds {
+  id             Int      @id @default(autoincrement())
+  name           String
+  rate           Float
+  category       String
+  effective_from DateTime
+}
+
+model FinancialYear {
+  id         Int      @id @default(autoincrement())
+  label      String
+  start_date DateTime
+  end_date   DateTime
+  is_active  Boolean  @default(false)
+}
+
+model CsrCompany {
+  id               Int      @id @default(autoincrement())
+  csr_id           String   @unique
+  name             String
+  budget           Float
+  budget_remaining Float    @default(0)
+  mou_pdf          String?
+  contact_person   String?
+  email            String?
+  phone            String?
+  created_by       Int
+  created_at       DateTime @default(now())
+
+  projects Project[]
+}
+
+model GovtEntry {
+  id           Int      @id @default(autoincrement())
+  govt_id      String   @unique
+  scheme_dept  String
+  type_of_work String
+  sub_type     String
+  district_id  Int?
+  taluka_id    Int?
+  village_id   Int?
+  created_by   Int
+  created_at   DateTime @default(now())
+
+  work_orders GovtWorkOrder[]
+}
+
+model GovtWorkOrder {
+  id                      Int      @id @default(autoincrement())
+  work_order_number       String   @unique
+  budget                  Float
+  budget_remaining        Float    @default(0)
+  description             String?
+  pdf_upload              String?
+  govt_id                 Int
+  govt                    GovtEntry @relation(fields: [govt_id], references: [id])
+  converted_to_project_id Int?
+
+  projects Project[]
+}
+
+model Project {
+  id                 Int      @id @default(autoincrement())
+  project_id         String   @unique
+  name               String
+  budget             Float
+  budget_remaining   Float
+  type_of_work       String
+  sub_type           String
+  district_id        Int?
+  taluka_id          Int?
+  village_id         Int?
+  proposal_id        String?
+  financial_year_id  Int?
+  start_date         DateTime?
+  end_date           DateTime?
+  proposal_pdf       String?
+  source_type        SourceType
+  csr_id             Int?
+  csr                CsrCompany? @relation(fields: [csr_id], references: [id])
+  govt_work_order_id Int?
+  govt_work_order    GovtWorkOrder? @relation(fields: [govt_work_order_id], references: [id])
+  individual_donor_id Int?
+  individual_donor   IndividualDonor? @relation(fields: [individual_donor_id], references: [id])
+  status             ProjectStatus @default(Active)
+  created_by         Int
+  created_at         DateTime @default(now())
+
+  vendor_projects VendorProject[]
+  contractor_assignments ContractorAssignment[]
+  wccs Wcc[]
+  invoices Invoice[]
+}
+
+model IndividualDonor {
+  id               Int      @id @default(autoincrement())
+  donor_id         String   @unique
+  name             String
+  pan              String?
+  contact          String?
+  email            String?
+  budget           Float
+  budget_remaining Float    @default(0)
+  created_by       Int
+  created_at       DateTime @default(now())
+
+  projects Project[]
+}
+
+enum SourceType {
+  CSR
+  GOVT
+  INDIVIDUAL
+}
+
+enum ProjectStatus {
+  Active
+  Completed
+  OnHold
+  BudgetExhausted
+}
+
+model Vendor {
+  id                   Int      @id @default(autoincrement())
+  vendor_id            String   @unique
+  company_name         String
+  pan                  String
+  aadhaar              String?
+  gst                  String?
+  owner_name           String
+  owner_contact        String
+  owner_address        String?
+  machine_details      String?  @db.Text
+  operator_details     String?  @db.Text
+  bank_name            String?
+  branch               String?
+  account_no           String?
+  ifsc                 String?
+  cancelled_cheque_pdf String?
+  created_by           Int
+  created_at           DateTime @default(now())
+
+  projects VendorProject[]
+  contractor_assignments ContractorAssignment[]
+  wccs Wcc[]
+  invoices Invoice[]
+}
+
+model VendorProject {
+  id            Int      @id @default(autoincrement())
+  vendor_id     Int
+  vendor        Vendor   @relation(fields: [vendor_id], references: [id])
+  project_id    Int
+  project       Project  @relation(fields: [project_id], references: [id])
+  assigned_date DateTime @default(now())
+}
+
+model Contractor {
+  id            Int      @id @default(autoincrement())
+  contractor_id String   @unique
+  full_name     String
+  pan           String
+  aadhaar       String?
+  contact       String
+  address       String?
+  bank_name     String?
+  branch        String?
+  account_no    String?
+  ifsc          String?
+  created_by    Int
+  created_at    DateTime @default(now())
+
+  assignments ContractorAssignment[]
+  wccs Wcc[]
+  invoices Invoice[]
+}
+
+model ContractorAssignment {
+  id            Int      @id @default(autoincrement())
+  contractor_id Int
+  contractor    Contractor @relation(fields: [contractor_id], references: [id])
+  vendor_id     Int
+  vendor        Vendor     @relation(fields: [vendor_id], references: [id])
+  project_id    Int
+  project       Project    @relation(fields: [project_id], references: [id])
+  assigned_date DateTime   @default(now())
+  status        AssignmentStatus @default(Active)
+}
+
+enum AssignmentStatus {
+  Active
+  Inactive
+}
+
+model Wcc {
+  id               Int      @id @default(autoincrement())
+  wcc_id           String   @unique
+  project_id       Int
+  project          Project  @relation(fields: [project_id], references: [id])
+  vendor_id        Int
+  vendor           Vendor   @relation(fields: [vendor_id], references: [id])
+  contractor_id    Int
+  contractor       Contractor @relation(fields: [contractor_id], references: [id])
+  work_description String
+  completion_date  DateTime
+  verified_by      Int?
+  pdf_upload       String?
+  status           WccStatus @default(Pending)
+  approved_by      Int?
+  approved_at      DateTime?
+  remarks          String?
+
+  invoices Invoice[]
+}
+
+enum WccStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+model Invoice {
+  id                 Int      @id @default(autoincrement())
+  invoice_id         String   @unique
+  invoice_type       InvoiceType
+  project_id         Int
+  project            Project  @relation(fields: [project_id], references: [id])
+  wcc_id             Int?
+  wcc                Wcc?     @relation(fields: [wcc_id], references: [id])
+  vendor_id          Int?
+  vendor             Vendor?  @relation(fields: [vendor_id], references: [id])
+  contractor_id      Int?
+  contractor         Contractor? @relation(fields: [contractor_id], references: [id])
+  invoice_date       DateTime
+  due_date           DateTime?
+  subtotal           Float
+  gst_id             Int?
+  gst_amount         Float    @default(0)
+  tds_id             Int?
+  tds_amount         Float    @default(0)
+  total_amount       Float
+  payment_status     PaymentStatus @default(Pending)
+  amount_paid        Float    @default(0)
+  payment_date       DateTime?
+  approved_by_vendor Boolean  @default(false)
+  approved_by_naam   Boolean  @default(false)
+  created_by         Int
+  created_at         DateTime @default(now())
+
+  line_items InvoiceLineItem[]
+}
+
+enum InvoiceType {
+  TypeA
+  TypeB
+  TypeC
+}
+
+enum PaymentStatus {
+  Pending
+  Partial
+  Paid
+}
+
+model InvoiceLineItem {
+  id          Int      @id @default(autoincrement())
+  invoice_id  Int
+  invoice     Invoice  @relation(fields: [invoice_id], references: [id])
+  description String
+  quantity    Float
+  unit        String
+  rate        Float
+  amount      Float
+}
