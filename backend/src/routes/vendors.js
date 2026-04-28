@@ -70,6 +70,22 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Get all contractors
+router.get('/contractors', async (req, res) => {
+  try {
+    const contractors = await prisma.contractor.findMany({
+      include: {
+        assignments: {
+          include: { vendor: true, project: true }
+        }
+      }
+    });
+    res.json(contractors);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch contractors' });
+  }
+});
+
 // Register a contractor
 router.post('/contractors', async (req, res) => {
   try {

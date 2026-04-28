@@ -7,6 +7,7 @@ export default function Vendors() {
   const [showForm, setShowForm] = useState(false);
   
   const [vendors, setVendors] = useState([]);
+  const [contractors, setContractors] = useState([]);
   const [projects, setProjects] = useState([]);
   
   // Vendor form
@@ -42,6 +43,8 @@ export default function Vendors() {
     try {
       const vRes = await api.get('/vendors');
       setVendors(vRes.data);
+      const cRes = await api.get('/vendors/contractors');
+      setContractors(cRes.data);
       const pRes = await api.get('/projects');
       setProjects(pRes.data);
     } catch (err) {
@@ -240,31 +243,57 @@ export default function Vendors() {
       )}
 
       <div className="glass-panel" style={{ overflow: 'hidden' }}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Company Name</th>
-              <th>Owner Name</th>
-              <th>PAN</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {vendors.map(v => (
-              <tr key={v.id}>
-                <td style={{ fontWeight: 500 }}>{v.vendor_id}</td>
-                <td>{v.company_name}</td>
-                <td>{v.owner_name}</td>
-                <td>{v.pan}</td>
-                <td>
-                  <span className="badge badge-success">Active</span>
-                </td>
+        {activeTab === 'vendors' ? (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Company Name</th>
+                <th>Owner Name</th>
+                <th>PAN</th>
+                <th>Status</th>
               </tr>
-            ))}
-            {vendors.length === 0 && <tr><td colSpan="5" style={{textAlign:'center'}}>No vendors found.</td></tr>}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {vendors.map(v => (
+                <tr key={v.id}>
+                  <td style={{ fontWeight: 500 }}>{v.vendor_id}</td>
+                  <td>{v.company_name}</td>
+                  <td>{v.owner_name}</td>
+                  <td>{v.pan}</td>
+                  <td><span className="badge badge-success">Active</span></td>
+                </tr>
+              ))}
+              {vendors.length === 0 && <tr><td colSpan="5" style={{textAlign:'center'}}>No vendors registered yet.</td></tr>}
+            </tbody>
+          </table>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Contractor ID</th>
+                <th>Full Name</th>
+                <th>PAN</th>
+                <th>Contact</th>
+                <th>Assigned Vendor</th>
+                <th>Assigned Project</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contractors.map(c => (
+                <tr key={c.id}>
+                  <td style={{ fontWeight: 500 }}>{c.contractor_id}</td>
+                  <td>{c.full_name}</td>
+                  <td>{c.pan}</td>
+                  <td>{c.contact}</td>
+                  <td>{c.assignments?.[0]?.vendor?.company_name || '—'}</td>
+                  <td>{c.assignments?.[0]?.project?.name || '—'}</td>
+                </tr>
+              ))}
+              {contractors.length === 0 && <tr><td colSpan="6" style={{textAlign:'center'}}>No contractors hired yet.</td></tr>}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
