@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, FolderKanban, FileText, Settings, LogOut, Building, Landmark, FileSpreadsheet, FileCheck2 } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, FileText, Settings as SettingsIcon, LogOut, Building, Landmark, FileSpreadsheet, FileCheck2 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import Vendors from './pages/Vendors';
@@ -11,9 +11,24 @@ import Reports from './pages/Reports';
 import WccManagement from './pages/WccManagement';
 import Donors from './pages/Donors';
 import Login from './pages/Login';
+import Settings from './pages/Settings';
+import ResetPassword from './pages/ResetPassword';
 
 function Sidebar({ onLogout }) {
   const location = useLocation();
+  const [userRole, setUserRole] = useState('Operator');
+
+  useEffect(() => {
+    const token = localStorage.getItem('naam_token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(payload.role || 'Operator');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [location]);
   
   return (
     <div className="sidebar glass-panel" style={{ borderRadius: 0, borderTop: 0, borderBottom: 0, borderLeft: 0 }}>
@@ -55,9 +70,11 @@ function Sidebar({ onLogout }) {
       </div>
 
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <Link to="/settings" className={`nav-link ${location.pathname === '/settings' ? 'active' : ''}`}>
-          <Settings size={20} /> Settings
-        </Link>
+        {userRole === 'Admin' && (
+          <Link to="/settings" className={`nav-link ${location.pathname === '/settings' ? 'active' : ''}`}>
+            <SettingsIcon size={20} /> Settings
+          </Link>
+        )}
         <button onClick={onLogout} className="nav-link" style={{ background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', color: 'var(--danger)' }}>
           <LogOut size={20} /> Logout
         </button>
@@ -79,26 +96,35 @@ function App() {
     setIsAuthenticated(false);
   };
 
-  if (!isAuthenticated) {
+  const isResetPage = window.location.pathname === '/reset-password';
+
+  if (!isAuthenticated && !isResetPage) {
     return <Login onLogin={() => setIsAuthenticated(true)} />;
   }
 
   return (
     <Router>
-      <div className="app-container">
-        <Sidebar onLogout={handleLogout} />
+      {isResetPage ? (
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/vendors" element={<Vendors />} />
-          <Route path="/wcc" element={<WccManagement />} />
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/csr" element={<CsrManagement />} />
-          <Route path="/donors" element={<Donors />} />
-          <Route path="/govt" element={<GovtSchemes />} />
-          <Route path="/reports" element={<Reports />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
-      </div>
+      ) : (
+        <div className="app-container">
+          <Sidebar onLogout={handleLogout} />
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/vendors" element={<Vendors />} />
+            <Route path="/wcc" element={<WccManagement />} />
+            <Route path="/invoices" element={<Invoices />} />
+            <Route path="/csr" element={<CsrManagement />} />
+            <Route path="/donors" element={<Donors />} />
+            <Route path="/govt" element={<GovtSchemes />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </div>
+      )}
     </Router>
   );
 }

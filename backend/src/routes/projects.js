@@ -42,19 +42,74 @@ router.post('/', async (req, res) => {
       proposal_id, financial_year_id, start_date, end_date
     } = req.body;
 
-    // Fetch locations to construct the ID
+    // Fetch or create locations to construct the ID and save correct associations
+    let final_district_id = null;
+    let final_taluka_id = null;
+    let final_village_id = null;
     let di_code = 'XX', ta_code = 'XX', vi_code = 'XXX';
+
+    // 1. Resolve District
     if (district_id) {
-      const d = await prisma.locationDistrict.findUnique({ where: { id: parseInt(district_id) } });
-      if (d) di_code = d.name.substring(0, 2).toUpperCase();
+      if (typeof district_id === 'string' && isNaN(Number(district_id))) {
+        const name = district_id.trim();
+        let d = await prisma.locationDistrict.findFirst({ where: { name } });
+        if (!d) {
+          let code = 'D-' + name.substring(0, 3).toUpperCase();
+          const codeExists = await prisma.locationDistrict.findUnique({ where: { code } });
+          if (codeExists) {
+            code = code + '-' + Math.floor(Math.random() * 1000);
+          }
+          d = await prisma.locationDistrict.create({ data: { name, code } });
+        }
+        final_district_id = d.id;
+        di_code = d.name.substring(0, 2).toUpperCase();
+      } else {
+        const d = await prisma.locationDistrict.findUnique({ where: { id: parseInt(district_id) } });
+        if (d) {
+          final_district_id = d.id;
+          di_code = d.name.substring(0, 2).toUpperCase();
+        }
+      }
     }
+
+    // 2. Resolve Taluka
     if (taluka_id) {
-      const t = await prisma.locationTaluka.findUnique({ where: { id: parseInt(taluka_id) } });
-      if (t) ta_code = t.name.substring(0, 2).toUpperCase();
+      if (typeof taluka_id === 'string' && isNaN(Number(taluka_id)) && final_district_id) {
+        const name = taluka_id.trim();
+        let t = await prisma.locationTaluka.findFirst({ where: { name, district_id: final_district_id } });
+        if (!t) {
+          const code = 'T-' + name.substring(0, 3).toUpperCase() + '-' + Math.floor(Math.random() * 1000);
+          t = await prisma.locationTaluka.create({ data: { name, code, district_id: final_district_id } });
+        }
+        final_taluka_id = t.id;
+        ta_code = t.name.substring(0, 2).toUpperCase();
+      } else {
+        const t = await prisma.locationTaluka.findUnique({ where: { id: parseInt(taluka_id) } });
+        if (t) {
+          final_taluka_id = t.id;
+          ta_code = t.name.substring(0, 2).toUpperCase();
+        }
+      }
     }
+
+    // 3. Resolve Village
     if (village_id) {
-      const v = await prisma.locationVillage.findUnique({ where: { id: parseInt(village_id) } });
-      if (v) vi_code = v.name.substring(0, 3).toUpperCase();
+      if (typeof village_id === 'string' && isNaN(Number(village_id)) && final_taluka_id) {
+        const name = village_id.trim();
+        let v = await prisma.locationVillage.findFirst({ where: { name, taluka_id: final_taluka_id } });
+        if (!v) {
+          const code = 'V-' + name.substring(0, 3).toUpperCase() + '-' + Math.floor(Math.random() * 1000);
+          v = await prisma.locationVillage.create({ data: { name, code, taluka_id: final_taluka_id } });
+        }
+        final_village_id = v.id;
+        vi_code = v.name.substring(0, 3).toUpperCase();
+      } else {
+        const v = await prisma.locationVillage.findUnique({ where: { id: parseInt(village_id) } });
+        if (v) {
+          final_village_id = v.id;
+          vi_code = v.name.substring(0, 3).toUpperCase();
+        }
+      }
     }
 
     // Generate Project ID logic
@@ -112,9 +167,9 @@ router.post('/', async (req, res) => {
         financial_year_id: financial_year_id ? parseInt(financial_year_id) : null,
         start_date: start_date ? new Date(start_date) : null,
         end_date: end_date ? new Date(end_date) : null,
-        district_id: district_id ? parseInt(district_id) : null,
-        taluka_id: taluka_id ? parseInt(taluka_id) : null,
-        village_id: village_id ? parseInt(village_id) : null,
+        district_id: final_district_id,
+        taluka_id: final_taluka_id,
+        village_id: final_village_id,
         created_by: req.user.id
       }
     });

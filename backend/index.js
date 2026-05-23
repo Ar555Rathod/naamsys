@@ -13,6 +13,7 @@ const reportsRoutes = require('./src/routes/reports');
 const locationsRoutes = require('./src/routes/locations');
 const wccRoutes = require('./src/routes/wcc');
 const donorsRoutes = require('./src/routes/donors');
+const configRoutes = require('./src/routes/config');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,6 +31,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/locations', locationsRoutes);
 app.use('/api/wcc', wccRoutes);
 app.use('/api/donors', donorsRoutes);
+app.use('/api/config', configRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'NAAM API is running' });

@@ -8,7 +8,7 @@ export default function Projects() {
   
   const [name, setName] = useState('');
   const [budget, setBudget] = useState('');
-  const [type_of_work, setTypeOfWork] = useState('Desilting');
+  const [type_of_work, setTypeOfWork] = useState('');
   const [source_type, setSourceType] = useState('CSR');
   const [csr_id, setCsrId] = useState('');
   const [govt_work_order_id, setGovtWorkOrderId] = useState('');
@@ -72,12 +72,13 @@ export default function Projects() {
         financial_year_id: financial_year_id ? parseInt(financial_year_id) : undefined,
         start_date: start_date ? new Date(start_date).toISOString() : undefined,
         end_date: end_date ? new Date(end_date).toISOString() : undefined,
-        district_id: district_id ? parseInt(district_id) : undefined,
-        taluka_id: taluka_id ? parseInt(taluka_id) : undefined,
-        village_id: village_id ? parseInt(village_id) : undefined
+        district_id: district_id || undefined,
+        taluka_id: taluka_id || undefined,
+        village_id: village_id || undefined
       });
       setShowForm(false);
       setName(''); setProposalId(''); setStartDate(''); setEndDate(''); setBudget(''); setSourceMaxBudget(null);
+      setTypeOfWork(''); setDistrictId(''); setTalukaId(''); setVillageId('');
       fetchProjects();
     } catch (err) {
       console.error('Failed to create project', err);
@@ -110,11 +111,7 @@ export default function Projects() {
 
             <div className="form-group">
               <label>Type of Work</label>
-              <select value={type_of_work} onChange={e=>setTypeOfWork(e.target.value)} className="input-field">
-                <option value="Desilting">Desilting</option>
-                <option value="Excavation">Excavation</option>
-                <option value="Construction">Construction</option>
-              </select>
+              <input type="text" value={type_of_work} onChange={e=>setTypeOfWork(e.target.value)} className="input-field" placeholder="e.g. Desilting, Excavation, Construction" required />
             </div>
 
             <div className="form-group">
@@ -127,37 +124,17 @@ export default function Projects() {
 
             <div className="form-group">
               <label>District</label>
-              <select value={district_id} onChange={e => {
-                setDistrictId(e.target.value);
-                setTalukaId(''); setVillageId('');
-                const district = locations.find(d => d.id === parseInt(e.target.value));
-                setAvailableTalukas(district ? district.talukas : []);
-                setAvailableVillages([]);
-              }} className="input-field">
-                <option value="">-- Select District --</option>
-                {locations.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
+              <input type="text" value={district_id} onChange={e=>setDistrictId(e.target.value)} className="input-field" placeholder="Enter District" />
             </div>
 
             <div className="form-group">
               <label>Taluka</label>
-              <select value={taluka_id} onChange={e => {
-                setTalukaId(e.target.value);
-                setVillageId('');
-                const taluka = availableTalukas.find(t => t.id === parseInt(e.target.value));
-                setAvailableVillages(taluka ? taluka.villages : []);
-              }} className="input-field" disabled={!district_id}>
-                <option value="">-- Select Taluka --</option>
-                {availableTalukas.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
+              <input type="text" value={taluka_id} onChange={e=>setTalukaId(e.target.value)} className="input-field" placeholder="Enter Taluka" />
             </div>
 
             <div className="form-group">
               <label>Village</label>
-              <select value={village_id} onChange={e=>setVillageId(e.target.value)} className="input-field" disabled={!taluka_id}>
-                <option value="">-- Select Village --</option>
-                {availableVillages.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-              </select>
+              <input type="text" value={village_id} onChange={e=>setVillageId(e.target.value)} className="input-field" placeholder="Enter Village" />
             </div>
 
             <div className="form-group" style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem' }}>

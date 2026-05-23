@@ -13,4 +13,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Intercept responses to handle 401 Unauthorized (expired, stale, or invalid token) errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('naam_token');
+      window.location.href = '/';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
