@@ -55,6 +55,7 @@ router.post('/:id/work-orders', async (req, res) => {
       data: {
         work_order_number,
         budget: parseFloat(budget),
+        budget_remaining: parseFloat(budget),
         description,
         govt_id
       }

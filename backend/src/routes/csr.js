@@ -29,6 +29,7 @@ router.post('/', async (req, res) => {
         csr_id,
         name,
         budget: parseFloat(budget),
+        budget_remaining: parseFloat(budget),
         contact_person,
         email,
         phone,
