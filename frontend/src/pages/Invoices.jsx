@@ -163,9 +163,9 @@ export default function Invoices() {
                 </div>
 
                 <div className="form-group">
-                  <label>Contractor</label>
-                  <select value={contractor_id} onChange={e=>setContractorId(e.target.value)} className="input-field" required disabled={!!purchase_order_id}>
-                    <option value="">-- Select Contractor --</option>
+                  <label>Contractor (Optional)</label>
+                  <select value={contractor_id} onChange={e=>setContractorId(e.target.value)} className="input-field" disabled={!!purchase_order_id}>
+                    <option value="">-- Select Contractor (Optional) --</option>
                     {contractors.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
                   </select>
                 </div>
