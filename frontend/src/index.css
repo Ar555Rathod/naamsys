@@ -249,3 +249,30 @@ label {
   color: var(--text-muted);
   font-size: 0.875rem;
 }
+
+/* Global High-Fidelity Printing System */
+@media print {
+  .no-print, .sidebar, .page-header, button {
+    display: none !important;
+  }
+  .main-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    position: static !important;
+    background: white !important;
+  }
+  body, #root, .app-container {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    position: static !important;
+    display: block !important;
+  }
+}

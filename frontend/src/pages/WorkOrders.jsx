@@ -167,22 +167,16 @@ export default function WorkOrders() {
       {selectedPrintWo && (
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
-            body * {
-              visibility: hidden !important;
-            }
-            .modal-overlay, .modal-overlay * {
-              visibility: visible !important;
-            }
             .modal-overlay {
-              position: absolute !important;
-              left: 0 !important;
-              top: 0 !important;
-              width: 100% !important;
+              position: static !important;
               background: transparent !important;
               backdrop-filter: none !important;
               -webkit-backdrop-filter: none !important;
               padding: 0 !important;
               margin: 0 !important;
+              display: block !important;
+              width: 100% !important;
+              height: auto !important;
               z-index: auto !important;
             }
             .modal-overlay .glass-panel {
@@ -195,19 +189,18 @@ export default function WorkOrders() {
               max-width: 100% !important;
               padding: 0 !important;
               margin: 0 !important;
+              display: block !important;
             }
             #printable-wo-modal-content {
               padding: 0 !important;
               margin: 0 !important;
-            }
-            .no-print {
-              display: none !important;
+              display: block !important;
             }
           }
         ` }} />
       )}
 
-      <div className="page-header">
+      <div className="page-header no-print">
         <h1 className="page-title">Work Orders</h1>
         <button className="btn btn-primary" onClick={() => {
           setIsAmending(false);
@@ -220,7 +213,7 @@ export default function WorkOrders() {
       </div>
 
       {showForm && (
-        <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
+        <div className="glass-panel no-print" style={{ padding: '2rem', marginBottom: '2rem' }}>
           <h2 style={{ marginBottom: '1.5rem', fontWeight: 600 }}>
             {isAmending ? `Amend Work Order: ${amendWoNumber} (Creates Next Version)` : 'Create New Work Order'}
           </h2>
@@ -290,7 +283,7 @@ export default function WorkOrders() {
       )}
 
       {/* Main Listing Panel */}
-      <div className="glass-panel" style={{ overflow: 'hidden' }}>
+      <div className="glass-panel no-print" style={{ overflow: 'hidden' }}>
         <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <Search size={18} color="var(--text-muted)" />
           <input 
@@ -373,7 +366,7 @@ export default function WorkOrders() {
 
       {/* VERSION HISTORY MODAL */}
       {showHistoryModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+        <div className="no-print" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '750px', background: 'var(--bg-card)', padding: '2.5rem', position: 'relative' }}>
             <button onClick={() => setShowHistoryModal(false)} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
               <XCircle size={24} />
@@ -420,7 +413,7 @@ export default function WorkOrders() {
 
       {/* MOCK UPLOAD SIGNED COPY MODAL */}
       {showUploadModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+        <div className="no-print" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', background: 'var(--bg-card)', padding: '2.5rem', position: 'relative' }}>
             <button onClick={() => setShowUploadModal(false)} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
               <XCircle size={24} />

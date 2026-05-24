@@ -57,27 +57,14 @@ export default function ProjectDetails() {
       {/* Absolute Print Layout CSS injected dynamically */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          body * {
-            visibility: hidden !important;
-          }
-          #dossier-report, #dossier-report * {
-            visibility: visible !important;
-          }
           #dossier-report {
             display: block !important;
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
+            position: static !important;
             width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
             background: white !important;
-            color: black !important;
-            box-shadow: none !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          .no-print {
-            display: none !important;
+            color: #1e293b !important;
           }
           .page-break-after {
             page-break-after: always !important;

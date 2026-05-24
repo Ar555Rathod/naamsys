@@ -90,22 +90,16 @@ export default function Invoices() {
       {selectedInvoice && (
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
-            body * {
-              visibility: hidden !important;
-            }
-            .modal-overlay, .modal-overlay * {
-              visibility: visible !important;
-            }
             .modal-overlay {
-              position: absolute !important;
-              left: 0 !important;
-              top: 0 !important;
-              width: 100% !important;
+              position: static !important;
               background: transparent !important;
               backdrop-filter: none !important;
               -webkit-backdrop-filter: none !important;
               padding: 0 !important;
               margin: 0 !important;
+              display: block !important;
+              width: 100% !important;
+              height: auto !important;
               z-index: auto !important;
             }
             .modal-overlay .glass-panel {
@@ -118,19 +112,18 @@ export default function Invoices() {
               max-width: 100% !important;
               padding: 0 !important;
               margin: 0 !important;
+              display: block !important;
             }
             #printable-invoice-modal-content {
               padding: 0 !important;
               margin: 0 !important;
-            }
-            .no-print {
-              display: none !important;
+              display: block !important;
             }
           }
         ` }} />
       )}
 
-      <div className="page-header">
+      <div className="page-header no-print">
         <h1 className="page-title">Invoice Engine</h1>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
           <PlusCircle size={18} /> {showForm ? 'Cancel' : 'Generate Invoice'}
@@ -138,7 +131,7 @@ export default function Invoices() {
       </div>
 
       {showForm && (
-        <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
+        <div className="glass-panel no-print" style={{ padding: '2rem', marginBottom: '2rem' }}>
           <h2 style={{ marginBottom: '1.5rem', fontWeight: 600 }}>Generate New Invoice</h2>
           <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             <div className="form-group">
@@ -216,7 +209,7 @@ export default function Invoices() {
         </div>
       )}
 
-      <div className="glass-panel" style={{ overflow: 'hidden' }}>
+      <div className="glass-panel no-print" style={{ overflow: 'hidden' }}>
         <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <Search size={18} color="var(--text-muted)" />
           <input 
