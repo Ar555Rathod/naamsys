@@ -160,6 +160,14 @@ export default function ProjectDetails() {
                 <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase' }}>Proposal ID</span>
                 <span style={{ display: 'block', marginTop: '0.2rem' }}>{project.proposal_id || '—'}</span>
               </div>
+              {project.proposal_pdf && (
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase' }}>Proposal PDF</span>
+                  <a href={`/uploads/${project.proposal_pdf}`} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: '0.2rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
+                    📄 {project.proposal_pdf}
+                  </a>
+                </div>
+              )}
               <div>
                 <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase' }}>Execution Timeline</span>
                 <span style={{ display: 'block', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -473,6 +481,14 @@ export default function ProjectDetails() {
                 <td style={{ padding: '0.6rem 0', color: '#64748b' }}>Proposal / MoU Reference:</td>
                 <td style={{ padding: '0.6rem 0', fontWeight: 500 }}>{project.proposal_id || 'N/A'}</td>
               </tr>
+              {project.proposal_pdf && (
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '0.6rem 0', color: '#64748b' }}>Proposal PDF Document:</td>
+                  <td style={{ padding: '0.6rem 0', fontWeight: 600 }} colSpan="3">
+                    {project.proposal_pdf}
+                  </td>
+                </tr>
+              )}
               <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                 <td style={{ padding: '0.6rem 0', color: '#64748b' }}>Timeline Period:</td>
                 <td style={{ padding: '0.6rem 0', fontWeight: 500 }}>

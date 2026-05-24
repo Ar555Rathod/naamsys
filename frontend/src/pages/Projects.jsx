@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, UploadCloud, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -26,6 +26,7 @@ export default function Projects() {
   const [district_id, setDistrictId] = useState('');
   const [taluka_id, setTalukaId] = useState('');
   const [village_id, setVillageId] = useState('');
+  const [proposal_pdf, setProposalPdf] = useState('');
 
   const [csrs, setCsrs] = useState([]);
   const [govts, setGovts] = useState([]);
@@ -77,11 +78,12 @@ export default function Projects() {
         end_date: end_date ? new Date(end_date).toISOString() : undefined,
         district_id: district_id || undefined,
         taluka_id: taluka_id || undefined,
-        village_id: village_id || undefined
+        village_id: village_id || undefined,
+        proposal_pdf: proposal_pdf || undefined
       });
       setShowForm(false);
       setName(''); setProposalId(''); setStartDate(''); setEndDate(''); setBudget(''); setSourceMaxBudget(null);
-      setTypeOfWork(''); setDistrictId(''); setTalukaId(''); setVillageId('');
+      setTypeOfWork(''); setDistrictId(''); setTalukaId(''); setVillageId(''); setProposalPdf('');
       fetchProjects();
     } catch (err) {
       console.error('Failed to create project', err);
@@ -138,6 +140,52 @@ export default function Projects() {
             <div className="form-group">
               <label>Village</label>
               <input type="text" value={village_id} onChange={e=>setVillageId(e.target.value)} className="input-field" placeholder="Enter Village" />
+            </div>
+
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <label>Project Proposal Document (PDF) - <span style={{color: 'var(--primary)', fontWeight: 600}}>Optional</span></label>
+              <div 
+                style={{ 
+                  border: '2px dashed var(--primary)', 
+                  padding: '2rem 1.5rem', 
+                  borderRadius: '12px', 
+                  background: 'rgba(30, 41, 59, 0.01)', 
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.75rem',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => {
+                  const simulatedName = `Project_Proposal_${proposal_id ? proposal_id.replace(/\s+/g, '_') : 'PROP_' + Math.floor(Math.random() * 1000)}.pdf`;
+                  setProposalPdf(simulatedName);
+                }}
+              >
+                {proposal_pdf ? (
+                  <>
+                    <FileText size={40} color="#10b981" />
+                    <span style={{ color: '#10b981', fontWeight: 700, fontSize: '0.95rem' }}>✓ Proposal PDF Uploaded Successfully</span>
+                    <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{proposal_pdf}</strong>
+                    <button 
+                      type="button" 
+                      onClick={(e) => { e.stopPropagation(); setProposalPdf(''); }} 
+                      className="btn btn-danger" 
+                      style={{ padding: '0.3rem 0.8rem', fontSize: '0.75rem', gap: '0.25rem', marginTop: '0.25rem' }}
+                    >
+                      Delete Attachment
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud size={40} color="var(--primary)" />
+                    <span style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Drag and drop project proposal here or click to upload</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Supports PDF document formats up to 10MB</span>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="form-group" style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem' }}>

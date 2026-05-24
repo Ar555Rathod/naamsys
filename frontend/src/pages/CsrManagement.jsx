@@ -93,7 +93,9 @@ export default function CsrManagement() {
         setSelectedCsr(null);
       }
     } catch (err) {
-      alert('Failed to save CSR Partner');
+      console.error("Save CSR error:", err);
+      const errMsg = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to save CSR Partner';
+      alert(`Failed to save CSR Partner: ${errMsg}`);
     }
   };
 
@@ -378,7 +380,7 @@ export default function CsrManagement() {
               {/* Modal Actions */}
               <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'flex-end' }}>
                 <button 
-                  onClick={(e) => { setSelectedCsr(null); handleEditClick(e, selectedCsr); }} 
+                  onClick={(e) => { const temp = selectedCsr; setSelectedCsr(null); handleEditClick(e, temp); }} 
                   className="btn btn-primary"
                   style={{ padding: '0.5rem 1.25rem', gap: '0.25rem' }}
                 >

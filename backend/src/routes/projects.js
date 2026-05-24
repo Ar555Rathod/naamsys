@@ -39,7 +39,7 @@ router.post('/', async (req, res) => {
       name, type_of_work, sub_type, budget,
       district_id, taluka_id, village_id, 
       source_type, csr_id, govt_work_order_id, individual_donor_id,
-      proposal_id, financial_year_id, start_date, end_date
+      proposal_id, financial_year_id, start_date, end_date, proposal_pdf
     } = req.body;
 
     // Fetch or create locations to construct the ID and save correct associations
@@ -164,6 +164,7 @@ router.post('/', async (req, res) => {
         govt_work_order_id: govt_work_order_id ? parseInt(govt_work_order_id) : null,
         individual_donor_id: individual_donor_id ? parseInt(individual_donor_id) : null,
         proposal_id,
+        proposal_pdf: proposal_pdf || null,
         financial_year_id: financial_year_id ? parseInt(financial_year_id) : null,
         start_date: start_date ? new Date(start_date) : null,
         end_date: end_date ? new Date(end_date) : null,
