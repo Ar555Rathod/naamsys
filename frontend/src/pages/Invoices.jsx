@@ -86,42 +86,7 @@ export default function Invoices() {
 
   return (
     <div className="main-content">
-      {/* Dynamic inline print styles injected only when invoice modal is active */}
-      {selectedInvoice && (
-        <style dangerouslySetInnerHTML={{ __html: `
-          @media print {
-            .modal-overlay {
-              position: static !important;
-              background: transparent !important;
-              backdrop-filter: none !important;
-              -webkit-backdrop-filter: none !important;
-              padding: 0 !important;
-              margin: 0 !important;
-              display: block !important;
-              width: 100% !important;
-              height: auto !important;
-              z-index: auto !important;
-            }
-            .modal-overlay .glass-panel {
-              background: white !important;
-              box-shadow: none !important;
-              border: none !important;
-              max-height: none !important;
-              overflow: visible !important;
-              width: 100% !important;
-              max-width: 100% !important;
-              padding: 0 !important;
-              margin: 0 !important;
-              display: block !important;
-            }
-            #printable-invoice-modal-content {
-              padding: 0 !important;
-              margin: 0 !important;
-              display: block !important;
-            }
-          }
-        ` }} />
-      )}
+
 
       <div className="page-header no-print">
         <h1 className="page-title">Invoice Engine</h1>

@@ -54,23 +54,7 @@ export default function ProjectDetails() {
 
   return (
     <div className="main-content">
-      {/* Absolute Print Layout CSS injected dynamically */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media print {
-          #dossier-report {
-            display: block !important;
-            position: static !important;
-            width: 100% !important;
-            height: auto !important;
-            overflow: visible !important;
-            background: white !important;
-            color: #1e293b !important;
-          }
-          .page-break-after {
-            page-break-after: always !important;
-          }
-        }
-      ` }} />
+
 
       {/* Navigation and Actions */}
       <div className="page-header no-print" style={{ marginBottom: '2rem' }}>
@@ -416,7 +400,7 @@ export default function ProjectDetails() {
       {/* ========================================================================= */}
       {/* HIGH-FIDELITY OFFICIAL PRINT-ONLY PROJECT DOSSIER REPORT SECTION */}
       {/* ========================================================================= */}
-      <div id="dossier-report" style={{ display: 'none', background: 'white', color: '#1e293b' }}>
+      <div id="dossier-report" className="print-only">
         
         {/* Cover Branding Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '3px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2.5rem' }}>

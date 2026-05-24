@@ -250,29 +250,98 @@ label {
   font-size: 0.875rem;
 }
 
+/* Screen-only styling for print elements */
+.print-only {
+  display: none !important;
+}
+
 /* Global High-Fidelity Printing System */
 @media print {
-  .no-print, .sidebar, .page-header, button {
+  .no-print, 
+  .sidebar, 
+  .page-header, 
+  button, 
+  .btn,
+  form,
+  .form-group,
+  input,
+  select,
+  textarea,
+  .no-print * {
     display: none !important;
   }
-  .main-content {
+  
+  html, body, #root, .app-container, .main-content {
+    background: white !important;
+    color: #1e293b !important;
     padding: 0 !important;
     margin: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
     overflow: visible !important;
     position: static !important;
-    background: white !important;
+    display: block !important;
+    box-shadow: none !important;
+    border: none !important;
   }
-  body, #root, .app-container {
+
+  .print-only {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
-    color: black !important;
+    color: #1e293b !important;
+  }
+
+  .modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    min-height: auto !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    z-index: auto !important;
+  }
+
+  .modal-overlay .glass-panel {
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    max-height: none !important;
+    overflow: visible !important;
     width: 100% !important;
     max-width: 100% !important;
-    position: static !important;
+    padding: 0 !important;
+    margin: 0 !important;
     display: block !important;
+  }
+
+  #dossier-report,
+  #printable-invoice-modal-content,
+  #printable-po-modal-content,
+  #printable-wo-modal-content {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    color: #1e293b !important;
+  }
+
+  .page-break-after {
+    page-break-after: always !important;
+    break-after: page !important;
   }
 }
