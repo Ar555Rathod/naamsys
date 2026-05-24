@@ -37,6 +37,7 @@ router.post('/', async (req, res) => {
     const { 
       company_name, pan, aadhaar, gst, 
       owner_name, owner_contact, owner_address, 
+      address_line1, address_line2, address_line3,
       machine_details, operator_details,
       bank_name, account_no, ifsc, project_ids
     } = req.body;
@@ -49,7 +50,9 @@ router.post('/', async (req, res) => {
         vendor_id,
         company_name,
         pan, aadhaar, gst,
-        owner_name, owner_contact, owner_address,
+        owner_name, owner_contact,
+        owner_address: owner_address || [address_line1, address_line2, address_line3].filter(Boolean).join(', '),
+        address_line1, address_line2, address_line3,
         machine_details, operator_details,
         bank_name, account_no, ifsc,
         created_by: req.user.id
@@ -91,6 +94,7 @@ router.post('/contractors', async (req, res) => {
   try {
     const { 
       full_name, pan, aadhaar, contact, address,
+      address_line1, address_line2, address_line3,
       bank_name, account_no, ifsc,
       vendor_id, project_id
     } = req.body;
@@ -108,7 +112,9 @@ router.post('/contractors', async (req, res) => {
       data: {
         contractor_id,
         full_name,
-        pan, aadhaar, contact, address,
+        pan, aadhaar, contact,
+        address: address || [address_line1, address_line2, address_line3].filter(Boolean).join(', '),
+        address_line1, address_line2, address_line3,
         bank_name, account_no, ifsc,
         created_by: req.user.id
       }

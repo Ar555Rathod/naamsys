@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
 export default function Projects() {
   const [showForm, setShowForm] = useState(false);
   const [projects, setProjects] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
   
   const [name, setName] = useState('');
   const [budget, setBudget] = useState('');
@@ -222,6 +225,8 @@ export default function Projects() {
           <input 
             type="text" 
             placeholder="Search projects..." 
+            value={searchTerm}
+            onChange={e=>setSearchTerm(e.target.value)}
             style={{ border: 'none', background: 'transparent', outline: 'none', color: 'var(--text-main)', width: '100%', fontFamily: 'Inter' }} 
           />
         </div>
@@ -237,13 +242,17 @@ export default function Projects() {
             </tr>
           </thead>
           <tbody>
-            {projects.map(p => (
-              <tr key={p.id}>
-                <td style={{ fontWeight: 500 }}>{p.project_id}</td>
-                <td>{p.name}</td>
+            {projects.filter(p => 
+              p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+              p.project_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              p.type_of_work.toLowerCase().includes(searchTerm.toLowerCase())
+            ).map(p => (
+              <tr key={p.id} onClick={() => navigate(`/projects/${p.id}`)} style={{ cursor: 'pointer' }} className="hover-row">
+                <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{p.project_id}</td>
+                <td style={{ fontWeight: 500 }}>{p.name}</td>
                 <td>{p.type_of_work}</td>
                 <td>₹{p.budget.toLocaleString()}</td>
-                <td style={{ color: p.budget_remaining < (p.budget * 0.2) ? 'var(--danger)' : 'var(--text-main)' }}>
+                <td style={{ color: p.budget_remaining < (p.budget * 0.2) ? 'var(--danger)' : 'var(--text-main)', fontWeight: 500 }}>
                   ₹{p.budget_remaining.toLocaleString()}
                 </td>
                 <td>

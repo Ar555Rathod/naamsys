@@ -23,7 +23,7 @@ router.post('/', async (req, res) => {
   try {
     const { 
       invoice_type, project_id, vendor_id, contractor_id, 
-      wcc_id, subtotal, total_amount 
+      purchase_order_id, subtotal, total_amount 
     } = req.body;
 
     const project = await prisma.project.findUnique({
@@ -34,13 +34,13 @@ router.post('/', async (req, res) => {
 
     // Budget Checking Logic for Payable Invoices
     if (invoice_type === 'TypeA') {
-      if (!wcc_id) {
-        return res.status(400).json({ error: 'Invoice Blocked: A Work Completion Certificate (WCC) must be linked.' });
+      if (!purchase_order_id) {
+        return res.status(400).json({ error: 'Invoice Blocked: A Purchase Order (PO) must be linked.' });
       }
 
-      const wcc = await prisma.wcc.findUnique({ where: { id: parseInt(wcc_id) } });
-      if (!wcc || wcc.status !== 'Approved') {
-        return res.status(400).json({ error: 'Invoice Blocked: The linked WCC must be Approved by NAAM staff first.' });
+      const po = await prisma.purchaseOrder.findUnique({ where: { id: parseInt(purchase_order_id) } });
+      if (!po || po.status !== 'Completed') {
+        return res.status(400).json({ error: 'Invoice Blocked: The linked Purchase Order must be Completed (Duly Signed copy uploaded) first.' });
       }
 
       if (project.budget_remaining < total_amount) {
@@ -57,9 +57,9 @@ router.post('/', async (req, res) => {
             invoice_id: `INV-${Date.now()}`,
             invoice_type,
             project_id: parseInt(project_id),
-            vendor_id: parseInt(vendor_id),
-            contractor_id: parseInt(contractor_id),
-            wcc_id: wcc_id ? parseInt(wcc_id) : null,
+            vendor_id: po.vendor_id,
+            contractor_id: po.contractor_id,
+            purchase_order_id: parseInt(purchase_order_id),
             invoice_date: new Date(),
             subtotal: parseFloat(subtotal),
             total_amount: parseFloat(total_amount),
@@ -97,7 +97,17 @@ router.post('/', async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const invoices = await prisma.invoice.findMany({ include: { project: true }});
+    const invoices = await prisma.invoice.findMany({ 
+      include: { 
+        project: true,
+        purchase_order: {
+          include: {
+            vendor: true,
+            contractor: true
+          }
+        }
+      }
+    });
     res.json(invoices);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch invoices' });

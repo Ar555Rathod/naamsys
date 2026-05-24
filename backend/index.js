@@ -12,6 +12,8 @@ const govtRoutes = require('./src/routes/govt');
 const reportsRoutes = require('./src/routes/reports');
 const locationsRoutes = require('./src/routes/locations');
 const wccRoutes = require('./src/routes/wcc');
+const workOrderRoutes = require('./src/routes/work_orders');
+const purchaseOrderRoutes = require('./src/routes/purchase_orders');
 const donorsRoutes = require('./src/routes/donors');
 const configRoutes = require('./src/routes/config');
 
@@ -30,6 +32,8 @@ app.use('/api/govt', govtRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/locations', locationsRoutes);
 app.use('/api/wcc', wccRoutes);
+app.use('/api/work-orders', workOrderRoutes);
+app.use('/api/purchase-orders', purchaseOrderRoutes);
 app.use('/api/donors', donorsRoutes);
 app.use('/api/config', configRoutes);
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, FolderKanban, FileText, Settings as SettingsIcon, LogOut, Building, Landmark, FileSpreadsheet, FileCheck2 } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, FileText, Settings as SettingsIcon, LogOut, Building, Landmark, FileSpreadsheet, FileCheck2, Receipt } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import Vendors from './pages/Vendors';
@@ -8,7 +8,9 @@ import Invoices from './pages/Invoices';
 import CsrManagement from './pages/CsrManagement';
 import GovtSchemes from './pages/GovtSchemes';
 import Reports from './pages/Reports';
-import WccManagement from './pages/WccManagement';
+import WorkOrders from './pages/WorkOrders';
+import PurchaseOrders from './pages/PurchaseOrders';
+import ProjectDetails from './pages/ProjectDetails';
 import Donors from './pages/Donors';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
@@ -43,14 +45,17 @@ function Sidebar({ onLogout }) {
         <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
           <LayoutDashboard size={20} /> Dashboard
         </Link>
-        <Link to="/projects" className={`nav-link ${location.pathname === '/projects' ? 'active' : ''}`}>
+        <Link to="/projects" className={`nav-link ${location.pathname === '/projects' ? 'active' : '' || location.pathname.startsWith('/projects/')}`}>
           <FolderKanban size={20} /> Projects
         </Link>
         <Link to="/vendors" className={`nav-link ${location.pathname === '/vendors' ? 'active' : ''}`}>
           <Users size={20} /> Vendors
         </Link>
-        <Link to="/wcc" className={`nav-link ${location.pathname === '/wcc' ? 'active' : ''}`}>
-          <FileCheck2 size={20} /> WCC Approvals
+        <Link to="/work-orders" className={`nav-link ${location.pathname === '/work-orders' ? 'active' : ''}`}>
+          <FileCheck2 size={20} /> Work Orders
+        </Link>
+        <Link to="/purchase-orders" className={`nav-link ${location.pathname === '/purchase-orders' ? 'active' : ''}`}>
+          <Receipt size={20} /> Purchase Orders
         </Link>
         <Link to="/invoices" className={`nav-link ${location.pathname === '/invoices' ? 'active' : ''}`}>
           <FileText size={20} /> Invoices
@@ -114,8 +119,10 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:id" element={<ProjectDetails />} />
             <Route path="/vendors" element={<Vendors />} />
-            <Route path="/wcc" element={<WccManagement />} />
+            <Route path="/work-orders" element={<WorkOrders />} />
+            <Route path="/purchase-orders" element={<PurchaseOrders />} />
             <Route path="/invoices" element={<Invoices />} />
             <Route path="/csr" element={<CsrManagement />} />
             <Route path="/donors" element={<Donors />} />

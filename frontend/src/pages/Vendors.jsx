@@ -17,6 +17,9 @@ export default function Vendors() {
   const [gst, setGst] = useState('');
   const [owner_name, setOwnerName] = useState('');
   const [owner_contact, setOwnerContact] = useState('');
+  const [address_line1, setAddressLine1] = useState('');
+  const [address_line2, setAddressLine2] = useState('');
+  const [address_line3, setAddressLine3] = useState('');
   const [machine_details, setMachineDetails] = useState('');
   const [operator_details, setOperatorDetails] = useState('');
   const [bank_name, setBankName] = useState('');
@@ -28,7 +31,9 @@ export default function Vendors() {
   const [contractor_pan, setContractorPan] = useState('');
   const [contractor_aadhaar, setContractorAadhaar] = useState('');
   const [contractor_contact, setContractorContact] = useState('');
-  const [contractor_address, setContractorAddress] = useState('');
+  const [contractor_address_line1, setContractorAddressLine1] = useState('');
+  const [contractor_address_line2, setContractorAddressLine2] = useState('');
+  const [contractor_address_line3, setContractorAddressLine3] = useState('');
   const [contractor_bank, setContractorBank] = useState('');
   const [contractor_account, setContractorAccount] = useState('');
   const [contractor_ifsc, setContractorIfsc] = useState('');
@@ -57,10 +62,12 @@ export default function Vendors() {
     try {
       await api.post('/vendors', {
         company_name, pan, aadhaar, gst, owner_name, owner_contact,
+        address_line1, address_line2, address_line3,
         machine_details, operator_details, bank_name, account_no, ifsc
       });
       setShowForm(false);
       setCompanyName(''); setPan(''); setAadhaar(''); setGst(''); setOwnerName(''); setOwnerContact('');
+      setAddressLine1(''); setAddressLine2(''); setAddressLine3('');
       setMachineDetails(''); setOperatorDetails(''); setBankName(''); setAccountNo(''); setIfsc('');
       fetchData();
     } catch (err) {
@@ -76,7 +83,9 @@ export default function Vendors() {
         pan: contractor_pan,
         aadhaar: contractor_aadhaar,
         contact: contractor_contact,
-        address: contractor_address,
+        address_line1: contractor_address_line1,
+        address_line2: contractor_address_line2,
+        address_line3: contractor_address_line3,
         bank_name: contractor_bank,
         account_no: contractor_account,
         ifsc: contractor_ifsc,
@@ -84,9 +93,11 @@ export default function Vendors() {
         project_id: selectedProjectId
       });
       setShowForm(false);
-      setContractorName(''); setContractorPan(''); setContractorAadhaar(''); setContractorContact(''); setContractorAddress('');
+      setContractorName(''); setContractorPan(''); setContractorAadhaar(''); setContractorContact('');
+      setContractorAddressLine1(''); setContractorAddressLine2(''); setContractorAddressLine3('');
       setContractorBank(''); setContractorAccount(''); setContractorIfsc('');
       alert('Contractor assigned successfully!');
+      fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to hire contractor');
     }
@@ -144,6 +155,25 @@ export default function Vendors() {
               <label>Owner Contact</label>
               <input type="text" value={owner_contact} onChange={e=>setOwnerContact(e.target.value)} className="input-field" required />
             </div>
+            
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <label style={{fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem'}}>Owner Address (Three-Line Format)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label style={{fontSize: '0.75rem'}}>Address Line 1</label>
+                  <input type="text" value={address_line1} onChange={e=>setAddressLine1(e.target.value)} className="input-field" placeholder="Flat/House No, Building" required />
+                </div>
+                <div className="form-group">
+                  <label style={{fontSize: '0.75rem'}}>Address Line 2</label>
+                  <input type="text" value={address_line2} onChange={e=>setAddressLine2(e.target.value)} className="input-field" placeholder="Street, Area/Locality" required />
+                </div>
+                <div className="form-group">
+                  <label style={{fontSize: '0.75rem'}}>Address Line 3</label>
+                  <input type="text" value={address_line3} onChange={e=>setAddressLine3(e.target.value)} className="input-field" placeholder="City, State, Pincode" required />
+                </div>
+              </div>
+            </div>
+
             <div className="form-group">
               <label>Machine Details (e.g. Excavators)</label>
               <textarea value={machine_details} onChange={e=>setMachineDetails(e.target.value)} className="input-field" rows="2"></textarea>
@@ -199,8 +229,21 @@ export default function Vendors() {
               <input type="text" value={contractor_contact} onChange={e=>setContractorContact(e.target.value)} className="input-field" required />
             </div>
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label>Address</label>
-              <input type="text" value={contractor_address} onChange={e=>setContractorAddress(e.target.value)} className="input-field" required />
+              <label style={{fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem'}}>Address Details (Three-Line Format)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label style={{fontSize: '0.75rem'}}>Address Line 1</label>
+                  <input type="text" value={contractor_address_line1} onChange={e=>setContractorAddressLine1(e.target.value)} className="input-field" placeholder="Flat/House No, Building" required />
+                </div>
+                <div className="form-group">
+                  <label style={{fontSize: '0.75rem'}}>Address Line 2</label>
+                  <input type="text" value={contractor_address_line2} onChange={e=>setContractorAddressLine2(e.target.value)} className="input-field" placeholder="Street, Area/Locality" required />
+                </div>
+                <div className="form-group">
+                  <label style={{fontSize: '0.75rem'}}>Address Line 3</label>
+                  <input type="text" value={contractor_address_line3} onChange={e=>setContractorAddressLine3(e.target.value)} className="input-field" placeholder="City, State, Pincode" required />
+                </div>
+              </div>
             </div>
             
             <div className="form-group" style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
@@ -249,7 +292,8 @@ export default function Vendors() {
               <tr>
                 <th>ID</th>
                 <th>Company Name</th>
-                <th>Owner Name</th>
+                <th>Owner Details</th>
+                <th>Address</th>
                 <th>PAN</th>
                 <th>Status</th>
               </tr>
@@ -259,12 +303,21 @@ export default function Vendors() {
                 <tr key={v.id}>
                   <td style={{ fontWeight: 500 }}>{v.vendor_id}</td>
                   <td>{v.company_name}</td>
-                  <td>{v.owner_name}</td>
+                  <td>{v.owner_name} <br/><small style={{color:'var(--text-muted)'}}>{v.owner_contact}</small></td>
+                  <td>
+                    {v.address_line1 ? (
+                      <div style={{ fontSize: '0.85rem', lineHeight: '1.3' }}>
+                        {v.address_line1}<br/>
+                        {v.address_line2}<br/>
+                        {v.address_line3}
+                      </div>
+                    ) : v.owner_address || '—'}
+                  </td>
                   <td>{v.pan}</td>
                   <td><span className="badge badge-success">Active</span></td>
                 </tr>
               ))}
-              {vendors.length === 0 && <tr><td colSpan="5" style={{textAlign:'center'}}>No vendors registered yet.</td></tr>}
+              {vendors.length === 0 && <tr><td colSpan="6" style={{textAlign:'center'}}>No vendors registered yet.</td></tr>}
             </tbody>
           </table>
         ) : (
@@ -273,8 +326,8 @@ export default function Vendors() {
               <tr>
                 <th>Contractor ID</th>
                 <th>Full Name</th>
-                <th>PAN</th>
-                <th>Contact</th>
+                <th>PAN / Contact</th>
+                <th>Address</th>
                 <th>Assigned Vendor</th>
                 <th>Assigned Project</th>
               </tr>
@@ -284,8 +337,16 @@ export default function Vendors() {
                 <tr key={c.id}>
                   <td style={{ fontWeight: 500 }}>{c.contractor_id}</td>
                   <td>{c.full_name}</td>
-                  <td>{c.pan}</td>
-                  <td>{c.contact}</td>
+                  <td>{c.pan} <br/><small style={{color:'var(--text-muted)'}}>{c.contact}</small></td>
+                  <td>
+                    {c.address_line1 ? (
+                      <div style={{ fontSize: '0.85rem', lineHeight: '1.3' }}>
+                        {c.address_line1}<br/>
+                        {c.address_line2}<br/>
+                        {c.address_line3}
+                      </div>
+                    ) : c.address || '—'}
+                  </td>
                   <td>{c.assignments?.[0]?.vendor?.company_name || '—'}</td>
                   <td>{c.assignments?.[0]?.project?.name || '—'}</td>
                 </tr>

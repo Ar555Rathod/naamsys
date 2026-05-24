@@ -8,12 +8,12 @@ export default function Invoices() {
   const [projects, setProjects] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [contractors, setContractors] = useState([]);
-  const [wccs, setWccs] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   const [invoice_type, setInvoiceType] = useState('TypeA');
   const [project_id, setProjectId] = useState('');
-  const [wcc_id, setWccId] = useState('');
+  const [purchase_order_id, setPurchaseOrderId] = useState('');
   const [vendor_id, setVendorId] = useState('');
   const [contractor_id, setContractorId] = useState('');
   const [total_amount, setTotalAmount] = useState('');
@@ -28,7 +28,7 @@ export default function Invoices() {
       const pRes = await api.get('/projects'); setProjects(pRes.data);
       const vRes = await api.get('/vendors'); setVendors(vRes.data);
       const cRes = await api.get('/vendors/contractors'); setContractors(cRes.data);
-      const wRes = await api.get('/wcc'); setWccs(wRes.data.filter(w => w.status === 'Approved'));
+      const poRes = await api.get('/purchase-orders'); setPurchaseOrders(poRes.data.filter(p => p.status === 'Completed'));
     } catch (err) {
       console.error(err);
     }
@@ -40,14 +40,14 @@ export default function Invoices() {
       await api.post('/invoices', {
         invoice_type,
         project_id,
-        wcc_id: wcc_id || null,
+        purchase_order_id: purchase_order_id || null,
         vendor_id: vendor_id || null,
         contractor_id: contractor_id || null,
         subtotal: total_amount,
         total_amount
       });
       setShowForm(false);
-      setTotalAmount(''); setWccId(''); setVendorId(''); setContractorId('');
+      setTotalAmount(''); setPurchaseOrderId(''); setVendorId(''); setContractorId('');
       fetchData();
       alert('Invoice processed successfully!');
     } catch (err) {
@@ -71,14 +71,14 @@ export default function Invoices() {
     const project = projects.find(p => p.id === inv.project_id) || inv.project;
     const vendor = vendors.find(v => v.id === inv.vendor_id);
     const contractor = contractors.find(c => c.id === inv.contractor_id);
-    const wcc = wccs.find(w => w.id === inv.wcc_id);
+    const purchase_order = purchaseOrders.find(p => p.id === inv.purchase_order_id) || inv.purchase_order;
     
     return {
       ...inv,
       project,
       vendor,
       contractor,
-      wcc
+      purchase_order
     };
   };
 
@@ -144,26 +144,27 @@ export default function Invoices() {
             {invoice_type === 'TypeA' && (
               <>
                 <div className="form-group">
-                  <label>Linked WCC (Must be Approved)</label>
-                  <select value={wcc_id} onChange={e=>{
-                    setWccId(e.target.value);
-                    const selectedWcc = wccs.find(w => w.id === parseInt(e.target.value));
-                    if (selectedWcc) {
-                      setContractorId(selectedWcc.contractor_id);
-                      setVendorId(selectedWcc.vendor_id);
+                  <label>Linked Purchase Order (Must be Completed)</label>
+                  <select value={purchase_order_id} onChange={e=>{
+                    setPurchaseOrderId(e.target.value);
+                    const selectedPo = purchaseOrders.find(p => p.id === parseInt(e.target.value));
+                    if (selectedPo) {
+                      setContractorId(selectedPo.contractor_id || '');
+                      setVendorId(selectedPo.vendor_id);
+                      setTotalAmount(selectedPo.total_amount.toString());
                     }
                   }} className="input-field" required>
-                    <option value="">-- Select Approved WCC --</option>
-                    {wccs.filter(w => w.project_id.toString() === project_id.toString()).map(w => (
-                      <option key={w.id} value={w.id}>{w.wcc_id} - {new Date(w.completion_date).toLocaleDateString()}</option>
+                    <option value="">-- Select Completed PO --</option>
+                    {purchaseOrders.filter(p => p.project_id.toString() === project_id.toString()).map(p => (
+                      <option key={p.id} value={p.id}>{p.po_number} (V{p.version}) - ₹{p.total_amount.toLocaleString()}</option>
                     ))}
                   </select>
-                  <small style={{ color: 'var(--text-muted)' }}>Only Approved WCCs for the selected project are shown.</small>
+                  <small style={{ color: 'var(--text-muted)' }}>Only Completed POs with uploaded signed copies are shown.</small>
                 </div>
 
                 <div className="form-group">
                   <label>Contractor</label>
-                  <select value={contractor_id} onChange={e=>setContractorId(e.target.value)} className="input-field" required disabled={!!wcc_id}>
+                  <select value={contractor_id} onChange={e=>setContractorId(e.target.value)} className="input-field" required disabled={!!purchase_order_id}>
                     <option value="">-- Select Contractor --</option>
                     {contractors.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
                   </select>
@@ -171,7 +172,7 @@ export default function Invoices() {
 
                 <div className="form-group">
                   <label>Vendor / Agency</label>
-                  <select value={vendor_id} onChange={e=>setVendorId(e.target.value)} className="input-field" required disabled={!!wcc_id}>
+                  <select value={vendor_id} onChange={e=>setVendorId(e.target.value)} className="input-field" required disabled={!!purchase_order_id}>
                     <option value="">-- Select Vendor --</option>
                     {vendors.map(v => <option key={v.id} value={v.id}>{v.company_name}</option>)}
                   </select>
@@ -320,12 +321,12 @@ export default function Invoices() {
                 <div>
                   <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Billed To / Project Context:</h4>
                   <div style={{ fontSize: '0.875rem' }}>
-                    <strong style={{ fontSize: '1rem', color: '#0f172a' }}>Project: {modalDetails.project?.project_id}</strong>
+                    <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {modalDetails.project?.project_id}</strong>
                     <p style={{ color: '#475569', marginTop: '0.25rem' }}>
                       Name: {modalDetails.project?.name}<br />
                       Type of Work: {modalDetails.project?.type_of_work}<br />
                       Funding Source: {modalDetails.project?.source_type} ({modalDetails.invoice_type === 'TypeA' ? 'NAAM Financed' : 'CSR/Govt Receivable'})<br />
-                      {modalDetails.wcc && <>Linked Approved WCC: <strong>{modalDetails.wcc.wcc_id}</strong></>}
+                      {modalDetails.purchase_order && <>Linked Purchase Order: <strong>{modalDetails.purchase_order.po_number} (V{modalDetails.purchase_order.version})</strong></>}
                     </p>
                   </div>
                 </div>
@@ -335,7 +336,7 @@ export default function Invoices() {
               <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
-                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569' }}>Description of Work Done</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569' }}>Description of Work Done / Supply Delivered</th>
                     <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569' }}>Amount</th>
                   </tr>
                 </thead>
@@ -345,7 +346,7 @@ export default function Invoices() {
                       <strong>{modalDetails.project?.type_of_work} Operations</strong>
                       <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>
                         {modalDetails.invoice_type === 'TypeA' 
-                          ? `Hiring and excavation operations managed under WCC certificate ${modalDetails.wcc?.wcc_id || 'N/A'}.`
+                          ? `Supply and delivery operations completed under Purchase Order ${modalDetails.purchase_order?.po_number || 'N/A'}.`
                           : `CSR / Govt matching funding call for budget allocation under reference ${modalDetails.project?.proposal_id || 'N/A'}.`
                         }
                       </p>

@@ -181,4 +181,64 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Get a single project with all linked details
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const project = await prisma.project.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        csr: true,
+        govt_work_order: {
+          include: {
+            govt: true
+          }
+        },
+        individual_donor: true,
+        invoices: {
+          include: {
+            purchase_order: {
+              include: {
+                vendor: true,
+                contractor: true
+              }
+            }
+          },
+          orderBy: { id: 'desc' }
+        },
+        work_orders: {
+          include: {
+            vendor: true,
+            contractor: true
+          },
+          orderBy: { version: 'desc' }
+        },
+        purchase_orders: {
+          include: {
+            vendor: true,
+            contractor: true
+          },
+          orderBy: { version: 'desc' }
+        },
+        vendor_projects: {
+          include: {
+            vendor: true
+          }
+        },
+        contractor_assignments: {
+          include: {
+            contractor: true,
+            vendor: true
+          }
+        }
+      }
+    });
+
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    res.json(project);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch project details', details: error.message });
+  }
+});
+
 module.exports = router;
