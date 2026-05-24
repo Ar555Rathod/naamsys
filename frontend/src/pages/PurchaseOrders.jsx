@@ -172,18 +172,33 @@ export default function PurchaseOrders() {
             body * {
               visibility: hidden !important;
             }
-            #printable-po-modal-content, #printable-po-modal-content * {
+            .modal-overlay, .modal-overlay * {
               visibility: visible !important;
             }
-            #printable-po-modal-content {
+            .modal-overlay {
               position: absolute !important;
               left: 0 !important;
               top: 0 !important;
               width: 100% !important;
+              background: transparent !important;
+              backdrop-filter: none !important;
+              -webkit-backdrop-filter: none !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              z-index: auto !important;
+            }
+            .modal-overlay .glass-panel {
               background: white !important;
-              color: black !important;
               box-shadow: none !important;
               border: none !important;
+              max-height: none !important;
+              overflow: visible !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              padding: 0 !important;
+              margin: 0 !important;
+            }
+            #printable-po-modal-content {
               padding: 0 !important;
               margin: 0 !important;
             }
@@ -441,10 +456,10 @@ export default function PurchaseOrders() {
 
       {/* PREMIUM HIGH-FIDELITY PRINT PREVIEW MODAL */}
       {selectedPrintPo && (
-        <div className="no-print" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '800px', maxHeight: '95vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'white' }}>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-light)' }}>
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-light)' }}>
               <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>Purchase Order Print Preview</span>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button onClick={() => window.print()} className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>

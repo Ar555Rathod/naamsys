@@ -64,6 +64,7 @@ export default function ProjectDetails() {
             visibility: visible !important;
           }
           #dossier-report {
+            display: block !important;
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
