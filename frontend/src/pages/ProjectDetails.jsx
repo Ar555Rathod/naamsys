@@ -916,6 +916,135 @@ export default function ProjectDetails() {
         ))}
 
         {/* ========================================================================= */}
+        {/* WORK ORDERS PRINT STACK (LATEST ACTIVE VERSIONS ONLY) */}
+        {/* ========================================================================= */}
+        {project.work_orders && project.work_orders.filter(wo => wo.is_active).map(wo => (
+          <div key={wo.id} style={{ pageBreakBefore: 'always', paddingTop: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', textAlign: 'left' }}>
+            
+            {/* Cover Branding Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2.5rem' }}>
+              <div>
+                <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '-0.025em', margin: 0 }}>NAAM Foundation</h1>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                  Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
+                  Email: operations@naammh.org | Reg: MAH/1196/2015/Pune
+                </p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>WORK ORDER</h2>
+                <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                  WO Ref: <strong>{wo.wo_number}</strong><br />
+                  Version: <strong>V{wo.version}</strong><br />
+                  Date: {new Date(wo.created_at).toLocaleDateString()}<br />
+                  {project.creator && <>Issued By: <strong>{project.creator.name}</strong><br /></>}
+                  {wo.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
+                </p>
+              </div>
+            </div>
+
+            {/* Order Specifics Info */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem', marginBottom: '2.5rem' }}>
+              <div>
+                <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Contracted Vendor (Agency):</h4>
+                <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+                  <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>{wo.vendor.company_name}</strong>
+                  <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                    Owner: {wo.vendor.owner_name}<br />
+                    PAN Card: {wo.vendor.pan}<br />
+                    GSTIN: {wo.vendor.gst || 'N/A'}<br />
+                    Remittance Contact: {wo.vendor.owner_contact}
+                  </p>
+                  {wo.vendor.address_line1 ? (
+                    <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                      Address: {wo.vendor.address_line1}, {wo.vendor.address_line2}, {wo.vendor.address_line3}
+                    </p>
+                  ) : wo.vendor.owner_address && (
+                    <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>Address: {wo.vendor.owner_address}</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Project & Sub-Contractor Context:</h4>
+                <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+                  <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {project.project_id}</strong>
+                  <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                    Name: {project.name}<br />
+                    Type of Operations: {project.type_of_work}<br />
+                    Location: {project.village_id || 'N/A'}, Taluka: {project.taluka_id || 'N/A'}, Dist: {project.district_id || 'N/A'}
+                  </p>
+                  {wo.contractor && (
+                    <p style={{ color: '#475569', marginTop: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem', margin: 0 }}>
+                      <strong>Sub-Contractor Hired:</strong> {wo.contractor.full_name} ({wo.contractor.pan})
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Items Summary Table */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
+                  <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '70%' }}>Description of Assigned Work Scope</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '30%' }}>Value Reference</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top', lineHeight: '1.5' }}>
+                    <strong>Operations under Work Order Reference {wo.wo_number}</strong>
+                    <p style={{ color: '#475569', marginTop: '0.5rem', whiteSpace: 'pre-wrap', margin: 0 }}>
+                      {wo.work_description}
+                    </p>
+                  </td>
+                  <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.95rem', fontWeight: 600, color: '#0f172a', verticalAlign: 'top' }}>
+                    {wo.budget_amount > 0 ? `₹${wo.budget_amount.toLocaleString()}.00` : 'No direct financial cost'}
+                  </td>
+                </tr>
+                {wo.budget_amount > 0 && (
+                  <tr style={{ borderTop: '2px solid #e2e8f0' }}>
+                    <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>Approved Contract Value:</td>
+                    <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.15rem', fontWeight: 800, color: '#4F46E5' }}>
+                      ₹{wo.budget_amount.toLocaleString()}.00
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            {/* Delivery and Schedule Terms */}
+            <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '3.5rem', fontSize: '0.8rem', lineHeight: '1.5' }}>
+              <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem', margin: 0 }}>Standard Delivery Terms & Completion Milestone:</h4>
+              <p style={{ margin: '0 0 0.5rem', color: '#475569' }}>
+                The active operations under this Work Order must be physically executed, reviewed, and finalized by the estimated milestone completion date of <strong>{new Date(wo.completion_date).toLocaleDateString()}</strong>.
+              </p>
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.75rem' }}>
+                * This document represents Version V{wo.version} of the assigned work order number {wo.wo_number} under project registration reference {project.project_id}. Any amendments or modifications override previous version codes.
+              </p>
+            </div>
+
+            {/* Authorization Signatures */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4rem' }}>
+              <div style={{ textAlign: 'center', width: '220px' }}>
+                <div style={{ borderBottom: '1px solid #cbd5e1', height: '45px', marginBottom: '0.5rem' }}></div>
+                <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, margin: 0 }}>Contractor / Vendor Representative</p>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Authorized Acceptor Signatory</span>
+              </div>
+              <div style={{ textAlign: 'center', width: '220px' }}>
+                <div style={{ borderBottom: '1px solid #cbd5e1', height: '45px', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {wo.status === 'Completed' && <span style={{ color: '#10b981', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem', display: 'inline-block', transform: 'rotate(-4deg)', border: '2.5px solid #10b981', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>DULY SIGNED</span>}
+                  {wo.status === 'Approved' && <span style={{ color: '#f59e0b', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem', display: 'inline-block', transform: 'rotate(-4deg)', border: '2.5px solid #f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>OFFICIALLY APPROVED</span>}
+                </div>
+                <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, margin: 0 }}>NAAM Foundation Auditor</p>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Audit Board Signature Code</span>
+              </div>
+            </div>
+
+          </div>
+        ))}
+
+        {/* ========================================================================= */}
         {/* INVOICES PRINT STACK */}
         {/* ========================================================================= */}
         {project.invoices && project.invoices.map(inv => (

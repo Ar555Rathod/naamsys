@@ -16,6 +16,8 @@ export default function WorkOrders() {
   const [uploadingWoId, setUploadingWoId] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [mockFileName, setMockFileName] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const [selectedPrintWo, setSelectedPrintWo] = useState(null);
 
@@ -131,12 +133,38 @@ export default function WorkOrders() {
 
   const handleUploadClick = (wo) => {
     setUploadingWoId(wo.id);
-    setMockFileName(`Signed_WO_${wo.wo_number}_V${wo.version}.pdf`);
+    setMockFileName('');
     setShowUploadModal(true);
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    setIsUploading(true);
+
+    try {
+      const res = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setMockFileName(res.data.filename);
+      alert('Signed Work Order PDF uploaded successfully!');
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to upload PDF copy');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
+    if (!mockFileName) {
+      alert('Please upload a duly signed PDF file from your device first.');
+      return;
+    }
     try {
       await api.put(`/work-orders/${uploadingWoId}/upload-signed`, { duly_signed_url: mockFileName });
       alert('Duly signed copy uploaded successfully! Work Order status is now Completed.');

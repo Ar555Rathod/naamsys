@@ -158,12 +158,16 @@ export default function PurchaseOrders() {
 
   const handleUploadClick = (po) => {
     setUploadingPoId(po.id);
-    setMockFileName(`Signed_PO_${po.po_number}_V${po.version}.pdf`);
+    setMockFileName('');
     setShowUploadModal(true);
   };
 
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
+    if (!mockFileName) {
+      alert('Please upload a duly signed PDF file from your device first.');
+      return;
+    }
     try {
       await api.put(`/purchase-orders/${uploadingPoId}/upload-signed`, { duly_signed_url: mockFileName });
       alert('Duly signed copy uploaded successfully! Purchase Order status is now Completed and allowed for invoice creation.');
