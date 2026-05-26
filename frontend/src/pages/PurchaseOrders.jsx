@@ -541,7 +541,7 @@ export default function PurchaseOrders() {
                     <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>NAAM Project: {selectedPrintPo.project.project_id}</strong>
                     <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
                       Project Name: {selectedPrintPo.project.name}<br />
-                      Location: {selectedPrintPo.project.village_id || 'N/A'}, Taluka: {selectedPrintPo.project.taluka_id || 'N/A'}, Dist: {selectedPrintPo.project.district_id || 'N/A'}<br />
+                      Location: {selectedPrintPo.project.village_name || selectedPrintPo.project.village_id || 'N/A'}, Taluka: {selectedPrintPo.project.taluka_name || selectedPrintPo.project.taluka_id || 'N/A'}, Dist: {selectedPrintPo.project.district_name || selectedPrintPo.project.district_id || 'N/A'}<br />
                       MoU Reference: {selectedPrintPo.project.proposal_id || 'N/A'}
                     </p>
                     {selectedPrintPo.contractor && (

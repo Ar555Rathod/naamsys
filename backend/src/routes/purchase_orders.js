@@ -44,6 +44,24 @@ router.get('/', async (req, res) => {
       p.creator = userMap.get(p.created_by) || null;
     });
 
+    // Resolve location names for each PO's project
+    for (const po of pos) {
+      if (po.project) {
+        if (po.project.district_id) {
+          const d = await prisma.locationDistrict.findUnique({ where: { id: po.project.district_id } });
+          po.project.district_name = d ? d.name : null;
+        }
+        if (po.project.taluka_id) {
+          const t = await prisma.locationTaluka.findUnique({ where: { id: po.project.taluka_id } });
+          po.project.taluka_name = t ? t.name : null;
+        }
+        if (po.project.village_id) {
+          const v = await prisma.locationVillage.findUnique({ where: { id: po.project.village_id } });
+          po.project.village_name = v ? v.name : null;
+        }
+      }
+    }
+
     res.json(pos);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch Purchase Orders', details: error.message });

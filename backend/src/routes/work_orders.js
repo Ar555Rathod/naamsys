@@ -44,6 +44,24 @@ router.get('/', async (req, res) => {
       w.creator = userMap.get(w.created_by) || null;
     });
 
+    // Resolve location names for each WO's project
+    for (const wo of wos) {
+      if (wo.project) {
+        if (wo.project.district_id) {
+          const d = await prisma.locationDistrict.findUnique({ where: { id: wo.project.district_id } });
+          wo.project.district_name = d ? d.name : null;
+        }
+        if (wo.project.taluka_id) {
+          const t = await prisma.locationTaluka.findUnique({ where: { id: wo.project.taluka_id } });
+          wo.project.taluka_name = t ? t.name : null;
+        }
+        if (wo.project.village_id) {
+          const v = await prisma.locationVillage.findUnique({ where: { id: wo.project.village_id } });
+          wo.project.village_name = v ? v.name : null;
+        }
+      }
+    }
+
     res.json(wos);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch Work Orders', details: error.message });

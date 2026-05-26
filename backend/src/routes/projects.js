@@ -280,6 +280,20 @@ router.get('/:id', async (req, res) => {
     });
     project.creator = creator;
 
+    // Resolve location IDs to names
+    if (project.district_id) {
+      const district = await prisma.locationDistrict.findUnique({ where: { id: project.district_id } });
+      project.district_name = district ? district.name : null;
+    }
+    if (project.taluka_id) {
+      const taluka = await prisma.locationTaluka.findUnique({ where: { id: project.taluka_id } });
+      project.taluka_name = taluka ? taluka.name : null;
+    }
+    if (project.village_id) {
+      const village = await prisma.locationVillage.findUnique({ where: { id: project.village_id } });
+      project.village_name = village ? village.name : null;
+    }
+
     res.json(project);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch project details', details: error.message });

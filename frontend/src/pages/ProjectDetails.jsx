@@ -224,7 +224,7 @@ export default function ProjectDetails() {
                 <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase' }}>Location Coordinates</span>
                 <span style={{ display: 'flex', marginTop: '0.2rem', alignItems: 'center', gap: '0.25rem' }}>
                   <MapPin size={13} color="var(--primary)" />
-                  Village: {project.village_id || '—'}, Taluka: {project.taluka_id || '—'}, District: {project.district_id || '—'}
+                  Village: {project.village_name || project.village_id || '—'}, Taluka: {project.taluka_name || project.taluka_id || '—'}, District: {project.district_name || project.district_id || '—'}
                 </span>
               </div>
             </div>
@@ -567,7 +567,7 @@ export default function ProjectDetails() {
               <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                 <td style={{ padding: '0.6rem 0', color: '#64748b' }}>Location Details:</td>
                 <td style={{ padding: '0.6rem 0', fontWeight: 500 }} colSpan="3">
-                  Village: {project.village_id || '—'} | Taluka: {project.taluka_id || '—'} | District: {project.district_id || '—'}
+                  Village: {project.village_name || project.village_id || '—'} | Taluka: {project.taluka_name || project.taluka_id || '—'} | District: {project.district_name || project.district_id || '—'}
                 </td>
               </tr>
               <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -847,7 +847,7 @@ export default function ProjectDetails() {
                   <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
                     Name: {project.name}<br />
                     Type of Operations: {project.type_of_work}<br />
-                    Location: {project.village_id || 'N/A'}, Taluka: {project.taluka_id || 'N/A'}, Dist: {project.district_id || 'N/A'}
+                    Location: {project.village_name || project.village_id || 'N/A'}, Taluka: {project.taluka_name || project.taluka_id || 'N/A'}, Dist: {project.district_name || project.district_id || 'N/A'}
                   </p>
                   {po.contractor && (
                     <p style={{ color: '#475569', marginTop: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem', margin: 0 }}>
@@ -971,7 +971,7 @@ export default function ProjectDetails() {
                   <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
                     Name: {project.name}<br />
                     Type of Operations: {project.type_of_work}<br />
-                    Location: {project.village_id || 'N/A'}, Taluka: {project.taluka_id || 'N/A'}, Dist: {project.district_id || 'N/A'}
+                    Location: {project.village_name || project.village_id || 'N/A'}, Taluka: {project.taluka_name || project.taluka_id || 'N/A'}, Dist: {project.district_name || project.district_id || 'N/A'}
                   </p>
                   {wo.contractor && (
                     <p style={{ color: '#475569', marginTop: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem', margin: 0 }}>

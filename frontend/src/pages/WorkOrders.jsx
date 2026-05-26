@@ -537,7 +537,7 @@ export default function WorkOrders() {
                     <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
                       Name: {selectedPrintWo.project.name}<br />
                       Type of Operations: {selectedPrintWo.project.type_of_work}<br />
-                      Location: {selectedPrintWo.project.village_id || 'N/A'}, Taluka: {selectedPrintWo.project.taluka_id || 'N/A'}, Dist: {selectedPrintWo.project.district_id || 'N/A'}
+                      Location: {selectedPrintWo.project.village_name || selectedPrintWo.project.village_id || 'N/A'}, Taluka: {selectedPrintWo.project.taluka_name || selectedPrintWo.project.taluka_id || 'N/A'}, Dist: {selectedPrintWo.project.district_name || selectedPrintWo.project.district_id || 'N/A'}
                     </p>
                     {selectedPrintWo.contractor && (
                       <p style={{ color: '#475569', marginTop: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem', margin: 0 }}>
