@@ -32,6 +32,11 @@ router.post('/', async (req, res) => {
 
     if (!project) return res.status(404).json({ error: 'Project not found' });
 
+    // Enforce that invoice amounts are strictly positive
+    if (parseFloat(total_amount) <= 0 || parseFloat(subtotal) <= 0) {
+      return res.status(400).json({ error: 'Invoice amount must be greater than zero.' });
+    }
+
     // Budget Checking Logic for Payable Invoices
     if (invoice_type === 'TypeA') {
       if (!purchase_order_id) {

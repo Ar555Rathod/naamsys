@@ -130,6 +130,9 @@ router.post('/', async (req, res) => {
 
     // Budget Validation & Deduction
     const reqBudget = parseFloat(budget);
+    if (isNaN(reqBudget) || reqBudget <= 0) {
+      return res.status(400).json({ error: 'Project budget must be greater than zero.' });
+    }
 
     // Perform check beforehand
     if (source_type === 'CSR' && csr_id) {
@@ -293,11 +296,31 @@ router.put('/:id', async (req, res) => {
       const current = await tx.project.findUnique({ where: { id: parseInt(id) } });
       if (!current) throw new Error('Project not found');
 
+      let newBudget = current.budget;
+      let newBudgetRemaining = current.budget_remaining;
+
+      if (budget !== undefined) {
+        newBudget = parseFloat(budget);
+        if (isNaN(newBudget) || newBudget <= 0) {
+          throw new Error('Project budget must be greater than zero.');
+        }
+        
+        // Ensure budget is not updated below spent amount
+        const spent = current.budget - current.budget_remaining;
+        if (newBudget < spent) {
+          throw new Error(`Project budget cannot be reduced below the spent amount of ₹${spent.toLocaleString('en-IN')}`);
+        }
+        
+        // Calculate new remaining budget
+        newBudgetRemaining = newBudget - spent;
+      }
+
       const project = await tx.project.update({
         where: { id: parseInt(id) },
         data: {
           name: name !== undefined ? name : current.name,
-          budget: budget !== undefined ? parseFloat(budget) : current.budget,
+          budget: newBudget,
+          budget_remaining: newBudgetRemaining,
           type_of_work: type_of_work !== undefined ? type_of_work : current.type_of_work,
           sub_type: sub_type !== undefined ? sub_type : current.sub_type,
           status: status !== undefined ? status : current.status,
