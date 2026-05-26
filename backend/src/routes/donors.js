@@ -81,6 +81,22 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// Get donor details
+router.get('/:id', async (req, res) => {
+  try {
+    const donor = await prisma.individualDonor.findUnique({
+      where: { id: parseInt(req.params.id) },
+      include: {
+        projects: true
+      }
+    });
+    if (!donor) return res.status(404).json({ error: 'Donor not found' });
+    res.json(donor);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch donor details' });
+  }
+});
+
 // Delete a donor
 router.delete('/:id', async (req, res) => {
   try {

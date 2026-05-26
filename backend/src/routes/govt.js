@@ -66,4 +66,85 @@ router.post('/:id/work-orders', async (req, res) => {
   }
 });
 
+// Get a single Govt Scheme with details
+router.get('/:id', async (req, res) => {
+  try {
+    const scheme = await prisma.govtEntry.findUnique({
+      where: { id: parseInt(req.params.id) },
+      include: {
+        work_orders: {
+          include: {
+            projects: true
+          }
+        }
+      }
+    });
+
+    if (!scheme) return res.status(404).json({ error: 'Government scheme not found' });
+
+    // Resolve location names
+    let districtName = '—';
+    let talukaName = '—';
+    let villageName = '—';
+
+    if (scheme.district_id) {
+      const dist = await prisma.locationDistrict.findUnique({
+        where: { id: scheme.district_id },
+        include: {
+          talukas: {
+            include: {
+              villages: true
+            }
+          }
+        }
+      });
+      if (dist) {
+        districtName = dist.name;
+        if (scheme.taluka_id) {
+          const tal = dist.talukas.find(t => t.id === scheme.taluka_id);
+          if (tal) {
+            talukaName = tal.name;
+            if (scheme.village_id) {
+              const vil = tal.villages.find(v => v.id === scheme.village_id);
+              if (vil) {
+                villageName = vil.name;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    res.json({
+      ...scheme,
+      district_name: districtName,
+      taluka_name: talukaName,
+      village_name: villageName
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch Government scheme details', details: error.message });
+  }
+});
+
+// Update a Govt Scheme
+router.put('/:id', async (req, res) => {
+  try {
+    const { scheme_dept, type_of_work, sub_type, district_id, taluka_id, village_id } = req.body;
+    const updated = await prisma.govtEntry.update({
+      where: { id: parseInt(req.params.id) },
+      data: {
+        scheme_dept,
+        type_of_work,
+        sub_type,
+        district_id: district_id ? parseInt(district_id) : null,
+        taluka_id: taluka_id ? parseInt(taluka_id) : null,
+        village_id: village_id ? parseInt(village_id) : null
+      }
+    });
+    res.json(updated);
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to update Government scheme', details: error.message });
+  }
+});
+
 module.exports = router;

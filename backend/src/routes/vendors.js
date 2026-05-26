@@ -134,4 +134,154 @@ router.post('/contractors', async (req, res) => {
   }
 });
 
+// Get a single vendor with full details
+router.get('/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid vendor ID' });
+
+    const vendor = await prisma.vendor.findUnique({
+      where: { id },
+      include: {
+        projects: {
+          include: { project: true }
+        },
+        work_orders: {
+          include: { project: true }
+        },
+        purchase_orders: {
+          include: { project: true }
+        },
+        invoices: {
+          include: { project: true }
+        },
+        contractor_assignments: {
+          include: { contractor: true, project: true }
+        }
+      }
+    });
+
+    if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
+    res.json(vendor);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch vendor details', details: error.message });
+  }
+});
+
+// Update a vendor
+router.put('/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { 
+      company_name, pan, aadhaar, gst, 
+      owner_name, owner_contact, owner_address, 
+      address_line1, address_line2, address_line3,
+      machine_details, operator_details,
+      bank_name, account_no, ifsc
+    } = req.body;
+
+    const updated = await prisma.vendor.update({
+      where: { id },
+      data: {
+        company_name,
+        pan, aadhaar, gst,
+        owner_name, owner_contact,
+        owner_address: owner_address || [address_line1, address_line2, address_line3].filter(Boolean).join(', '),
+        address_line1, address_line2, address_line3,
+        machine_details, operator_details,
+        bank_name, account_no, ifsc
+      }
+    });
+
+    res.json(updated);
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to update vendor', details: error.message });
+  }
+});
+
+// Get a single contractor with full details
+router.get('/contractors/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid contractor ID' });
+
+    const contractor = await prisma.contractor.findUnique({
+      where: { id },
+      include: {
+        assignments: {
+          include: { vendor: true, project: true }
+        },
+        invoices: {
+          include: { project: true }
+        },
+        work_orders: {
+          include: { project: true }
+        },
+        purchase_orders: {
+          include: { project: true }
+        }
+      }
+    });
+
+    if (!contractor) return res.status(404).json({ error: 'Contractor not found' });
+    res.json(contractor);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch contractor details', details: error.message });
+  }
+});
+
+// Update a contractor
+router.put('/contractors/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { 
+      full_name, pan, aadhaar, contact, address,
+      address_line1, address_line2, address_line3,
+      bank_name, account_no, ifsc,
+      vendor_id, project_id
+    } = req.body;
+
+    const updated = await prisma.contractor.update({
+      where: { id },
+      data: {
+        full_name,
+        pan, aadhaar, contact,
+        address: address || [address_line1, address_line2, address_line3].filter(Boolean).join(', '),
+        address_line1, address_line2, address_line3,
+        bank_name, account_no, ifsc
+      }
+    });
+
+    // If vendor_id or project_id are provided, update the assignment
+    if (vendor_id && project_id) {
+      // Find active assignment
+      const activeAssignment = await prisma.contractorAssignment.findFirst({
+        where: { contractor_id: id, status: 'Active' }
+      });
+
+      if (activeAssignment) {
+        await prisma.contractorAssignment.update({
+          where: { id: activeAssignment.id },
+          data: {
+            vendor_id: parseInt(vendor_id),
+            project_id: parseInt(project_id)
+          }
+        });
+      } else {
+        await prisma.contractorAssignment.create({
+          data: {
+            contractor_id: id,
+            vendor_id: parseInt(vendor_id),
+            project_id: parseInt(project_id)
+          }
+        });
+      }
+    }
+
+    res.json(updated);
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to update contractor', details: error.message });
+  }
+});
+
 module.exports = router;

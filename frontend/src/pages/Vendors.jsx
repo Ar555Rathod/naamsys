@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Users, HardHat } from 'lucide-react';
+import { PlusCircle, Users, HardHat, User, Mail, Phone, Edit3, XCircle, FolderKanban, Info, CreditCard, PenTool, Receipt, Landmark } from 'lucide-react';
 import api from '../api';
 
 export default function Vendors() {
   const [activeTab, setActiveTab] = useState('vendors');
   const [showForm, setShowForm] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [selectedContractor, setSelectedContractor] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
   
   const [vendors, setVendors] = useState([]);
   const [contractors, setContractors] = useState([]);
@@ -40,6 +44,24 @@ export default function Vendors() {
   const [selectedVendorId, setSelectedVendorId] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState('');
 
+  const handleVendorClick = async (vendor) => {
+    try {
+      const res = await api.get(`/vendors/${vendor.id}`);
+      setSelectedVendor(res.data);
+    } catch (err) {
+      console.error('Failed to fetch vendor details', err);
+    }
+  };
+
+  const handleContractorClick = async (contractor) => {
+    try {
+      const res = await api.get(`/vendors/contractors/${contractor.id}`);
+      setSelectedContractor(res.data);
+    } catch (err) {
+      console.error('Failed to fetch contractor details', err);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -60,25 +82,34 @@ export default function Vendors() {
   const handleVendorCreate = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/vendors', {
+      const payload = {
         company_name, pan, aadhaar, gst, owner_name, owner_contact,
         address_line1, address_line2, address_line3,
         machine_details, operator_details, bank_name, account_no, ifsc
-      });
-      setShowForm(false);
-      setCompanyName(''); setPan(''); setAadhaar(''); setGst(''); setOwnerName(''); setOwnerContact('');
-      setAddressLine1(''); setAddressLine2(''); setAddressLine3('');
-      setMachineDetails(''); setOperatorDetails(''); setBankName(''); setAccountNo(''); setIfsc('');
+      };
+
+      if (isEditing) {
+        await api.put(`/vendors/${editId}`, payload);
+        alert('Vendor details updated successfully!');
+      } else {
+        await api.post('/vendors', payload);
+        alert('Vendor registered successfully!');
+      }
+      
+      resetForm();
       fetchData();
+      if (selectedVendor && selectedVendor.id === editId) {
+        setSelectedVendor(null);
+      }
     } catch (err) {
-      alert('Failed to register vendor');
+      alert('Failed to save vendor');
     }
   };
 
   const handleContractorCreate = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/vendors/contractors', {
+      const payload = {
         full_name: contractor_name,
         pan: contractor_pan,
         aadhaar: contractor_aadhaar,
@@ -91,23 +122,96 @@ export default function Vendors() {
         ifsc: contractor_ifsc,
         vendor_id: selectedVendorId,
         project_id: selectedProjectId
-      });
-      setShowForm(false);
-      setContractorName(''); setContractorPan(''); setContractorAadhaar(''); setContractorContact('');
-      setContractorAddressLine1(''); setContractorAddressLine2(''); setContractorAddressLine3('');
-      setContractorBank(''); setContractorAccount(''); setContractorIfsc('');
-      alert('Contractor assigned successfully!');
+      };
+
+      if (isEditing) {
+        await api.put(`/vendors/contractors/${editId}`, payload);
+        alert('Contractor details updated successfully!');
+      } else {
+        await api.post('/vendors/contractors', payload);
+        alert('Contractor assigned successfully!');
+      }
+
+      resetForm();
       fetchData();
+      if (selectedContractor && selectedContractor.id === editId) {
+        setSelectedContractor(null);
+      }
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to hire contractor');
+      alert(err.response?.data?.error || 'Failed to save contractor');
     }
+  };
+
+  const resetForm = () => {
+    setIsEditing(false);
+    setEditId(null);
+    setShowForm(false);
+    
+    // Reset vendor form
+    setCompanyName(''); setPan(''); setAadhaar(''); setGst(''); setOwnerName(''); setOwnerContact('');
+    setAddressLine1(''); setAddressLine2(''); setAddressLine3('');
+    setMachineDetails(''); setOperatorDetails(''); setBankName(''); setAccountNo(''); setIfsc('');
+    
+    // Reset contractor form
+    setContractorName(''); setContractorPan(''); setContractorAadhaar(''); setContractorContact('');
+    setContractorAddressLine1(''); setContractorAddressLine2(''); setContractorAddressLine3('');
+    setContractorBank(''); setContractorAccount(''); setContractorIfsc('');
+    setSelectedVendorId(''); setSelectedProjectId('');
+  };
+
+  const handleVendorEdit = (e, v) => {
+    e.stopPropagation();
+    setIsEditing(true);
+    setEditId(v.id);
+    setCompanyName(v.company_name);
+    setGst(v.gst || '');
+    setPan(v.pan);
+    setAadhaar(v.aadhaar || '');
+    setOwnerName(v.owner_name);
+    setOwnerContact(v.owner_contact);
+    setAddressLine1(v.address_line1 || '');
+    setAddressLine2(v.address_line2 || '');
+    setAddressLine3(v.address_line3 || '');
+    setMachineDetails(v.machine_details || '');
+    setOperatorDetails(v.operator_details || '');
+    setBankName(v.bank_name || '');
+    setAccountNo(v.account_no || '');
+    setIfsc(v.ifsc || '');
+    setShowForm(true);
+  };
+
+  const handleContractorEdit = (e, c) => {
+    e.stopPropagation();
+    setIsEditing(true);
+    setEditId(c.id);
+    setContractorName(c.full_name);
+    setContractorPan(c.pan);
+    setContractorAadhaar(c.aadhaar || '');
+    setContractorContact(c.contact);
+    setContractorAddressLine1(c.address_line1 || '');
+    setContractorAddressLine2(c.address_line2 || '');
+    setContractorAddressLine3(c.address_line3 || '');
+    setContractorBank(c.bank_name || '');
+    setContractorAccount(c.account_no || '');
+    setContractorIfsc(c.ifsc || '');
+    
+    const activeAssignment = c.assignments?.[0];
+    if (activeAssignment) {
+      setSelectedVendorId(activeAssignment.vendor_id?.toString() || '');
+      setSelectedProjectId(activeAssignment.project_id?.toString() || '');
+    } else {
+      setSelectedVendorId('');
+      setSelectedProjectId('');
+    }
+    
+    setShowForm(true);
   };
 
   return (
     <div className="main-content">
       <div className="page-header">
         <h1 className="page-title">Vendors & Contractors</h1>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+        <button className="btn btn-primary" onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}>
           <PlusCircle size={18} /> {showForm ? 'Cancel' : `New ${activeTab === 'vendors' ? 'Vendor' : 'Contractor'}`}
         </button>
       </div>
@@ -129,7 +233,7 @@ export default function Vendors() {
 
       {showForm && activeTab === 'vendors' && (
         <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
-          <h2 style={{ marginBottom: '1.5rem', fontWeight: 600 }}>Register New Vendor</h2>
+          <h2 style={{ marginBottom: '1.5rem', fontWeight: 600 }}>{isEditing ? 'Edit Vendor Details' : 'Register New Vendor'}</h2>
           <form onSubmit={handleVendorCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             <div className="form-group">
               <label>Company/Business Name</label>
@@ -201,8 +305,11 @@ export default function Vendors() {
               </div>
             </div>
 
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <button type="submit" className="btn btn-primary">Register Vendor</button>
+            <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem' }}>
+              <button type="submit" className="btn btn-primary">{isEditing ? 'Update Vendor' : 'Register Vendor'}</button>
+              {isEditing && (
+                <button type="button" className="btn" style={{background: 'rgba(0,0,0,0.08)'}} onClick={resetForm}>Cancel</button>
+              )}
             </div>
           </form>
         </div>
@@ -210,7 +317,7 @@ export default function Vendors() {
 
       {showForm && activeTab === 'contractors' && (
         <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
-          <h2 style={{ marginBottom: '1.5rem', fontWeight: 600 }}>Hire Sub-Contractor</h2>
+          <h2 style={{ marginBottom: '1.5rem', fontWeight: 600 }}>{isEditing ? 'Edit Contractor Details' : 'Hire Sub-Contractor'}</h2>
           <form onSubmit={handleContractorCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             <div className="form-group">
               <label>Full Name</label>
@@ -278,8 +385,11 @@ export default function Vendors() {
                 {projects.map(p => <option key={p.id} value={p.id}>{p.name} (Budget Rem: ₹{p.budget_remaining})</option>)}
               </select>
             </div>
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <button type="submit" className="btn btn-primary">Hire Contractor</button>
+            <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem' }}>
+              <button type="submit" className="btn btn-primary">{isEditing ? 'Update Contractor' : 'Hire Contractor'}</button>
+              {isEditing && (
+                <button type="button" className="btn" style={{background: 'rgba(0,0,0,0.08)'}} onClick={resetForm}>Cancel</button>
+              )}
             </div>
           </form>
         </div>
@@ -295,14 +405,18 @@ export default function Vendors() {
                 <th>Owner Details</th>
                 <th>Address</th>
                 <th>PAN</th>
-                <th>Status</th>
+                <th style={{textAlign: 'center'}}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {vendors.map(v => (
-                <tr key={v.id}>
-                  <td style={{ fontWeight: 500 }}>{v.vendor_id}</td>
-                  <td>{v.company_name}</td>
+                <tr key={v.id} onClick={() => handleVendorClick(v)} style={{ cursor: 'pointer' }} className="hover-row">
+                  <td style={{ fontWeight: 600, color: 'var(--primary)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Users size={16} /> {v.vendor_id}
+                    </div>
+                  </td>
+                  <td style={{ fontWeight: 500 }}>{v.company_name}</td>
                   <td>{v.owner_name} <br/><small style={{color:'var(--text-muted)'}}>{v.owner_contact}</small></td>
                   <td>
                     {v.address_line1 ? (
@@ -314,10 +428,16 @@ export default function Vendors() {
                     ) : v.owner_address || '—'}
                   </td>
                   <td>{v.pan}</td>
-                  <td><span className="badge badge-success">Active</span></td>
+                  <td style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                      <button onClick={(e) => handleVendorEdit(e, v)} className="btn" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', gap: '0.25rem', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)' }}>
+                        <Edit3 size={13} /> Edit
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
-              {vendors.length === 0 && <tr><td colSpan="6" style={{textAlign:'center'}}>No vendors registered yet.</td></tr>}
+              {vendors.length === 0 && <tr><td colSpan="6" style={{textAlign:'center', padding: '2rem', color: 'var(--text-muted)'}}>No vendors registered yet.</td></tr>}
             </tbody>
           </table>
         ) : (
@@ -330,13 +450,18 @@ export default function Vendors() {
                 <th>Address</th>
                 <th>Assigned Vendor</th>
                 <th>Assigned Project</th>
+                <th style={{textAlign: 'center'}}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {contractors.map(c => (
-                <tr key={c.id}>
-                  <td style={{ fontWeight: 500 }}>{c.contractor_id}</td>
-                  <td>{c.full_name}</td>
+                <tr key={c.id} onClick={() => handleContractorClick(c)} style={{ cursor: 'pointer' }} className="hover-row">
+                  <td style={{ fontWeight: 600, color: 'var(--primary)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <HardHat size={16} /> {c.contractor_id}
+                    </div>
+                  </td>
+                  <td style={{ fontWeight: 500 }}>{c.full_name}</td>
                   <td>{c.pan} <br/><small style={{color:'var(--text-muted)'}}>{c.contact}</small></td>
                   <td>
                     {c.address_line1 ? (
@@ -349,13 +474,422 @@ export default function Vendors() {
                   </td>
                   <td>{c.assignments?.[0]?.vendor?.company_name || '—'}</td>
                   <td>{c.assignments?.[0]?.project?.name || '—'}</td>
+                  <td style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                      <button onClick={(e) => handleContractorEdit(e, c)} className="btn" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', gap: '0.25rem', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)' }}>
+                        <Edit3 size={13} /> Edit
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
-              {contractors.length === 0 && <tr><td colSpan="6" style={{textAlign:'center'}}>No contractors hired yet.</td></tr>}
+              {contractors.length === 0 && <tr><td colSpan="7" style={{textAlign:'center', padding: '2rem', color: 'var(--text-muted)'}}>No contractors hired yet.</td></tr>}
             </tbody>
           </table>
         )}
       </div>
+
+      {/* VENDOR DETAIL MODAL */}
+      {selectedVendor && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card)', padding: '2.5rem', position: 'relative' }}>
+            
+            <button 
+              onClick={() => setSelectedVendor(null)} 
+              style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+            >
+              <XCircle size={24} />
+            </button>
+
+            {/* Header Branding */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+              <div style={{ background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Users size={26} />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>{selectedVendor.company_name}</h2>
+                <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 600 }}>Vendor ID: {selectedVendor.vendor_id}</span>
+              </div>
+            </div>
+
+            {/* Quick Cards Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '2rem' }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', padding: '1rem', borderRadius: '8px' }}>
+                <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Owner / Representative</span>
+                <strong style={{ display: 'block', fontSize: '1.1rem', marginTop: '0.25rem' }}>{selectedVendor.owner_name}</strong>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Contact: {selectedVendor.owner_contact}</span>
+              </div>
+              <div style={{ background: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.2)', padding: '1rem', borderRadius: '8px' }}>
+                <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--primary)', letterSpacing: '0.05em', fontWeight: 600 }}>Associated Projects</span>
+                <strong style={{ display: 'block', fontSize: '1.25rem', marginTop: '0.25rem' }}>{selectedVendor.projects?.length || 0} Projects</strong>
+              </div>
+            </div>
+
+            {/* Detail Grid Section */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1.0rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Info size={16} color="var(--primary)" /> Business Credentials
+                </h3>
+                <div style={{ fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>GSTIN Reference: </span>
+                    <strong>{selectedVendor.gst || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>PAN Number: </span>
+                    <strong>{selectedVendor.pan}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Aadhaar Reference: </span>
+                    <strong>{selectedVendor.aadhaar || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Address details: </span>
+                    <span style={{ display: 'block', fontSize: '0.85rem', marginTop: '0.25rem', color: 'var(--text-main)', lineHeight: '1.4' }}>
+                      {selectedVendor.address_line1 ? (
+                        <>
+                          {selectedVendor.address_line1}<br/>
+                          {selectedVendor.address_line2}<br/>
+                          {selectedVendor.address_line3}
+                        </>
+                      ) : selectedVendor.owner_address || '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1.0rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <CreditCard size={16} color="var(--primary)" /> Bank Remittance Info
+                </h3>
+                <div style={{ fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Beneficiary Bank: </span>
+                    <strong>{selectedVendor.bank_name || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Account Number: </span>
+                    <strong>{selectedVendor.account_no || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>IFSC Remittance: </span>
+                    <strong>{selectedVendor.ifsc || 'N/A'}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Logistics & Equipment details */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem', marginBottom: '2rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <PenTool size={16} color="var(--primary)" /> Heavy Machinery Specs
+                </h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-main)', lineHeight: '1.4', margin: 0 }}>
+                  {selectedVendor.machine_details || 'No heavy machinery listed.'}
+                </p>
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Users size={16} color="var(--primary)" /> Operator Assets
+                </h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-main)', lineHeight: '1.4', margin: 0 }}>
+                  {selectedVendor.operator_details || 'No active operators assigned.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Linked Purchase Orders, Work Orders, and Invoices */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Receipt size={16} color="var(--primary)" /> Financial Statements & Timeline
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                {/* Purchase Orders */}
+                <div>
+                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Purchase Orders issued:</h4>
+                  {!selectedVendor.purchase_orders || selectedVendor.purchase_orders.length === 0 ? (
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>No POs issued yet.</p>
+                  ) : (
+                    <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                      <table className="data-table" style={{ margin: 0, fontSize: '0.75rem' }}>
+                        <thead>
+                          <tr style={{ background: 'rgba(0,0,0,0.01)' }}>
+                            <th style={{ padding: '0.4rem' }}>PO Ref</th>
+                            <th style={{ padding: '0.4rem', textAlign: 'right' }}>Total Amount</th>
+                            <th style={{ padding: '0.4rem' }}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedVendor.purchase_orders.map(po => (
+                            <tr key={po.id}>
+                              <td style={{ padding: '0.4rem', fontWeight: 600 }}>{po.po_number}</td>
+                              <td style={{ padding: '0.4rem', textAlign: 'right', fontWeight: 500 }}>₹{po.total_amount.toLocaleString()}</td>
+                              <td style={{ padding: '0.4rem' }}>
+                                <span className={po.status === 'Completed' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem' }}>{po.status}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Invoices */}
+                <div>
+                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Billed Invoices:</h4>
+                  {!selectedVendor.invoices || selectedVendor.invoices.length === 0 ? (
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>No invoices generated yet.</p>
+                  ) : (
+                    <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                      <table className="data-table" style={{ margin: 0, fontSize: '0.75rem' }}>
+                        <thead>
+                          <tr style={{ background: 'rgba(0,0,0,0.01)' }}>
+                            <th style={{ padding: '0.4rem' }}>Invoice Ref</th>
+                            <th style={{ padding: '0.4rem', textAlign: 'right' }}>Total Amount</th>
+                            <th style={{ padding: '0.4rem' }}>Payment</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedVendor.invoices.map(inv => (
+                            <tr key={inv.id}>
+                              <td style={{ padding: '0.4rem', fontWeight: 600 }}>{inv.invoice_id}</td>
+                              <td style={{ padding: '0.4rem', textAlign: 'right', fontWeight: 500 }}>₹{inv.total_amount.toLocaleString()}</td>
+                              <td style={{ padding: '0.4rem' }}>
+                                <span className={inv.payment_status === 'Paid' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem' }}>{inv.payment_status}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={(e) => { const temp = selectedVendor; setSelectedVendor(null); handleVendorEdit(e, temp); }} 
+                className="btn btn-primary"
+                style={{ padding: '0.5rem 1.25rem', gap: '0.25rem' }}
+              >
+                <Edit3 size={16} /> Edit Vendor Details
+              </button>
+              <button 
+                onClick={() => setSelectedVendor(null)} 
+                className="btn"
+                style={{ background: 'rgba(0,0,0,0.08)', padding: '0.5rem 1.25rem' }}
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* CONTRACTOR DETAIL MODAL */}
+      {selectedContractor && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card)', padding: '2.5rem', position: 'relative' }}>
+            
+            <button 
+              onClick={() => setSelectedContractor(null)} 
+              style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+            >
+              <XCircle size={24} />
+            </button>
+
+            {/* Header Branding */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+              <div style={{ background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <HardHat size={26} />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>{selectedContractor.full_name}</h2>
+                <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 600 }}>Contractor ID: {selectedContractor.contractor_id}</span>
+              </div>
+            </div>
+
+            {/* Details Grid Section */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1.0rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Info size={16} color="var(--primary)" /> Contractor Credentials
+                </h3>
+                <div style={{ fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Contact Number: </span>
+                    <strong>{selectedContractor.contact}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>PAN Number: </span>
+                    <strong>{selectedContractor.pan}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Aadhaar Card: </span>
+                    <strong>{selectedContractor.aadhaar || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Hiring Address: </span>
+                    <span style={{ display: 'block', fontSize: '0.85rem', marginTop: '0.25rem', color: 'var(--text-main)', lineHeight: '1.4' }}>
+                      {selectedContractor.address_line1 ? (
+                        <>
+                          {selectedContractor.address_line1}<br/>
+                          {selectedContractor.address_line2}<br/>
+                          {selectedContractor.address_line3}
+                        </>
+                      ) : selectedContractor.address || '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1.0rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <CreditCard size={16} color="var(--primary)" /> Bank Remittance Info
+                </h3>
+                <div style={{ fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Beneficiary Bank: </span>
+                    <strong>{selectedContractor.bank_name || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Account Number: </span>
+                    <strong>{selectedContractor.account_no || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>IFSC Remittance: </span>
+                    <strong>{selectedContractor.ifsc || 'N/A'}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Assignments Context */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Landmark size={16} color="var(--primary)" /> Hiring Agency & Project Assignments
+              </h3>
+              {!selectedContractor.assignments || selectedContractor.assignments.length === 0 ? (
+                <div style={{ background: 'rgba(0,0,0,0.02)', padding: '1rem', borderRadius: '8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  This contractor is currently unassigned.
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', padding: '1rem', borderRadius: '8px' }}>
+                    <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Associated Vendor Agency</span>
+                    <strong style={{ display: 'block', fontSize: '1.1rem', marginTop: '0.25rem', color: 'var(--primary)' }}>
+                      {selectedContractor.assignments[0]?.vendor?.company_name}
+                    </strong>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Represented by: {selectedContractor.assignments[0]?.vendor?.owner_name}</span>
+                  </div>
+                  <div style={{ background: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.2)', padding: '1rem', borderRadius: '8px' }}>
+                    <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--primary)', letterSpacing: '0.05em', fontWeight: 600 }}>Active Assigned Project</span>
+                    <strong style={{ display: 'block', fontSize: '1.1rem', marginTop: '0.25rem' }}>
+                      {selectedContractor.assignments[0]?.project?.name}
+                    </strong>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Project ID: {selectedContractor.assignments[0]?.project?.project_id}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Orders and Billing timeline */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Receipt size={16} color="var(--primary)" /> Billing & Claims Ledger
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                {/* Orders */}
+                <div>
+                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Associated Purchase Orders:</h4>
+                  {!selectedContractor.purchase_orders || selectedContractor.purchase_orders.length === 0 ? (
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>No PO assignments found.</p>
+                  ) : (
+                    <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                      <table className="data-table" style={{ margin: 0, fontSize: '0.75rem' }}>
+                        <thead>
+                          <tr style={{ background: 'rgba(0,0,0,0.01)' }}>
+                            <th style={{ padding: '0.4rem' }}>PO Ref</th>
+                            <th style={{ padding: '0.4rem', textAlign: 'right' }}>Total Amount</th>
+                            <th style={{ padding: '0.4rem' }}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedContractor.purchase_orders.map(po => (
+                            <tr key={po.id}>
+                              <td style={{ padding: '0.4rem', fontWeight: 600 }}>{po.po_number}</td>
+                              <td style={{ padding: '0.4rem', textAlign: 'right', fontWeight: 500 }}>₹{po.total_amount.toLocaleString()}</td>
+                              <td style={{ padding: '0.4rem' }}>
+                                <span className={po.status === 'Completed' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem' }}>{po.status}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Invoices */}
+                <div>
+                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Invoices Filed:</h4>
+                  {!selectedContractor.invoices || selectedContractor.invoices.length === 0 ? (
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>No invoices billed yet.</p>
+                  ) : (
+                    <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                      <table className="data-table" style={{ margin: 0, fontSize: '0.75rem' }}>
+                        <thead>
+                          <tr style={{ background: 'rgba(0,0,0,0.01)' }}>
+                            <th style={{ padding: '0.4rem' }}>Invoice Ref</th>
+                            <th style={{ padding: '0.4rem', textAlign: 'right' }}>Total Amount</th>
+                            <th style={{ padding: '0.4rem' }}>Payment</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedContractor.invoices.map(inv => (
+                            <tr key={inv.id}>
+                              <td style={{ padding: '0.4rem', fontWeight: 600 }}>{inv.invoice_id}</td>
+                              <td style={{ padding: '0.4rem', textAlign: 'right', fontWeight: 500 }}>₹{inv.total_amount.toLocaleString()}</td>
+                              <td style={{ padding: '0.4rem' }}>
+                                <span className={inv.payment_status === 'Paid' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem' }}>{inv.payment_status}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={(e) => { const temp = selectedContractor; setSelectedContractor(null); handleContractorEdit(e, temp); }} 
+                className="btn btn-primary"
+                style={{ padding: '0.5rem 1.25rem', gap: '0.25rem' }}
+              >
+                <Edit3 size={16} /> Edit Contractor Details
+              </button>
+              <button 
+                onClick={() => setSelectedContractor(null)} 
+                className="btn"
+                style={{ background: 'rgba(0,0,0,0.08)', padding: '0.5rem 1.25rem' }}
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
