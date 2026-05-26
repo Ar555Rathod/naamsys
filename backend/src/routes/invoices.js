@@ -63,7 +63,9 @@ router.post('/', async (req, res) => {
             invoice_date: new Date(),
             subtotal: parseFloat(subtotal),
             total_amount: parseFloat(total_amount),
-            payment_status: 'Pending',
+            payment_status: 'Paid',
+            amount_paid: parseFloat(total_amount),
+            payment_date: new Date(),
             created_by: req.user.id
           }
         });
@@ -80,7 +82,7 @@ router.post('/', async (req, res) => {
             action: 'Generate Invoice',
             module: 'Invoices',
             record_id: String(inv.id),
-            new_value: `Generated Payable Invoice '${inv.invoice_id}' for project '${project.name}' in the amount of ₹${parseFloat(total_amount).toLocaleString('en-IN')}`
+            new_value: `Generated and Paid Payable Invoice '${inv.invoice_id}' for project '${project.name}' in the amount of ₹${parseFloat(total_amount).toLocaleString('en-IN')}`
           }
         });
 
@@ -99,7 +101,9 @@ router.post('/', async (req, res) => {
             invoice_date: new Date(),
             subtotal: parseFloat(subtotal),
             total_amount: parseFloat(total_amount),
-            payment_status: 'Pending',
+            payment_status: 'Paid',
+            amount_paid: parseFloat(total_amount),
+            payment_date: new Date(),
             created_by: req.user.id
           }
         });
