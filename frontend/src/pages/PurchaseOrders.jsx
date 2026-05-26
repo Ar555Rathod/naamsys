@@ -307,7 +307,10 @@ export default function PurchaseOrders() {
                     <Receipt size={16} /> {p.po_number}
                   </div>
                 </td>
-                <td style={{fontWeight: 500}}>V{p.version}</td>
+                <td style={{fontWeight: 500}}>
+                  V{p.version}
+                  {p.creator && <><br/><small style={{color:'var(--text-muted)', fontSize: '0.7rem'}}>By: {p.creator.name}</small></>}
+                </td>
                 <td>{p.project.name} <br/><small style={{color:'var(--text-muted)'}}>{p.project.project_id}</small></td>
                 <td>
                   <strong>{p.vendor.company_name}</strong>
@@ -381,7 +384,10 @@ export default function PurchaseOrders() {
                 <tbody>
                   {selectedHistory.map(h => (
                     <tr key={h.id} style={{ opacity: h.is_active ? 1 : 0.65, background: h.is_active ? 'rgba(79, 70, 229, 0.02)' : 'transparent' }}>
-                      <td style={{fontWeight: 700}}>V{h.version} {h.is_active && <span style={{fontSize: '0.65rem', background: 'var(--primary)', color: 'white', padding: '0.1rem 0.3rem', borderRadius: '4px', marginLeft: '0.25rem'}}>ACTIVE</span>}</td>
+                      <td style={{fontWeight: 700}}>
+                        V{h.version} {h.is_active && <span style={{fontSize: '0.65rem', background: 'var(--primary)', color: 'white', padding: '0.1rem 0.3rem', borderRadius: '4px', marginLeft: '0.25rem'}}>ACTIVE</span>}
+                        {h.creator && <div style={{fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: '0.15rem'}}>By: {h.creator.name}</div>}
+                      </td>
                       <td style={{fontSize: '0.8rem'}}>{new Date(h.created_at).toLocaleString()}</td>
                       <td style={{fontSize: '0.8rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}} title={h.item_details}>{h.item_details}</td>
                       <td style={{fontSize: '0.8rem', fontWeight: 600}}>₹{h.total_amount.toLocaleString()}</td>
@@ -490,7 +496,9 @@ export default function PurchaseOrders() {
                   <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
                     PO Ref: <strong>{selectedPrintPo.po_number}</strong><br />
                     Version: <strong>V{selectedPrintPo.version}</strong><br />
-                    Date: {new Date(selectedPrintPo.created_at).toLocaleDateString()}
+                    Date: {new Date(selectedPrintPo.created_at).toLocaleDateString()}<br />
+                    {selectedPrintPo.creator && <>Issued By: <strong>{selectedPrintPo.creator.name}</strong><br /></>}
+                    {selectedPrintPo.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
                   </p>
                 </div>
               </div>

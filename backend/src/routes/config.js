@@ -185,9 +185,23 @@ router.post('/fy', requireAdmin, async (req, res) => {
 // ==========================================
 // AUDIT LOG TRAILS (Admin & Manager)
 // ==========================================
-router.get('/audit-logs', requireAdminOrManager, async (req, res) => {
+router.get('/audit-logs', async (req, res) => {
   try {
+    const { module, record_id } = req.query;
+
+    // Only Admin or Manager can view the unrestricted full audit trail
+    if (!module && !record_id) {
+      if (req.user.role !== 'Admin' && req.user.role !== 'Manager') {
+        return res.status(403).json({ error: 'Access denied: Admin or Manager role required to view unrestricted audit logs.' });
+      }
+    }
+
+    const where = {};
+    if (module) where.module = module;
+    if (record_id) where.record_id = String(record_id);
+
     const logs = await prisma.auditLog.findMany({
+      where,
       include: {
         user: {
           select: { name: true, email: true, role: true }

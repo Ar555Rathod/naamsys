@@ -32,6 +32,18 @@ router.get('/', async (req, res) => {
       },
       orderBy: { id: 'desc' }
     });
+
+    // Enrich with creator details
+    const userIds = [...new Set(wos.map(w => w.created_by))];
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true, role: true }
+    });
+    const userMap = new Map(users.map(u => [u.id, u]));
+    wos.forEach(w => {
+      w.creator = userMap.get(w.created_by) || null;
+    });
+
     res.json(wos);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch Work Orders', details: error.message });
@@ -50,6 +62,18 @@ router.get('/history/:wo_number', async (req, res) => {
       },
       orderBy: { version: 'desc' }
     });
+
+    // Enrich with creator details
+    const userIds = [...new Set(history.map(w => w.created_by))];
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true, role: true }
+    });
+    const userMap = new Map(users.map(u => [u.id, u]));
+    history.forEach(w => {
+      w.creator = userMap.get(w.created_by) || null;
+    });
+
     res.json(history);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch Work Order history', details: error.message });
@@ -68,6 +92,14 @@ router.get('/:id', async (req, res) => {
       }
     });
     if (!wo) return res.status(404).json({ error: 'Work Order not found' });
+
+    // Enrich with creator details
+    const creator = await prisma.user.findUnique({
+      where: { id: wo.created_by },
+      select: { id: true, name: true, email: true, role: true }
+    });
+    wo.creator = creator;
+
     res.json(wo);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch Work Order details', details: error.message });
@@ -79,27 +111,43 @@ router.post('/', async (req, res) => {
   try {
     const { project_id, vendor_id, contractor_id, work_description, completion_date, budget_amount, status } = req.body;
     
-    // Count unique wo_numbers to generate sequential number
-    const uniqueOrders = await prisma.workOrder.groupBy({
-      by: ['wo_number']
-    });
-    const wo_number = `WO-${new Date().getFullYear()}-${(uniqueOrders.length + 1).toString().padStart(4, '0')}`;
+    const newWo = await prisma.$transaction(async (tx) => {
+      // Count unique wo_numbers to generate sequential number
+      const uniqueOrders = await tx.workOrder.groupBy({
+        by: ['wo_number']
+      });
+      const wo_number = `WO-${new Date().getFullYear()}-${(uniqueOrders.length + 1).toString().padStart(4, '0')}`;
 
-    const newWo = await prisma.workOrder.create({
-      data: {
-        wo_number,
-        version: 1,
-        is_active: true,
-        project_id: parseInt(project_id),
-        vendor_id: parseInt(vendor_id),
-        contractor_id: contractor_id ? parseInt(contractor_id) : null,
-        work_description,
-        completion_date: new Date(completion_date),
-        budget_amount: budget_amount ? parseFloat(budget_amount) : 0,
-        status: status || 'Draft',
-        created_by: req.user.id
-      }
+      const wo = await tx.workOrder.create({
+        data: {
+          wo_number,
+          version: 1,
+          is_active: true,
+          project_id: parseInt(project_id),
+          vendor_id: parseInt(vendor_id),
+          contractor_id: contractor_id ? parseInt(contractor_id) : null,
+          work_description,
+          completion_date: new Date(completion_date),
+          budget_amount: budget_amount ? parseFloat(budget_amount) : 0,
+          status: status || 'Draft',
+          created_by: req.user.id
+        }
+      });
+
+      // Write AuditLog
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: 'Create Work Order',
+          module: 'Work Orders',
+          record_id: String(wo.id),
+          new_value: `Created Work Order '${wo.wo_number}' (Budget: ₹${parseFloat(wo.budget_amount).toLocaleString('en-IN')})`
+        }
+      });
+
+      return wo;
     });
+
     res.status(201).json(newWo);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create Work Order', details: error.message });
@@ -120,13 +168,14 @@ router.post('/amend', async (req, res) => {
       return res.status(404).json({ error: 'Active Work Order to amend not found' });
     }
 
-    // Wrap in transaction: Deactivate previous, create new version
-    const transaction = await prisma.$transaction([
-      prisma.workOrder.update({
+    // Wrap in transaction: Deactivate previous, create new version, and write audit log
+    const result = await prisma.$transaction(async (tx) => {
+      await tx.workOrder.update({
         where: { id: previousWo.id },
         data: { is_active: false }
-      }),
-      prisma.workOrder.create({
+      });
+
+      const newWo = await tx.workOrder.create({
         data: {
           wo_number,
           version: previousWo.version + 1,
@@ -141,10 +190,22 @@ router.post('/amend', async (req, res) => {
           remarks: remarks || `Amended from Version V${previousWo.version}`,
           created_by: req.user.id
         }
-      })
-    ]);
+      });
 
-    res.json(transaction[1]);
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: 'Amend Work Order',
+          module: 'Work Orders',
+          record_id: String(newWo.id),
+          new_value: `Amended Work Order '${wo_number}' to Version V${newWo.version} (Budget: ₹${parseFloat(newWo.budget_amount).toLocaleString('en-IN')})`
+        }
+      });
+
+      return newWo;
+    });
+
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Failed to amend Work Order', details: error.message });
   }
@@ -154,13 +215,30 @@ router.post('/amend', async (req, res) => {
 router.put('/:id/status', async (req, res) => {
   try {
     const { status, remarks } = req.body;
-    const wo = await prisma.workOrder.update({
-      where: { id: parseInt(req.params.id) },
-      data: {
-        status,
-        remarks: remarks || `Status updated to ${status}`
-      }
+    
+    const wo = await prisma.$transaction(async (tx) => {
+      const updated = await tx.workOrder.update({
+        where: { id: parseInt(req.params.id) },
+        data: {
+          status,
+          remarks: remarks || `Status updated to ${status}`
+        }
+      });
+
+      const actionName = status === 'Approved' ? 'Approve Work Order' : 'Update Work Order Status';
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: actionName,
+          module: 'Work Orders',
+          record_id: String(updated.id),
+          new_value: `${status === 'Approved' ? 'Approved' : 'Updated status of'} Work Order '${updated.wo_number}' (Status: ${status})`
+        }
+      });
+
+      return updated;
     });
+
     res.json(wo);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update Work Order status', details: error.message });
@@ -171,13 +249,29 @@ router.put('/:id/status', async (req, res) => {
 router.put('/:id/upload-signed', async (req, res) => {
   try {
     const { duly_signed_url } = req.body; // simulated URL or filename
-    const wo = await prisma.workOrder.update({
-      where: { id: parseInt(req.params.id) },
-      data: {
-        duly_signed_url,
-        status: 'Completed'
-      }
+
+    const wo = await prisma.$transaction(async (tx) => {
+      const updated = await tx.workOrder.update({
+        where: { id: parseInt(req.params.id) },
+        data: {
+          duly_signed_url,
+          status: 'Completed'
+        }
+      });
+
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: 'Complete Work Order',
+          module: 'Work Orders',
+          record_id: String(updated.id),
+          new_value: `Signed and Completed Work Order '${updated.wo_number}'`
+        }
+      });
+
+      return updated;
     });
+
     res.json(wo);
   } catch (error) {
     res.status(500).json({ error: 'Failed to upload signed Work Order copy', details: error.message });

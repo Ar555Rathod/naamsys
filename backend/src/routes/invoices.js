@@ -51,8 +51,8 @@ router.post('/', async (req, res) => {
       }
 
       // Automatically deduct budget in a transaction
-      const transaction = await prisma.$transaction([
-        prisma.invoice.create({
+      const transaction = await prisma.$transaction(async (tx) => {
+        const inv = await tx.invoice.create({
           data: {
             invoice_id: `INV-${Date.now()}`,
             invoice_type,
@@ -66,28 +66,58 @@ router.post('/', async (req, res) => {
             payment_status: 'Pending',
             created_by: req.user.id
           }
-        }),
-        prisma.project.update({
+        });
+
+        await tx.project.update({
           where: { id: project.id },
           data: { budget_remaining: project.budget_remaining - total_amount }
-        })
-      ]);
+        });
 
-      return res.json(transaction[0]);
+        // Write AuditLog
+        await tx.auditLog.create({
+          data: {
+            user_id: req.user.id,
+            action: 'Generate Invoice',
+            module: 'Invoices',
+            record_id: String(inv.id),
+            new_value: `Generated Payable Invoice '${inv.invoice_id}' for project '${project.name}' in the amount of ₹${parseFloat(total_amount).toLocaleString('en-IN')}`
+          }
+        });
+
+        return inv;
+      });
+
+      return res.json(transaction);
     } else {
       // TypeB / TypeC (Receivables)
-      const invoice = await prisma.invoice.create({
-        data: {
-          invoice_id: `REC-${Date.now()}`,
-          invoice_type,
-          project_id: parseInt(project_id),
-          invoice_date: new Date(),
-          subtotal: parseFloat(subtotal),
-          total_amount: parseFloat(total_amount),
-          payment_status: 'Pending',
-          created_by: req.user.id
-        }
+      const invoice = await prisma.$transaction(async (tx) => {
+        const inv = await tx.invoice.create({
+          data: {
+            invoice_id: `REC-${Date.now()}`,
+            invoice_type,
+            project_id: parseInt(project_id),
+            invoice_date: new Date(),
+            subtotal: parseFloat(subtotal),
+            total_amount: parseFloat(total_amount),
+            payment_status: 'Pending',
+            created_by: req.user.id
+          }
+        });
+
+        // Write AuditLog
+        await tx.auditLog.create({
+          data: {
+            user_id: req.user.id,
+            action: 'Generate Invoice',
+            module: 'Invoices',
+            record_id: String(inv.id),
+            new_value: `Generated Receivable Invoice '${inv.invoice_id}' (${invoice_type}) for project '${project.name}' in the amount of ₹${parseFloat(total_amount).toLocaleString('en-IN')}`
+          }
+        });
+
+        return inv;
       });
+
       return res.json(invoice);
     }
   } catch (error) {
@@ -108,6 +138,18 @@ router.get('/', async (req, res) => {
         }
       }
     });
+
+    // Enrich with creator details
+    const userIds = [...new Set(invoices.map(i => i.created_by))];
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true, role: true }
+    });
+    const userMap = new Map(users.map(u => [u.id, u]));
+    invoices.forEach(i => {
+      i.creator = userMap.get(i.created_by) || null;
+    });
+
     res.json(invoices);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch invoices' });

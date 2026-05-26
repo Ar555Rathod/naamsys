@@ -18,15 +18,33 @@ const donorsRoutes = require('./src/routes/donors');
 const configRoutes = require('./src/routes/config');
 const uploadRoutes = require('./src/routes/upload');
 
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
-// Serve static uploads folder (both local and Vercel temp fallback)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/uploads', express.static('/tmp/uploads'));
+// Serve uploads dynamically from the database to bypass short-lived serverless container limits
+app.get('/uploads/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const fileRecord = await prisma.uploadedFile.findUnique({
+      where: { filename }
+    });
+    if (!fileRecord) {
+      return res.status(404).send('Not Found');
+    }
+    res.setHeader('Content-Type', fileRecord.mime_type);
+    res.send(fileRecord.data);
+  } catch (error) {
+    console.error('Error serving database file:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);

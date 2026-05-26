@@ -1,41 +1,13 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+const { PrismaClient } = require('@prisma/client');
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, '../../uploads');
-let activeUploadDir = uploadDir;
-
-try {
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-} catch (err) {
-  console.warn('Local uploads folder is read-only, falling back to /tmp/uploads on Vercel.');
-  activeUploadDir = '/tmp/uploads';
-  if (!fs.existsSync(activeUploadDir)) {
-    try {
-      fs.mkdirSync(activeUploadDir, { recursive: true });
-    } catch (e) {
-      console.error('Failed to create fallback upload directory:', e.message);
-    }
-  }
-}
-
-// Multer Storage Configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, activeUploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const baseName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '_');
-    cb(null, `${Date.now()}_${baseName}${ext}`);
-  }
-});
+// Multer Storage Configuration (In-Memory for stateless serverless environments)
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
@@ -52,18 +24,36 @@ const upload = multer({
   }
 });
 
-router.post('/', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded.' });
+router.post('/', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded.' });
+    }
+    
+    const ext = path.extname(req.file.originalname);
+    const baseName = path.basename(req.file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '_');
+    const uniqueFilename = `${Date.now()}_${baseName}${ext}`;
+
+    // Store in MySQL database LONGBLOB
+    await prisma.uploadedFile.create({
+      data: {
+        filename: uniqueFilename,
+        mime_type: req.file.mimetype,
+        data: req.file.buffer
+      }
+    });
+    
+    res.json({
+      message: 'File uploaded successfully!',
+      filename: uniqueFilename,
+      url: `/uploads/${uniqueFilename}`
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save uploaded file to database', details: error.message });
   }
-  
-  res.json({
-    message: 'File uploaded successfully!',
-    filename: req.file.filename,
-    url: `/uploads/${req.file.filename}`
-  });
 }, (err, req, res, next) => {
   res.status(400).json({ error: err.message });
 });
 
 module.exports = router;
+

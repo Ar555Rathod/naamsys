@@ -7,10 +7,12 @@ export default function ProjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProjectDetails();
+    fetchAuditLogs();
   }, [id]);
 
   const fetchProjectDetails = async () => {
@@ -23,6 +25,15 @@ export default function ProjectDetails() {
       navigate('/');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAuditLogs = async () => {
+    try {
+      const res = await api.get(`/config/audit-logs?module=Projects&record_id=${id}`);
+      setAuditLogs(res.data);
+    } catch (err) {
+      console.error('Failed to fetch project audit logs', err);
     }
   };
 
@@ -64,7 +75,14 @@ export default function ProjectDetails() {
           </button>
           <div>
             <h1 className="page-title" style={{ fontSize: '1.5rem', marginBottom: '0.1rem' }}>{project.name}</h1>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Project Registration Code: {project.project_id}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.15rem' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Project Registration Code: {project.project_id}</span>
+              {project.creator && (
+                <span style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(255,255,255,0.04)', padding: '0.15rem 0.5rem', borderRadius: '100px', color: 'var(--text-muted)' }}>
+                  <User size={11} color="var(--primary)" /> Created by <strong>{project.creator.name}</strong> on {new Date(project.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <button onClick={handlePrintDossier} className="btn btn-primary" style={{ display: 'flex', gap: '0.5rem' }}>
@@ -392,6 +410,61 @@ export default function ProjectDetails() {
                 ))}
               </tbody>
             </table>
+          )}
+        </div>
+
+        {/* Project Audit Trail & Activity History (High Fidelity Timeline) */}
+        <div className="glass-panel" style={{ padding: '1.75rem', overflow: 'hidden', marginBottom: '2.5rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Activity size={16} color="var(--primary)" /> Project Audit Trail & Activity Timeline
+          </h3>
+          {auditLogs.length === 0 ? (
+            <p style={{color: 'var(--text-muted)', fontSize: '0.85rem', paddingLeft: '0.5rem'}}>No recorded audit history for this project yet.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingLeft: '0.5rem', position: 'relative' }}>
+              {/* Vertical line connector */}
+              <div style={{ position: 'absolute', left: '15px', top: '10px', bottom: '10px', width: '2px', background: 'linear-gradient(180deg, var(--primary) 0%, rgba(255,255,255,0.03) 100%)' }}></div>
+              
+              {auditLogs.map((log, index) => (
+                <div key={log.id} style={{ display: 'flex', gap: '1.25rem', position: 'relative', zIndex: 1 }}>
+                  {/* Point Indicator */}
+                  <div style={{ 
+                    width: '12px', 
+                    height: '12px', 
+                    borderRadius: '50%', 
+                    background: index === 0 ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)', 
+                    border: '3px solid var(--bg-card)', 
+                    boxShadow: index === 0 ? '0 0 10px var(--primary)' : 'none',
+                    marginTop: '5px',
+                    marginLeft: '10px'
+                  }}></div>
+                  
+                  {/* Card Container */}
+                  <div className="glass-panel" style={{ 
+                    flex: 1, 
+                    padding: '0.85rem 1.25rem', 
+                    background: index === 0 ? 'rgba(79, 70, 229, 0.04)' : 'rgba(255,255,255,0.01)', 
+                    border: index === 0 ? '1px solid rgba(79, 70, 229, 0.15)' : '1px solid rgba(255,255,255,0.03)',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.85rem', color: index === 0 ? 'var(--primary)' : 'var(--text-main)' }}>
+                        {log.action}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Calendar size={11} /> {new Date(log.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', margin: '0 0 0.5rem 0', lineHeight: 1.4 }}>
+                      {log.new_value}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      <User size={10} color="var(--primary)" /> Performed by: <strong style={{ color: 'var(--text-main)' }}>{log.user.name}</strong> <span style={{ opacity: 0.65 }}>({log.user.role})</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 

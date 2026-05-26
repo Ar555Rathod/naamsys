@@ -26,6 +26,18 @@ router.get('/', async (req, res) => {
     const projects = await prisma.project.findMany({
       include: { csr: true, govt_work_order: true }
     });
+    
+    // Enrich with creator details
+    const userIds = [...new Set(projects.map(p => p.created_by))];
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true, role: true }
+    });
+    const userMap = new Map(users.map(u => [u.id, u]));
+    projects.forEach(p => {
+      p.creator = userMap.get(p.created_by) || null;
+    });
+
     res.json(projects);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch projects' });
@@ -118,65 +130,86 @@ router.post('/', async (req, res) => {
 
     // Budget Validation & Deduction
     const reqBudget = parseFloat(budget);
-    let updateSourceQuery = null;
 
+    // Perform check beforehand
     if (source_type === 'CSR' && csr_id) {
       const csr = await prisma.csrCompany.findUnique({ where: { id: parseInt(csr_id) } });
       if (!csr || csr.budget_remaining < reqBudget) {
         return res.status(400).json({ error: 'Insufficient budget remaining in the selected CSR Partner.' });
       }
-      updateSourceQuery = prisma.csrCompany.update({
-        where: { id: parseInt(csr_id) },
-        data: { budget_remaining: csr.budget_remaining - reqBudget }
-      });
     } else if (source_type === 'GOVT' && govt_work_order_id) {
       const wo = await prisma.govtWorkOrder.findUnique({ where: { id: parseInt(govt_work_order_id) } });
       if (!wo || wo.budget_remaining < reqBudget) {
         return res.status(400).json({ error: 'Insufficient budget remaining in the selected Govt Work Order.' });
       }
-      updateSourceQuery = prisma.govtWorkOrder.update({
-        where: { id: parseInt(govt_work_order_id) },
-        data: { budget_remaining: wo.budget_remaining - reqBudget }
-      });
     } else if (source_type === 'INDIVIDUAL' && individual_donor_id) {
       const donor = await prisma.individualDonor.findUnique({ where: { id: parseInt(individual_donor_id) } });
       if (!donor || donor.budget_remaining < reqBudget) {
         return res.status(400).json({ error: 'Insufficient budget remaining in the selected Individual Donor.' });
       }
-      updateSourceQuery = prisma.individualDonor.update({
-        where: { id: parseInt(individual_donor_id) },
-        data: { budget_remaining: donor.budget_remaining - reqBudget }
-      });
     } else {
       return res.status(400).json({ error: 'Valid Funding Source is required.' });
     }
 
-    const createProjectQuery = prisma.project.create({
-      data: {
-        project_id,
-        name,
-        budget: reqBudget,
-        budget_remaining: reqBudget,
-        type_of_work,
-        sub_type,
-        source_type,
-        csr_id: csr_id ? parseInt(csr_id) : null,
-        govt_work_order_id: govt_work_order_id ? parseInt(govt_work_order_id) : null,
-        individual_donor_id: individual_donor_id ? parseInt(individual_donor_id) : null,
-        proposal_id,
-        proposal_pdf: proposal_pdf || null,
-        financial_year_id: financial_year_id ? parseInt(financial_year_id) : null,
-        start_date: start_date ? new Date(start_date) : null,
-        end_date: end_date ? new Date(end_date) : null,
-        district_id: final_district_id,
-        taluka_id: final_taluka_id,
-        village_id: final_village_id,
-        created_by: req.user.id
+    const createdProject = await prisma.$transaction(async (tx) => {
+      // 1. Deduct from funding source
+      if (source_type === 'CSR' && csr_id) {
+        await tx.csrCompany.update({
+          where: { id: parseInt(csr_id) },
+          data: { budget_remaining: { decrement: reqBudget } }
+        });
+      } else if (source_type === 'GOVT' && govt_work_order_id) {
+        await tx.govtWorkOrder.update({
+          where: { id: parseInt(govt_work_order_id) },
+          data: { budget_remaining: { decrement: reqBudget } }
+        });
+      } else if (source_type === 'INDIVIDUAL' && individual_donor_id) {
+        await tx.individualDonor.update({
+          where: { id: parseInt(individual_donor_id) },
+          data: { budget_remaining: { decrement: reqBudget } }
+        });
       }
+
+      // 2. Create Project
+      const project = await tx.project.create({
+        data: {
+          project_id,
+          name,
+          budget: reqBudget,
+          budget_remaining: reqBudget,
+          type_of_work,
+          sub_type,
+          source_type,
+          csr_id: csr_id ? parseInt(csr_id) : null,
+          govt_work_order_id: govt_work_order_id ? parseInt(govt_work_order_id) : null,
+          individual_donor_id: individual_donor_id ? parseInt(individual_donor_id) : null,
+          proposal_id,
+          proposal_pdf: proposal_pdf || null,
+          financial_year_id: financial_year_id ? parseInt(financial_year_id) : null,
+          start_date: start_date ? new Date(start_date) : null,
+          end_date: end_date ? new Date(end_date) : null,
+          district_id: final_district_id,
+          taluka_id: final_taluka_id,
+          village_id: final_village_id,
+          created_by: req.user.id
+        }
+      });
+
+      // 3. Log Audit Activity
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: 'Create Project',
+          module: 'Projects',
+          record_id: String(project.id),
+          new_value: `Created project '${name}' (${project_id}) with budget ₹${reqBudget.toLocaleString('en-IN')}`
+        }
+      });
+
+      return project;
     });
 
-    const transaction = await prisma.$transaction([updateSourceQuery, createProjectQuery]);
-    res.json(transaction[1]);
+    res.json(createdProject);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create project', details: error.message });
   }
@@ -236,6 +269,14 @@ router.get('/:id', async (req, res) => {
     });
 
     if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    // Enrich with creator details
+    const creator = await prisma.user.findUnique({
+      where: { id: project.created_by },
+      select: { id: true, name: true, email: true, role: true }
+    });
+    project.creator = creator;
+
     res.json(project);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch project details', details: error.message });

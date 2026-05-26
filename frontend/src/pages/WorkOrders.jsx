@@ -280,7 +280,10 @@ export default function WorkOrders() {
                     <FileCheck2 size={16} /> {w.wo_number}
                   </div>
                 </td>
-                <td style={{fontWeight: 500}}>V{w.version}</td>
+                <td style={{fontWeight: 500}}>
+                  V{w.version}
+                  {w.creator && <><br/><small style={{color:'var(--text-muted)', fontSize: '0.7rem'}}>By: {w.creator.name}</small></>}
+                </td>
                 <td>{w.project.name} <br/><small style={{color:'var(--text-muted)'}}>{w.project.project_id}</small></td>
                 <td>
                   <strong>{w.vendor.company_name}</strong>
@@ -354,7 +357,10 @@ export default function WorkOrders() {
                 <tbody>
                   {selectedHistory.map(h => (
                     <tr key={h.id} style={{ opacity: h.is_active ? 1 : 0.65, background: h.is_active ? 'rgba(79, 70, 229, 0.02)' : 'transparent' }}>
-                      <td style={{fontWeight: 700}}>V{h.version} {h.is_active && <span style={{fontSize: '0.65rem', background: 'var(--primary)', color: 'white', padding: '0.1rem 0.3rem', borderRadius: '4px', marginLeft: '0.25rem'}}>ACTIVE</span>}</td>
+                      <td style={{fontWeight: 700}}>
+                        V{h.version} {h.is_active && <span style={{fontSize: '0.65rem', background: 'var(--primary)', color: 'white', padding: '0.1rem 0.3rem', borderRadius: '4px', marginLeft: '0.25rem'}}>ACTIVE</span>}
+                        {h.creator && <div style={{fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: '0.15rem'}}>By: {h.creator.name}</div>}
+                      </td>
                       <td style={{fontSize: '0.8rem'}}>{new Date(h.created_at).toLocaleString()}</td>
                       <td style={{fontSize: '0.8rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}} title={h.work_description}>{h.work_description}</td>
                       <td style={{fontSize: '0.8rem', fontWeight: 600}}>{h.budget_amount > 0 ? `₹${h.budget_amount.toLocaleString()}` : '—'}</td>
@@ -463,7 +469,9 @@ export default function WorkOrders() {
                   <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
                     WO Ref: <strong>{selectedPrintWo.wo_number}</strong><br />
                     Version: <strong>V{selectedPrintWo.version}</strong><br />
-                    Date: {new Date(selectedPrintWo.created_at).toLocaleDateString()}
+                    Date: {new Date(selectedPrintWo.created_at).toLocaleDateString()}<br />
+                    {selectedPrintWo.creator && <>Issued By: <strong>{selectedPrintWo.creator.name}</strong><br /></>}
+                    {selectedPrintWo.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
                   </p>
                 </div>
               </div>

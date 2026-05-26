@@ -408,3 +408,12 @@ model PurchaseOrder {
 
   invoices          Invoice[]
 }
+
+model UploadedFile {
+  id         Int      @id @default(autoincrement())
+  filename   String   @unique
+  mime_type  String
+  data       Bytes    @db.LongBlob
+  created_at DateTime @default(now())
+}
+
