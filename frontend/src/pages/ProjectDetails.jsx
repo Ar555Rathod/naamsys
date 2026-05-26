@@ -799,6 +799,29 @@ export default function ProjectDetails() {
         {project.purchase_orders && project.purchase_orders.filter(po => po.is_active).map(po => (
           <div key={po.id} style={{ pageBreakBefore: 'always', paddingTop: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', textAlign: 'left' }}>
             
+            {po.duly_signed_url ? (
+              /* ---- UPLOADED SIGNED COPY: Embed the uploaded PDF ---- */
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #4F46E5', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#4F46E5', margin: 0, textTransform: 'uppercase' }}>Duly Signed Purchase Order</h2>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0' }}>
+                      PO Ref: <strong>{po.po_number}</strong> | Version: V{po.version} | Vendor: {po.vendor.company_name}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ color: '#10b981', fontWeight: 800, fontSize: '0.85rem', border: '2.5px solid #10b981', padding: '0.2rem 0.6rem', borderRadius: '4px' }}>SIGNED COPY ATTACHED</span>
+                  </div>
+                </div>
+                <iframe
+                  src={getUploadUrl(po.duly_signed_url)}
+                  title={`Signed PO ${po.po_number}`}
+                  style={{ width: '100%', height: '85vh', border: '1px solid #e2e8f0', borderRadius: '4px' }}
+                />
+              </div>
+            ) : (
+              /* ---- SYSTEM-GENERATED PO TEMPLATE ---- */
+              <>
             {/* Cover Branding Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2.5rem' }}>
               <div>
@@ -911,6 +934,8 @@ export default function ProjectDetails() {
                 <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Audit Comptroller Code</span>
               </div>
             </div>
+              </>
+            )}
 
           </div>
         ))}
@@ -921,6 +946,29 @@ export default function ProjectDetails() {
         {project.work_orders && project.work_orders.filter(wo => wo.is_active).map(wo => (
           <div key={wo.id} style={{ pageBreakBefore: 'always', paddingTop: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', textAlign: 'left' }}>
             
+            {wo.duly_signed_url ? (
+              /* ---- UPLOADED SIGNED COPY: Embed the uploaded PDF ---- */
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #4F46E5', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#4F46E5', margin: 0, textTransform: 'uppercase' }}>Duly Signed Work Order</h2>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0' }}>
+                      WO Ref: <strong>{wo.wo_number}</strong> | Version: V{wo.version} | Vendor: {wo.vendor.company_name}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ color: '#10b981', fontWeight: 800, fontSize: '0.85rem', border: '2.5px solid #10b981', padding: '0.2rem 0.6rem', borderRadius: '4px' }}>SIGNED COPY ATTACHED</span>
+                  </div>
+                </div>
+                <iframe
+                  src={getUploadUrl(wo.duly_signed_url)}
+                  title={`Signed WO ${wo.wo_number}`}
+                  style={{ width: '100%', height: '85vh', border: '1px solid #e2e8f0', borderRadius: '4px' }}
+                />
+              </div>
+            ) : (
+              /* ---- SYSTEM-GENERATED WO TEMPLATE ---- */
+              <>
             {/* Cover Branding Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2.5rem' }}>
               <div>
@@ -1040,6 +1088,8 @@ export default function ProjectDetails() {
                 <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Audit Board Signature Code</span>
               </div>
             </div>
+              </>
+            )}
 
           </div>
         ))}
