@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { FolderKanban, Building, Users, FileText, IndianRupee, Printer, ArrowLeft, Calendar, Landmark, User, FileCheck2, Receipt, Activity, MapPin, UploadCloud } from 'lucide-react';
+import { Users, FileText, Printer, ArrowLeft, Calendar, Landmark, User, FileCheck2, Receipt, Activity, MapPin, UploadCloud } from 'lucide-react';
 import api, { getUploadUrl } from '../api';
 
 export default function ProjectDetails() {
@@ -10,12 +10,7 @@ export default function ProjectDetails() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchProjectDetails();
-    fetchAuditLogs();
-  }, [id]);
-
-  const fetchProjectDetails = async () => {
+  const fetchProjectDetails = useCallback(async () => {
     try {
       const res = await api.get(`/projects/${id}`);
       setProject(res.data);
@@ -26,16 +21,22 @@ export default function ProjectDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
 
-  const fetchAuditLogs = async () => {
+  const fetchAuditLogs = useCallback(async () => {
     try {
       const res = await api.get(`/config/audit-logs?module=Projects&record_id=${id}`);
       setAuditLogs(res.data);
     } catch (err) {
       console.error('Failed to fetch project audit logs', err);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchProjectDetails();
+    fetchAuditLogs();
+  }, [fetchProjectDetails, fetchAuditLogs]);
 
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = React.useRef(null);
@@ -83,10 +84,6 @@ export default function ProjectDetails() {
   // Calculations
   const totalInvoiced = project.invoices
     .filter(i => i.invoice_type === 'TypeA')
-    .reduce((sum, inv) => sum + inv.total_amount, 0);
-  
-  const totalReceivables = project.invoices
-    .filter(i => i.invoice_type !== 'TypeA')
     .reduce((sum, inv) => sum + inv.total_amount, 0);
 
   const budgetUsed = project.budget - project.budget_remaining;
@@ -218,14 +215,14 @@ export default function ProjectDetails() {
               </div>
               <div>
                 <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase' }}>Execution Timeline</span>
-                <span style={{ display: 'block', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <span style={{ display: 'flex', marginTop: '0.2rem', alignItems: 'center', gap: '0.25rem' }}>
                   <Calendar size={13} /> 
                   {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'Start'} - {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'End'}
                 </span>
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
                 <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase' }}>Location Coordinates</span>
-                <span style={{ display: 'block', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <span style={{ display: 'flex', marginTop: '0.2rem', alignItems: 'center', gap: '0.25rem' }}>
                   <MapPin size={13} color="var(--primary)" />
                   Village: {project.village_id || '—'}, Taluka: {project.taluka_id || '—'}, District: {project.district_id || '—'}
                 </span>
@@ -795,6 +792,264 @@ export default function ProjectDetails() {
             <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Executive Board seal</span>
           </div>
         </div>
+
+        {/* ========================================================================= */}
+        {/* PROCUREMENT ORDERS PRINT STACK (LATEST ACTIVE VERSIONS ONLY) */}
+        {/* ========================================================================= */}
+        {project.purchase_orders && project.purchase_orders.filter(po => po.is_active).map(po => (
+          <div key={po.id} style={{ pageBreakBefore: 'always', paddingTop: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', textAlign: 'left' }}>
+            
+            {/* Cover Branding Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2.5rem' }}>
+              <div>
+                <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '-0.025em', margin: 0 }}>NAAM Foundation</h1>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                  Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
+                  Email: finance@naammh.org | Reg: MAH/1196/2015/Pune
+                </p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>PURCHASE ORDER</h2>
+                <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                  PO Ref: <strong>{po.po_number}</strong><br />
+                  Version: <strong>V{po.version}</strong><br />
+                  Date: {new Date(po.created_at).toLocaleDateString()}<br />
+                  {project.creator && <>Issued By: <strong>{project.creator.name}</strong><br /></>}
+                  {po.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
+                </p>
+              </div>
+            </div>
+
+            {/* Order Specifics Info */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem', marginBottom: '2.5rem' }}>
+              <div>
+                <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Supplier / Vendor Details:</h4>
+                <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+                  <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>{po.vendor.company_name}</strong>
+                  <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                    Owner Name: {po.vendor.owner_name}<br />
+                    PAN Card: {po.vendor.pan}<br />
+                    GSTIN: {po.vendor.gst || 'N/A'}<br />
+                    Contact: {po.vendor.owner_contact}
+                  </p>
+                  {po.vendor.address_line1 && (
+                    <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                      Address: {po.vendor.address_line1}, {po.vendor.address_line2}, {po.vendor.address_line3}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Project Context:</h4>
+                <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+                  <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {project.project_id}</strong>
+                  <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                    Name: {project.name}<br />
+                    Type of Operations: {project.type_of_work}<br />
+                    Location: {project.village_id || 'N/A'}, Taluka: {project.taluka_id || 'N/A'}, Dist: {project.district_id || 'N/A'}
+                  </p>
+                  {po.contractor && (
+                    <p style={{ color: '#475569', marginTop: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem', margin: 0 }}>
+                      <strong>Sub-Contractor Hired:</strong> {po.contractor.full_name} ({po.contractor.pan})
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Items Summary Table */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
+                  <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '70%' }}>Description of Supply/Materials Ordered</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '30%' }}>Value Reference</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top', lineHeight: '1.5' }}>
+                    <strong>Material Supply under PO Reference {po.po_number}</strong>
+                    <p style={{ color: '#475569', marginTop: '0.5rem', whiteSpace: 'pre-wrap', margin: 0 }}>
+                      {po.item_details}
+                    </p>
+                  </td>
+                  <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.95rem', fontWeight: 600, color: '#0f172a', verticalAlign: 'top' }}>
+                    ₹{po.total_amount.toLocaleString()}.00
+                  </td>
+                </tr>
+                <tr style={{ borderTop: '2px solid #e2e8f0' }}>
+                  <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>Approved PO Value:</td>
+                  <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.15rem', fontWeight: 800, color: '#4F46E5' }}>
+                    ₹{po.total_amount.toLocaleString()}.00
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Terms */}
+            <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '3.5rem', fontSize: '0.8rem', lineHeight: '1.5' }}>
+              <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem', margin: 0 }}>Standard Delivery Terms:</h4>
+              <p style={{ margin: '0 0 0.5rem', color: '#475569' }}>
+                All supplies must be delivered in full to site locations by <strong>{new Date(po.delivery_date).toLocaleDateString()}</strong>.
+              </p>
+            </div>
+
+            {/* Authorization Signatures */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4rem' }}>
+              <div style={{ textAlign: 'center', width: '220px' }}>
+                <div style={{ borderBottom: '1px solid #cbd5e1', height: '45px', marginBottom: '0.5rem' }}></div>
+                <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, margin: 0 }}>Vendor/Agency Representative</p>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Authorized Signatory</span>
+              </div>
+              <div style={{ textAlign: 'center', width: '220px' }}>
+                <div style={{ borderBottom: '1px solid #cbd5e1', height: '45px', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {po.status === 'Completed' && <span style={{ color: '#10b981', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem', border: '2.5px solid #10b981', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>DULY SIGNED</span>}
+                  {po.status === 'Approved' && <span style={{ color: '#f59e0b', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem', border: '2.5px solid #f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>OFFICIALLY APPROVED</span>}
+                </div>
+                <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, margin: 0 }}>NAAM Foundation Auditor</p>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Audit Comptroller Code</span>
+              </div>
+            </div>
+
+          </div>
+        ))}
+
+        {/* ========================================================================= */}
+        {/* INVOICES PRINT STACK */}
+        {/* ========================================================================= */}
+        {project.invoices && project.invoices.map(inv => (
+          <div key={inv.id} style={{ pageBreakBefore: 'always', paddingTop: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', textAlign: 'left' }}>
+            
+            {/* Header Branding */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #e2e8f0', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+              <div>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#4F46E5', letterSpacing: '-0.025em', textTransform: 'uppercase', margin: 0 }}>NAAM Foundation</h1>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>
+                  Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
+                  Email: finance@naammh.org | Reg: MAH/1196/2015/Pune
+                </p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>INVOICE SHEET</h2>
+                <p style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500, marginTop: '0.25rem' }}>
+                  Invoice Ref: <strong>{inv.invoice_id}</strong><br />
+                  Date: {new Date(inv.invoice_date).toLocaleDateString()}<br />
+                  {inv.creator && <>Generated By: <strong>{inv.creator.name}</strong></>}
+                </p>
+              </div>
+            </div>
+
+            {/* Invoice Specifics Info */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem' }}>
+              <div>
+                <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Billed From (Contractor / Vendor):</h4>
+                {inv.invoice_type === 'TypeA' ? (
+                  <div style={{ fontSize: '0.875rem' }}>
+                    <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{inv.purchase_order?.contractor?.full_name || 'Individual Contractor'}</strong>
+                    <p style={{ color: '#475569', marginTop: '0.25rem', margin: 0 }}>
+                      Under Vendor Agency: {inv.purchase_order?.vendor?.company_name || 'N/A'}<br />
+                      PAN Number: {inv.purchase_order?.contractor?.pan || 'N/A'}<br />
+                      GSTIN: {inv.purchase_order?.vendor?.gst || 'N/A'}<br />
+                      Contact: {inv.purchase_order?.contractor?.contact}
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.875rem' }}>
+                    <strong style={{ fontSize: '1rem', color: '#0f172a' }}>NAAM Foundation</strong>
+                    <p style={{ color: '#475569', marginTop: '0.25rem', margin: 0 }}>
+                      GSTIN: AACTN2388N<br />
+                      TDS status: Exempt (12A / 80G Registered)
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Billed To / Project Context:</h4>
+                <div style={{ fontSize: '0.875rem' }}>
+                  <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {project.project_id}</strong>
+                  <p style={{ color: '#475569', marginTop: '0.25rem', margin: 0 }}>
+                    Name: {project.name}<br />
+                    Type of Work: {project.type_of_work}<br />
+                    Funding Source: {project.source_type} ({inv.invoice_type === 'TypeA' ? 'NAAM Financed' : 'CSR/Govt Receivable'})<br />
+                    {inv.purchase_order && <>Linked Purchase Order: <strong>{inv.purchase_order.po_number} (V{inv.purchase_order.version})</strong></>}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Items Summary Table */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
+                  <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569' }}>Description of Work Done / Supply Delivered</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569' }}>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top' }}>
+                    <strong>{project.type_of_work} Operations</strong>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem', margin: 0 }}>
+                      {inv.invoice_type === 'TypeA' 
+                        ? `Supply and delivery operations completed under Purchase Order ${inv.purchase_order?.po_number || 'N/A'}.`
+                        : `CSR / Govt matching funding call for budget allocation under reference ${project.proposal_id || 'N/A'}.`
+                      }
+                    </p>
+                  </td>
+                  <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.95rem', fontWeight: 500, verticalAlign: 'top' }}>
+                    ₹{inv.subtotal?.toLocaleString() || inv.total_amount?.toLocaleString()}.00
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#64748b' }}>Subtotal:</td>
+                  <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', fontWeight: 500 }}>₹{inv.subtotal?.toLocaleString() || inv.total_amount?.toLocaleString()}.00</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#64748b' }}>Taxes & Deductions:</td>
+                  <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#64748b' }}>₹0.00</td>
+                </tr>
+                <tr style={{ borderTop: '2px solid #e2e8f0' }}>
+                  <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Total Amount Billed:</td>
+                  <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.1rem', fontWeight: 800, color: '#4F46E5' }}>₹{inv.total_amount.toLocaleString()}.00</td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Remittance Bank details */}
+            {inv.invoice_type === 'TypeA' && inv.purchase_order?.vendor?.bank_name && (
+              <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '3rem' }}>
+                <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.75rem', margin: 0 }}>Beneficiary Remittance Bank Details:</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.8rem', marginTop: '0.5rem' }}>
+                  <div>
+                    Bank Name: <strong>{inv.purchase_order.vendor.bank_name}</strong><br />
+                    Branch: <strong>{inv.purchase_order.vendor.branch || 'Pune main'}</strong>
+                  </div>
+                  <div>
+                    Account Number: <strong>{inv.purchase_order.vendor.account_no || '••••••••••••'}</strong><br />
+                    IFSC Code: <strong>{inv.purchase_order.vendor.ifsc || 'SBIN0007339'}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Signatures */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4rem' }}>
+              <div style={{ textAlign: 'center', width: '200px' }}>
+                <div style={{ borderBottom: '1px solid #cbd5e1', height: '40px', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ color: '#10b981', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem' }}>PAID INSTANTLY</span>
+                </div>
+                <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500, margin: 0 }}>Prepared By Operator</p>
+              </div>
+              <div style={{ textAlign: 'center', width: '200px' }}>
+                <div style={{ borderBottom: '1px solid #cbd5e1', height: '40px', marginBottom: '0.5rem' }}></div>
+                <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500, margin: 0 }}>Approved Auditor Signatory</p>
+              </div>
+            </div>
+
+          </div>
+        ))}
 
       </div>
 
