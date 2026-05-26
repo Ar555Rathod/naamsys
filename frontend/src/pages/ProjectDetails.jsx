@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FolderKanban, Building, Users, FileText, IndianRupee, Printer, ArrowLeft, Calendar, Landmark, User, FileCheck2, Receipt, Activity, MapPin } from 'lucide-react';
-import api from '../api';
+import api, { getUploadUrl } from '../api';
 
 export default function ProjectDetails() {
   const { id } = useParams();
@@ -134,7 +134,7 @@ export default function ProjectDetails() {
               {project.proposal_pdf && (
                 <div>
                   <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase' }}>Proposal PDF</span>
-                  <a href={`/uploads/${project.proposal_pdf}`} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: '0.2rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
+                  <a href={getUploadUrl(project.proposal_pdf)} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: '0.2rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
                     📄 {project.proposal_pdf}
                   </a>
                 </div>

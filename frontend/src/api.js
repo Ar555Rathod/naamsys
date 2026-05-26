@@ -25,4 +25,13 @@ api.interceptors.response.use(
   }
 );
 
+export const getUploadUrl = (filename) => {
+  if (!filename) return '';
+  const baseUrl = import.meta.env.VITE_API_URL || '';
+  if (baseUrl.endsWith('/api')) {
+    return `${baseUrl.substring(0, baseUrl.length - 4)}/uploads/${filename}`;
+  }
+  return `/uploads/${filename}`;
+};
+
 export default api;
