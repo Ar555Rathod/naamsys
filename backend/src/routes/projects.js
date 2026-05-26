@@ -283,4 +283,53 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Update a project
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, budget, type_of_work, sub_type, status, proposal_pdf } = req.body;
+    
+    const updated = await prisma.$transaction(async (tx) => {
+      const current = await tx.project.findUnique({ where: { id: parseInt(id) } });
+      if (!current) throw new Error('Project not found');
+
+      const project = await tx.project.update({
+        where: { id: parseInt(id) },
+        data: {
+          name: name !== undefined ? name : current.name,
+          budget: budget !== undefined ? parseFloat(budget) : current.budget,
+          type_of_work: type_of_work !== undefined ? type_of_work : current.type_of_work,
+          sub_type: sub_type !== undefined ? sub_type : current.sub_type,
+          status: status !== undefined ? status : current.status,
+          proposal_pdf: proposal_pdf !== undefined ? proposal_pdf : current.proposal_pdf
+        }
+      });
+
+      // Write AuditLog
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: 'Update Project Details',
+          module: 'Projects',
+          record_id: String(project.id),
+          new_value: `Updated details for project '${project.name}' (${project.project_id})`
+        }
+      });
+
+      return project;
+    });
+
+    // Enrich with creator details
+    const creator = await prisma.user.findUnique({
+      where: { id: updated.created_by },
+      select: { id: true, name: true, email: true, role: true }
+    });
+    updated.creator = creator;
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update project', details: error.message });
+  }
+});
+
 module.exports = router;

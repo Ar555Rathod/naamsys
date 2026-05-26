@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { FolderKanban, Building, Users, FileText, IndianRupee, Printer, ArrowLeft, Calendar, Landmark, User, FileCheck2, Receipt, Activity, MapPin } from 'lucide-react';
+import { FolderKanban, Building, Users, FileText, IndianRupee, Printer, ArrowLeft, Calendar, Landmark, User, FileCheck2, Receipt, Activity, MapPin, UploadCloud } from 'lucide-react';
 import api, { getUploadUrl } from '../api';
 
 export default function ProjectDetails() {
@@ -34,6 +34,39 @@ export default function ProjectDetails() {
       setAuditLogs(res.data);
     } catch (err) {
       console.error('Failed to fetch project audit logs', err);
+    }
+  };
+
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = React.useRef(null);
+
+  const handleUpdatePdf = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    setIsUploading(true);
+
+    try {
+      // 1. Upload file buffer to TiDB database as BLOB
+      const res = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const newFilename = res.data.filename;
+
+      // 2. Put update to project details
+      const updateRes = await api.put(`/projects/${project.id}`, { proposal_pdf: newFilename });
+      setProject(updateRes.data);
+      alert('Project Proposal PDF updated successfully!');
+      
+      // 3. Refresh audit logs timeline
+      fetchAuditLogs();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to upload proposal PDF');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -149,14 +182,40 @@ export default function ProjectDetails() {
                 <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase' }}>Proposal ID</span>
                 <span style={{ display: 'block', marginTop: '0.2rem' }}>{project.proposal_id || '—'}</span>
               </div>
-              {project.proposal_pdf && (
-                <div>
-                  <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase' }}>Proposal PDF</span>
-                  <a href={getUploadUrl(project.proposal_pdf)} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: '0.2rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
-                    📄 {project.proposal_pdf}
-                  </a>
-                </div>
-              )}
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase' }}>Proposal PDF</span>
+                {project.proposal_pdf ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                    <a href={getUploadUrl(project.proposal_pdf)} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '120px' }} title={project.proposal_pdf}>
+                      📄 View Proposal
+                    </a>
+                    <button 
+                      onClick={() => fileInputRef.current?.click()} 
+                      disabled={isUploading}
+                      className="btn" 
+                      style={{ padding: '0.15rem 0.4rem', fontSize: '0.7rem', background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.08)' }}
+                    >
+                      {isUploading ? '...' : 'Update'}
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => fileInputRef.current?.click()} 
+                    disabled={isUploading}
+                    className="btn btn-primary" 
+                    style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', gap: '0.25rem', marginTop: '0.2rem', display: 'flex', alignItems: 'center' }}
+                  >
+                    <UploadCloud size={12} /> {isUploading ? 'Uploading...' : 'Upload PDF'}
+                  </button>
+                )}
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleUpdatePdf} 
+                  accept="application/pdf,image/*" 
+                  style={{ display: 'none' }} 
+                />
+              </div>
               <div>
                 <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase' }}>Execution Timeline</span>
                 <span style={{ display: 'block', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
