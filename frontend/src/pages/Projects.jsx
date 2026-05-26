@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PlusCircle, Search, UploadCloud, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -27,6 +27,31 @@ export default function Projects() {
   const [taluka_id, setTalukaId] = useState('');
   const [village_id, setVillageId] = useState('');
   const [proposal_pdf, setProposalPdf] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    setIsUploading(true);
+
+    try {
+      const res = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setProposalPdf(res.data.filename);
+      alert('Project Proposal PDF uploaded successfully!');
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to upload PDF document');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const [csrs, setCsrs] = useState([]);
   const [govts, setGovts] = useState([]);
@@ -144,6 +169,13 @@ export default function Projects() {
 
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
               <label>Project Proposal Document (PDF) - <span style={{color: 'var(--primary)', fontWeight: 600}}>Optional</span></label>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                accept="application/pdf" 
+                style={{ display: 'none' }} 
+                onChange={handleFileChange} 
+              />
               <div 
                 style={{ 
                   border: '2px dashed var(--primary)', 
@@ -160,11 +192,17 @@ export default function Projects() {
                   transition: 'all 0.2s ease'
                 }}
                 onClick={() => {
-                  const simulatedName = `Project_Proposal_${proposal_id ? proposal_id.replace(/\s+/g, '_') : 'PROP_' + Math.floor(Math.random() * 1000)}.pdf`;
-                  setProposalPdf(simulatedName);
+                  if (!proposal_pdf && !isUploading) {
+                    fileInputRef.current?.click();
+                  }
                 }}
               >
-                {proposal_pdf ? (
+                {isUploading ? (
+                  <>
+                    <UploadCloud size={40} color="var(--primary)" className="animate-pulse" />
+                    <span style={{ fontWeight: 600, color: 'var(--primary)', fontSize: '0.95rem' }}>Uploading project proposal document...</span>
+                  </>
+                ) : proposal_pdf ? (
                   <>
                     <FileText size={40} color="#10b981" />
                     <span style={{ color: '#10b981', fontWeight: 700, fontSize: '0.95rem' }}>✓ Proposal PDF Uploaded Successfully</span>

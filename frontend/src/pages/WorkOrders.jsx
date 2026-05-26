@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PlusCircle, Search, FileCheck2, History, Edit3, CheckCircle, UploadCloud, Printer, XCircle, Building, User, Calendar, FileText } from 'lucide-react';
 import api from '../api';
 
@@ -387,19 +387,39 @@ export default function WorkOrders() {
               <UploadCloud color="var(--primary)" /> Upload Signed Work Order
             </h2>
             <form onSubmit={handleUploadSubmit}>
-              <div className="form-group" style={{ textAlign: 'center', border: '2px dashed var(--primary)', padding: '2.5rem 1.5rem', borderRadius: '12px', background: 'rgba(79, 70, 229, 0.02)', cursor: 'pointer', marginBottom: '1.5rem' }}>
-                <UploadCloud size={48} color="var(--primary)" style={{margin: '0 auto 1rem'}} />
-                <p style={{fontWeight: 500, margin: '0 0 0.25rem'}}>Drag and drop duly signed copy here</p>
-                <small style={{color:'var(--text-muted)', display: 'block'}}>Supports PDF, JPG, PNG up to 10MB</small>
+              <div 
+                className="form-group" 
+                style={{ textAlign: 'center', border: '2px dashed var(--primary)', padding: '2.5rem 1.5rem', borderRadius: '12px', background: 'rgba(79, 70, 229, 0.02)', cursor: 'pointer', marginBottom: '1.5rem' }}
+                onClick={() => {
+                  if (!isUploading) {
+                    fileInputRef.current?.click();
+                  }
+                }}
+              >
                 <input 
-                  type="text" 
-                  value={mockFileName}
-                  onChange={e=>setMockFileName(e.target.value)}
-                  className="input-field"
-                  style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.85rem' }} 
-                  required
-                  placeholder="Simulated Filename"
+                  type="file" 
+                  ref={fileInputRef} 
+                  accept="application/pdf" 
+                  style={{ display: 'none' }} 
+                  onChange={handleFileChange} 
                 />
+                {isUploading ? (
+                  <>
+                    <UploadCloud size={48} color="var(--primary)" className="animate-pulse" style={{margin: '0 auto 1rem'}} />
+                    <p style={{fontWeight: 500, margin: '0 0 0.25rem'}}>Uploading signed copy document...</p>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud size={48} color="var(--primary)" style={{margin: '0 auto 1rem'}} />
+                    <p style={{fontWeight: 500, margin: '0 0 0.25rem'}}>{mockFileName ? '✓ Signed Copy Attached' : 'Drag and drop duly signed copy here or click to browse'}</p>
+                    <small style={{color:'var(--text-muted)', display: 'block'}}>Supports PDF, JPG, PNG up to 10MB</small>
+                  </>
+                )}
+                {mockFileName && (
+                  <div style={{ marginTop: '1rem', background: 'rgba(16, 185, 129, 0.08)', padding: '0.5rem', borderRadius: '6px', border: '1px solid #10b981', color: '#10b981', fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {mockFileName}
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                 <button type="submit" className="btn btn-primary" style={{padding: '0.5rem 1.5rem'}}>Confirm Upload</button>
