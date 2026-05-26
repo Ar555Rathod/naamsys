@@ -313,7 +313,7 @@ export default function WorkOrders() {
                   </div>
                 </td>
                 <td style={{fontWeight: 500}}>
-                  V{w.version}
+                  A{w.version}
                   {w.creator && <><br/><small style={{color:'var(--text-muted)', fontSize: '0.7rem'}}>By: {w.creator.name}</small></>}
                 </td>
                 <td>{w.project.name} <br/><small style={{color:'var(--text-muted)'}}>{w.project.project_id}</small></td>
@@ -350,7 +350,7 @@ export default function WorkOrders() {
                       </button>
                     )}
 
-                    {w.status === 'Approved' && (
+                    {(w.status === 'Approved' || w.status === 'Completed') && (
                       <button onClick={() => handleUploadClick(w)} className="btn" style={{padding: '0.35rem 0.6rem', fontSize: '0.75rem', gap: '0.2rem', background: 'var(--primary)', color: 'white'}} title="Upload Signed Copy">
                         <UploadCloud size={13} /> Sign
                       </button>
@@ -390,7 +390,7 @@ export default function WorkOrders() {
                   {selectedHistory.map(h => (
                     <tr key={h.id} style={{ opacity: h.is_active ? 1 : 0.65, background: h.is_active ? 'rgba(79, 70, 229, 0.02)' : 'transparent' }}>
                       <td style={{fontWeight: 700}}>
-                        V{h.version} {h.is_active && <span style={{fontSize: '0.65rem', background: 'var(--primary)', color: 'white', padding: '0.1rem 0.3rem', borderRadius: '4px', marginLeft: '0.25rem'}}>ACTIVE</span>}
+                        A{h.version} {h.is_active && <span style={{fontSize: '0.65rem', background: 'var(--primary)', color: 'white', padding: '0.1rem 0.3rem', borderRadius: '4px', marginLeft: '0.25rem'}}>ACTIVE</span>}
                         {h.creator && <div style={{fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: '0.15rem'}}>By: {h.creator.name}</div>}
                       </td>
                       <td style={{fontSize: '0.8rem'}}>{new Date(h.created_at).toLocaleString()}</td>
@@ -500,7 +500,7 @@ export default function WorkOrders() {
                   <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>WORK ORDER</h2>
                   <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
                     WO Ref: <strong>{selectedPrintWo.wo_number}</strong><br />
-                    Version: <strong>V{selectedPrintWo.version}</strong><br />
+                    Version: <strong>A{selectedPrintWo.version}</strong><br />
                     Date: {new Date(selectedPrintWo.created_at).toLocaleDateString()}<br />
                     {selectedPrintWo.creator && <>Issued By: <strong>{selectedPrintWo.creator.name}</strong><br /></>}
                     {selectedPrintWo.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
@@ -587,7 +587,7 @@ export default function WorkOrders() {
                   The active operations under this Work Order must be physically executed, reviewed, and finalized by the estimated milestone completion date of <strong>{new Date(selectedPrintWo.completion_date).toLocaleDateString()}</strong>.
                 </p>
                 <p style={{ margin: 0, color: '#64748b', fontSize: '0.75rem' }}>
-                  * This document represents Version V{selectedPrintWo.version} of the assigned work order number {selectedPrintWo.wo_number} under project registration reference {selectedPrintWo.project.project_id}. Any amendments or modifications override previous version codes.
+                  * This document represents Version A{selectedPrintWo.version} of the assigned work order number {selectedPrintWo.wo_number} under project registration reference {selectedPrintWo.project.project_id}. Any amendments or modifications override previous version codes.
                 </p>
               </div>
 

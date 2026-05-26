@@ -57,8 +57,8 @@ export default function ProjectDetails() {
       const newFilename = res.data.filename;
 
       // 2. Put update to project details
-      const updateRes = await api.put(`/projects/${project.id}`, { proposal_pdf: newFilename });
-      setProject(updateRes.data);
+      await api.put(`/projects/${project.id}`, { proposal_pdf: newFilename });
+      await fetchProjectDetails();
       alert('Project Proposal PDF updated successfully!');
       
       // 3. Refresh audit logs timeline
@@ -366,7 +366,7 @@ export default function ProjectDetails() {
                   {project.work_orders.filter(w=>w.is_active).map(w => (
                     <tr key={w.id}>
                       <td style={{fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)'}}>
-                        <Link to="/work-orders" style={{color: 'inherit', textDecoration: 'none'}}>{w.wo_number} (V{w.version})</Link>
+                        <Link to="/work-orders" style={{color: 'inherit', textDecoration: 'none'}}>{w.wo_number} (A{w.version})</Link>
                       </td>
                       <td style={{fontSize: '0.8rem'}}>{w.vendor.company_name}</td>
                       <td style={{fontSize: '0.8rem'}}>{new Date(w.completion_date).toLocaleDateString()}</td>
@@ -403,7 +403,7 @@ export default function ProjectDetails() {
                   {project.purchase_orders.filter(p=>p.is_active).map(p => (
                     <tr key={p.id}>
                       <td style={{fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)'}}>
-                        <Link to="/purchase-orders" style={{color: 'inherit', textDecoration: 'none'}}>{p.po_number} (V{p.version})</Link>
+                        <Link to="/purchase-orders" style={{color: 'inherit', textDecoration: 'none'}}>{p.po_number} (A{p.version})</Link>
                       </td>
                       <td style={{fontSize: '0.8rem'}}>{p.vendor.company_name}</td>
                       <td style={{fontSize: '0.8rem', fontWeight: 600}}>₹{p.total_amount.toLocaleString()}</td>
@@ -706,7 +706,7 @@ export default function ProjectDetails() {
               <tbody>
                 {project.work_orders.map(w => (
                   <tr key={w.id} style={{ borderBottom: '1px solid #e2e8f0', opacity: w.is_active ? 1 : 0.55 }}>
-                    <td style={{ padding: '0.5rem 0.75rem', fontWeight: 700 }}>{w.wo_number} (V{w.version}) {w.is_active ? '' : '(Superseded)'}</td>
+                    <td style={{ padding: '0.5rem 0.75rem', fontWeight: 700 }}>{w.wo_number} (A{w.version}) {w.is_active ? '' : '(Superseded)'}</td>
                     <td style={{ padding: '0.5rem 0.75rem' }}>{w.vendor.company_name}</td>
                     <td style={{ padding: '0.5rem 0.75rem' }}>{new Date(w.completion_date).toLocaleDateString()}</td>
                     <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 600 }}>{w.budget_amount > 0 ? `₹${w.budget_amount.toLocaleString()}` : '—'}</td>
@@ -734,7 +734,7 @@ export default function ProjectDetails() {
               <tbody>
                 {project.purchase_orders.map(p => (
                   <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0', opacity: p.is_active ? 1 : 0.55 }}>
-                    <td style={{ padding: '0.5rem 0.75rem', fontWeight: 700 }}>{p.po_number} (V{p.version}) {p.is_active ? '' : '(Superseded)'}</td>
+                    <td style={{ padding: '0.5rem 0.75rem', fontWeight: 700 }}>{p.po_number} (A{p.version}) {p.is_active ? '' : '(Superseded)'}</td>
                     <td style={{ padding: '0.5rem 0.75rem' }}>{p.vendor.company_name}</td>
                     <td style={{ padding: '0.5rem 0.75rem' }}>{new Date(p.delivery_date).toLocaleDateString()}</td>
                     <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 600 }}>₹{p.total_amount.toLocaleString()}</td>
@@ -806,7 +806,7 @@ export default function ProjectDetails() {
                   <div>
                     <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#4F46E5', margin: 0, textTransform: 'uppercase' }}>Duly Signed Purchase Order</h2>
                     <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0' }}>
-                      PO Ref: <strong>{po.po_number}</strong> | Version: V{po.version} | Vendor: {po.vendor.company_name}
+                      PO Ref: <strong>{po.po_number}</strong> | Version: A{po.version} | Vendor: {po.vendor.company_name}
                     </p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
@@ -835,7 +835,7 @@ export default function ProjectDetails() {
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>PURCHASE ORDER</h2>
                 <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
                   PO Ref: <strong>{po.po_number}</strong><br />
-                  Version: <strong>V{po.version}</strong><br />
+                  Version: <strong>A{po.version}</strong><br />
                   Date: {new Date(po.created_at).toLocaleDateString()}<br />
                   {project.creator && <>Issued By: <strong>{project.creator.name}</strong><br /></>}
                   {po.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
@@ -953,7 +953,7 @@ export default function ProjectDetails() {
                   <div>
                     <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#4F46E5', margin: 0, textTransform: 'uppercase' }}>Duly Signed Work Order</h2>
                     <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0' }}>
-                      WO Ref: <strong>{wo.wo_number}</strong> | Version: V{wo.version} | Vendor: {wo.vendor.company_name}
+                      WO Ref: <strong>{wo.wo_number}</strong> | Version: A{wo.version} | Vendor: {wo.vendor.company_name}
                     </p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
@@ -982,7 +982,7 @@ export default function ProjectDetails() {
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>WORK ORDER</h2>
                 <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
                   WO Ref: <strong>{wo.wo_number}</strong><br />
-                  Version: <strong>V{wo.version}</strong><br />
+                  Version: <strong>A{wo.version}</strong><br />
                   Date: {new Date(wo.created_at).toLocaleDateString()}<br />
                   {project.creator && <>Issued By: <strong>{project.creator.name}</strong><br /></>}
                   {wo.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
@@ -1068,7 +1068,7 @@ export default function ProjectDetails() {
                 The active operations under this Work Order must be physically executed, reviewed, and finalized by the estimated milestone completion date of <strong>{new Date(wo.completion_date).toLocaleDateString()}</strong>.
               </p>
               <p style={{ margin: 0, color: '#64748b', fontSize: '0.75rem' }}>
-                * This document represents Version V{wo.version} of the assigned work order number {wo.wo_number} under project registration reference {project.project_id}. Any amendments or modifications override previous version codes.
+                * This document represents Version A{wo.version} of the assigned work order number {wo.wo_number} under project registration reference {project.project_id}. Any amendments or modifications override previous version codes.
               </p>
             </div>
 
@@ -1152,7 +1152,7 @@ export default function ProjectDetails() {
                     Name: {project.name}<br />
                     Type of Work: {project.type_of_work}<br />
                     Funding Source: {project.source_type} ({inv.invoice_type === 'TypeA' ? 'NAAM Financed' : 'CSR/Govt Receivable'})<br />
-                    {inv.purchase_order && <>Linked Purchase Order: <strong>{inv.purchase_order.po_number} (V{inv.purchase_order.version})</strong></>}
+                    {inv.purchase_order && <>Linked Purchase Order: <strong>{inv.purchase_order.po_number} (A{inv.purchase_order.version})</strong></>}
                   </p>
                 </div>
               </div>
