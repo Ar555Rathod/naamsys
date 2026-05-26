@@ -7,14 +7,28 @@ const router = express.Router();
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+let activeUploadDir = uploadDir;
+
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (err) {
+  console.warn('Local uploads folder is read-only, falling back to /tmp/uploads on Vercel.');
+  activeUploadDir = '/tmp/uploads';
+  if (!fs.existsSync(activeUploadDir)) {
+    try {
+      fs.mkdirSync(activeUploadDir, { recursive: true });
+    } catch (e) {
+      console.error('Failed to create fallback upload directory:', e.message);
+    }
+  }
 }
 
 // Multer Storage Configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir);
+    cb(null, activeUploadDir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);

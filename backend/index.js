@@ -24,8 +24,9 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Serve static uploads folder
+// Serve static uploads folder (both local and Vercel temp fallback)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static('/tmp/uploads'));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
