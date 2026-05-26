@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PlusCircle, Search, FileCheck2, History, Edit3, CheckCircle, UploadCloud, Printer, XCircle, Building, User, Calendar, Receipt } from 'lucide-react';
-import api from '../api';
+import api, { getUploadUrl } from '../api';
 
 export default function PurchaseOrders() {
   const [pos, setPos] = useState([]);
@@ -180,6 +180,12 @@ export default function PurchaseOrders() {
   };
 
   const handlePrint = (po) => {
+    if (po.duly_signed_url) {
+      window.open(getUploadUrl(po.duly_signed_url), '_blank');
+      // Ensure no print preview modal remains open
+      setSelectedPrintPo(null);
+      return;
+    }
     setSelectedPrintPo(po);
     setTimeout(() => {
       window.print();
@@ -349,7 +355,7 @@ export default function PurchaseOrders() {
                       </button>
                     )}
 
-                    {p.status === 'Approved' && (
+                    {(p.status === 'Approved' || p.status === 'Completed') && (
                       <button onClick={() => handleUploadClick(p)} className="btn" style={{padding: '0.35rem 0.6rem', fontSize: '0.75rem', gap: '0.2rem', background: 'var(--primary)', color: 'white'}} title="Upload Signed Copy">
                         <UploadCloud size={13} /> Sign
                       </button>
@@ -468,7 +474,7 @@ export default function PurchaseOrders() {
       )}
 
       {/* PREMIUM HIGH-FIDELITY PRINT PREVIEW MODAL */}
-      {selectedPrintPo && (
+      {selectedPrintPo && !selectedPrintPo.duly_signed_url && (
         <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '800px', maxHeight: '95vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'white' }}>
             

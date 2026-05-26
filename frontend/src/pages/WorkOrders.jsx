@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PlusCircle, Search, FileCheck2, History, Edit3, CheckCircle, UploadCloud, Printer, XCircle, Building, User, Calendar, FileText } from 'lucide-react';
-import api from '../api';
+import api, { getUploadUrl } from '../api';
 
 export default function WorkOrders() {
   const [wos, setWos] = useState([]);
@@ -177,6 +177,10 @@ export default function WorkOrders() {
   };
 
   const handlePrint = (wo) => {
+    if (wo.duly_signed_url) {
+      window.open(getUploadUrl(wo.duly_signed_url), '_blank');
+      return;
+    }
     setSelectedPrintWo(wo);
     setTimeout(() => {
       window.print();
