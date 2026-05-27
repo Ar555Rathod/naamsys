@@ -298,6 +298,10 @@ label {
     color: #1e293b !important;
   }
 
+  .hide-on-print {
+    display: none !important;
+  }
+
   .modal-overlay {
     position: static !important;
     background: transparent !important;

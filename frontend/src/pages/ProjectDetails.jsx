@@ -3,6 +3,12 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Users, FileText, Printer, ArrowLeft, Calendar, Landmark, User, FileCheck2, Receipt, Activity, MapPin, UploadCloud } from 'lucide-react';
 import api, { getUploadUrl } from '../api';
 
+const isImage = (url) => {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.gif') || lower.endsWith('.webp');
+};
+
 export default function ProjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -796,303 +802,361 @@ export default function ProjectDetails() {
         {/* ========================================================================= */}
         {/* PROCUREMENT ORDERS PRINT STACK (LATEST ACTIVE VERSIONS ONLY) */}
         {/* ========================================================================= */}
-        {project.purchase_orders && project.purchase_orders.filter(po => po.is_active).map(po => (
-          <div key={po.id} style={{ pageBreakBefore: 'always', paddingTop: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', textAlign: 'left' }}>
-            
-            {po.duly_signed_url ? (
-              /* ---- UPLOADED SIGNED COPY: Embed the uploaded PDF ---- */
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #4F46E5', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+        {project.purchase_orders && project.purchase_orders.filter(po => po.is_active).map(po => {
+          const hasSigned = !!po.duly_signed_url;
+          return (
+            <React.Fragment key={po.id}>
+              {/* ---- SYSTEM-GENERATED PO TEMPLATE ---- */}
+              <div style={{ pageBreakBefore: 'always', paddingTop: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', textAlign: 'left' }}>
+                {/* Cover Branding Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2.5rem' }}>
                   <div>
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#4F46E5', margin: 0, textTransform: 'uppercase' }}>Duly Signed Purchase Order</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0' }}>
-                      PO Ref: <strong>{po.po_number}</strong> | Version: A{po.version} | Vendor: {po.vendor.company_name}
+                    <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '-0.025em', margin: 0 }}>NAAM Foundation</h1>
+                    <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                      Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
+                      Email: finance@naammh.org | Reg: MAH/1196/2015/Pune
                     </p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <span style={{ color: '#10b981', fontWeight: 800, fontSize: '0.85rem', border: '2.5px solid #10b981', padding: '0.2rem 0.6rem', borderRadius: '4px' }}>SIGNED COPY ATTACHED</span>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>PURCHASE ORDER</h2>
+                    <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                      PO Ref: <strong>{po.po_number}</strong><br />
+                      Version: <strong>A{po.version}</strong><br />
+                      Date: {new Date(po.created_at).toLocaleDateString()}<br />
+                      {project.creator && <>Issued By: <strong>{project.creator.name}</strong><br /></>}
+                      {po.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
+                    </p>
                   </div>
                 </div>
-                <iframe
-                  src={getUploadUrl(po.duly_signed_url)}
-                  title={`Signed PO ${po.po_number}`}
-                  style={{ width: '100%', height: '85vh', border: '1px solid #e2e8f0', borderRadius: '4px' }}
-                />
-              </div>
-            ) : (
-              /* ---- SYSTEM-GENERATED PO TEMPLATE ---- */
-              <>
-            {/* Cover Branding Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2.5rem' }}>
-              <div>
-                <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '-0.025em', margin: 0 }}>NAAM Foundation</h1>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
-                  Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
-                  Email: finance@naammh.org | Reg: MAH/1196/2015/Pune
-                </p>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>PURCHASE ORDER</h2>
-                <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
-                  PO Ref: <strong>{po.po_number}</strong><br />
-                  Version: <strong>A{po.version}</strong><br />
-                  Date: {new Date(po.created_at).toLocaleDateString()}<br />
-                  {project.creator && <>Issued By: <strong>{project.creator.name}</strong><br /></>}
-                  {po.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
-                </p>
-              </div>
-            </div>
 
-            {/* Order Specifics Info */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem', marginBottom: '2.5rem' }}>
-              <div>
-                <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Supplier / Vendor Details:</h4>
-                <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
-                  <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>{po.vendor.company_name}</strong>
-                  <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
-                    Owner Name: {po.vendor.owner_name}<br />
-                    PAN Card: {po.vendor.pan}<br />
-                    GSTIN: {po.vendor.gst || 'N/A'}<br />
-                    Contact: {po.vendor.owner_contact}
+                {/* Order Specifics Info */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem', marginBottom: '2.5rem' }}>
+                  <div>
+                    <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Supplier / Vendor Details:</h4>
+                    <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+                      <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>{po.vendor.company_name}</strong>
+                      <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                        Owner Name: {po.vendor.owner_name}<br />
+                        PAN Card: {po.vendor.pan}<br />
+                        GSTIN: {po.vendor.gst || 'N/A'}<br />
+                        Contact: {po.vendor.owner_contact}
+                      </p>
+                      {po.vendor.address_line1 && (
+                        <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                          Address: {po.vendor.address_line1}, {po.vendor.address_line2}, {po.vendor.address_line3}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Project Context:</h4>
+                    <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+                      <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {project.project_id}</strong>
+                      <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                        Name: {project.name}<br />
+                        Type of Operations: {project.type_of_work}<br />
+                        Location: {project.village_name || project.village_id || 'N/A'}, Taluka: {project.taluka_name || project.taluka_id || 'N/A'}, Dist: {project.district_name || project.district_id || 'N/A'}
+                      </p>
+                      {po.contractor && (
+                        <p style={{ color: '#475569', marginTop: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem', margin: 0 }}>
+                          <strong>Sub-Contractor Hired:</strong> {po.contractor.full_name} ({po.contractor.pan})
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items Summary Table */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem', fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
+                      <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '70%' }}>Description of Supply/Materials Ordered</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '30%' }}>Value Reference</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top', lineHeight: '1.5' }}>
+                        <strong>Material Supply under PO Reference {po.po_number}</strong>
+                        <p style={{ color: '#475569', marginTop: '0.5rem', whiteSpace: 'pre-wrap', margin: 0 }}>
+                          {po.item_details}
+                        </p>
+                      </td>
+                      <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.95rem', fontWeight: 600, color: '#0f172a', verticalAlign: 'top' }}>
+                        ₹{po.total_amount.toLocaleString()}.00
+                      </td>
+                    </tr>
+                    <tr style={{ borderTop: '2px solid #e2e8f0' }}>
+                      <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>Approved PO Value:</td>
+                      <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.15rem', fontWeight: 800, color: '#4F46E5' }}>
+                        ₹{po.total_amount.toLocaleString()}.00
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Terms */}
+                <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '3.5rem', fontSize: '0.8rem', lineHeight: '1.5' }}>
+                  <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem', margin: 0 }}>Standard Delivery Terms:</h4>
+                  <p style={{ margin: '0 0 0.5rem', color: '#475569' }}>
+                    All supplies must be delivered in full to site locations by <strong>{new Date(po.delivery_date).toLocaleDateString()}</strong>.
                   </p>
-                  {po.vendor.address_line1 && (
-                    <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
-                      Address: {po.vendor.address_line1}, {po.vendor.address_line2}, {po.vendor.address_line3}
-                    </p>
+                </div>
+
+                {/* Authorization Signatures */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4rem' }}>
+                  <div style={{ textAlign: 'center', width: '220px' }}>
+                    <div style={{ borderBottom: '1px solid #cbd5e1', height: '45px', marginBottom: '0.5rem' }}></div>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, margin: 0 }}>Vendor/Agency Representative</p>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Authorized Signatory</span>
+                  </div>
+                  <div style={{ textAlign: 'center', width: '220px' }}>
+                    <div style={{ borderBottom: '1px solid #cbd5e1', height: '45px', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {po.status === 'Completed' && <span style={{ color: '#10b981', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem', border: '2.5px solid #10b981', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>DULY SIGNED</span>}
+                      {po.status === 'Approved' && <span style={{ color: '#f59e0b', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem', border: '2.5px solid #f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>OFFICIALLY APPROVED</span>}
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, margin: 0 }}>NAAM Foundation Auditor</p>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Audit Comptroller Code</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ---- UPLOADED SIGNED COPY IF EXISTS ---- */}
+              {hasSigned && (
+                <div style={{ pageBreakBefore: 'always', paddingTop: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', textAlign: 'left' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #4F46E5', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                    <div>
+                      <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#4F46E5', margin: 0, textTransform: 'uppercase' }}>Duly Signed Purchase Order Copy</h2>
+                      <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0' }}>
+                        PO Ref: <strong>{po.po_number}</strong> | Version: A{po.version} | Vendor: {po.vendor.company_name}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ color: '#10b981', fontWeight: 800, fontSize: '0.85rem', border: '2.5px solid #10b981', padding: '0.2rem 0.6rem', borderRadius: '4px' }}>SIGNED COPY ATTACHED</span>
+                    </div>
+                  </div>
+
+                  {isImage(po.duly_signed_url) ? (
+                    <div style={{ textAlign: 'center', width: '100%', border: '1px solid #e2e8f0', padding: '1rem', borderRadius: '8px', background: '#fff' }}>
+                      <img
+                        src={getUploadUrl(po.duly_signed_url)}
+                        alt={`Signed PO ${po.po_number}`}
+                        style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      {/* Premium fallback card for PDF during printing */}
+                      <div style={{ border: '2px dashed #cbd5e1', padding: '2.5rem', borderRadius: '8px', textAlign: 'center', background: '#f8fafc', marginBottom: '2rem' }}>
+                        <FileText size={48} style={{ color: '#4F46E5', marginBottom: '1rem', strokeWidth: 1.5 }} />
+                        <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.5rem 0' }}>Signed PDF Document Attached</h3>
+                        <p style={{ fontSize: '0.875rem', color: '#475569', margin: '0 auto 1.5rem auto', maxWidth: '500px', lineHeight: '1.5' }}>
+                          The verified signed PDF copy of this Purchase Order is stored in the NAAM document system. 
+                          You can scan/click the link below to retrieve or inspect the digital original.
+                        </p>
+                        <a href={getUploadUrl(po.duly_signed_url)} target="_blank" rel="noreferrer" style={{ display: 'inline-block', fontSize: '0.875rem', fontWeight: 600, color: '#4F46E5', textDecoration: 'underline', wordBreak: 'break-all' }}>
+                          {po.duly_signed_url}
+                        </a>
+                      </div>
+                      
+                      {/* The interactive screen iframe */}
+                      <iframe
+                        src={getUploadUrl(po.duly_signed_url)}
+                        title={`Signed PO ${po.po_number}`}
+                        style={{ width: '100%', height: '75vh', border: '1px solid #e2e8f0', borderRadius: '4px' }}
+                        className="hide-on-print"
+                      />
+                    </>
                   )}
                 </div>
-              </div>
-
-              <div>
-                <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Project Context:</h4>
-                <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
-                  <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {project.project_id}</strong>
-                  <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
-                    Name: {project.name}<br />
-                    Type of Operations: {project.type_of_work}<br />
-                    Location: {project.village_name || project.village_id || 'N/A'}, Taluka: {project.taluka_name || project.taluka_id || 'N/A'}, Dist: {project.district_name || project.district_id || 'N/A'}
-                  </p>
-                  {po.contractor && (
-                    <p style={{ color: '#475569', marginTop: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem', margin: 0 }}>
-                      <strong>Sub-Contractor Hired:</strong> {po.contractor.full_name} ({po.contractor.pan})
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Items Summary Table */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem', fontSize: '0.85rem' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
-                  <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '70%' }}>Description of Supply/Materials Ordered</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '30%' }}>Value Reference</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top', lineHeight: '1.5' }}>
-                    <strong>Material Supply under PO Reference {po.po_number}</strong>
-                    <p style={{ color: '#475569', marginTop: '0.5rem', whiteSpace: 'pre-wrap', margin: 0 }}>
-                      {po.item_details}
-                    </p>
-                  </td>
-                  <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.95rem', fontWeight: 600, color: '#0f172a', verticalAlign: 'top' }}>
-                    ₹{po.total_amount.toLocaleString()}.00
-                  </td>
-                </tr>
-                <tr style={{ borderTop: '2px solid #e2e8f0' }}>
-                  <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>Approved PO Value:</td>
-                  <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.15rem', fontWeight: 800, color: '#4F46E5' }}>
-                    ₹{po.total_amount.toLocaleString()}.00
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            {/* Terms */}
-            <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '3.5rem', fontSize: '0.8rem', lineHeight: '1.5' }}>
-              <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem', margin: 0 }}>Standard Delivery Terms:</h4>
-              <p style={{ margin: '0 0 0.5rem', color: '#475569' }}>
-                All supplies must be delivered in full to site locations by <strong>{new Date(po.delivery_date).toLocaleDateString()}</strong>.
-              </p>
-            </div>
-
-            {/* Authorization Signatures */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4rem' }}>
-              <div style={{ textAlign: 'center', width: '220px' }}>
-                <div style={{ borderBottom: '1px solid #cbd5e1', height: '45px', marginBottom: '0.5rem' }}></div>
-                <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, margin: 0 }}>Vendor/Agency Representative</p>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Authorized Signatory</span>
-              </div>
-              <div style={{ textAlign: 'center', width: '220px' }}>
-                <div style={{ borderBottom: '1px solid #cbd5e1', height: '45px', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {po.status === 'Completed' && <span style={{ color: '#10b981', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem', border: '2.5px solid #10b981', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>DULY SIGNED</span>}
-                  {po.status === 'Approved' && <span style={{ color: '#f59e0b', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem', border: '2.5px solid #f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>OFFICIALLY APPROVED</span>}
-                </div>
-                <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, margin: 0 }}>NAAM Foundation Auditor</p>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Audit Comptroller Code</span>
-              </div>
-            </div>
-              </>
-            )}
-
-          </div>
-        ))}
+              )}
+            </React.Fragment>
+          );
+        })}
 
         {/* ========================================================================= */}
         {/* WORK ORDERS PRINT STACK (LATEST ACTIVE VERSIONS ONLY) */}
         {/* ========================================================================= */}
-        {project.work_orders && project.work_orders.filter(wo => wo.is_active).map(wo => (
-          <div key={wo.id} style={{ pageBreakBefore: 'always', paddingTop: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', textAlign: 'left' }}>
-            
-            {wo.duly_signed_url ? (
-              /* ---- UPLOADED SIGNED COPY: Embed the uploaded PDF ---- */
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #4F46E5', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+        {project.work_orders && project.work_orders.filter(wo => wo.is_active).map(wo => {
+          const hasSigned = !!wo.duly_signed_url;
+          return (
+            <React.Fragment key={wo.id}>
+              {/* ---- SYSTEM-GENERATED WO TEMPLATE ---- */}
+              <div style={{ pageBreakBefore: 'always', paddingTop: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', textAlign: 'left' }}>
+                {/* Cover Branding Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2.5rem' }}>
                   <div>
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#4F46E5', margin: 0, textTransform: 'uppercase' }}>Duly Signed Work Order</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0' }}>
-                      WO Ref: <strong>{wo.wo_number}</strong> | Version: A{wo.version} | Vendor: {wo.vendor.company_name}
+                    <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '-0.025em', margin: 0 }}>NAAM Foundation</h1>
+                    <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                      Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
+                      Email: operations@naammh.org | Reg: MAH/1196/2015/Pune
                     </p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <span style={{ color: '#10b981', fontWeight: 800, fontSize: '0.85rem', border: '2.5px solid #10b981', padding: '0.2rem 0.6rem', borderRadius: '4px' }}>SIGNED COPY ATTACHED</span>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>WORK ORDER</h2>
+                    <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                      WO Ref: <strong>{wo.wo_number}</strong><br />
+                      Version: <strong>A{wo.version}</strong><br />
+                      Date: {new Date(wo.created_at).toLocaleDateString()}<br />
+                      {project.creator && <>Issued By: <strong>{project.creator.name}</strong><br /></>}
+                      {wo.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
+                    </p>
                   </div>
                 </div>
-                <iframe
-                  src={getUploadUrl(wo.duly_signed_url)}
-                  title={`Signed WO ${wo.wo_number}`}
-                  style={{ width: '100%', height: '85vh', border: '1px solid #e2e8f0', borderRadius: '4px' }}
-                />
-              </div>
-            ) : (
-              /* ---- SYSTEM-GENERATED WO TEMPLATE ---- */
-              <>
-            {/* Cover Branding Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2.5rem' }}>
-              <div>
-                <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '-0.025em', margin: 0 }}>NAAM Foundation</h1>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
-                  Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
-                  Email: operations@naammh.org | Reg: MAH/1196/2015/Pune
-                </p>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>WORK ORDER</h2>
-                <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
-                  WO Ref: <strong>{wo.wo_number}</strong><br />
-                  Version: <strong>A{wo.version}</strong><br />
-                  Date: {new Date(wo.created_at).toLocaleDateString()}<br />
-                  {project.creator && <>Issued By: <strong>{project.creator.name}</strong><br /></>}
-                  {wo.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
-                </p>
-              </div>
-            </div>
 
-            {/* Order Specifics Info */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem', marginBottom: '2.5rem' }}>
-              <div>
-                <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Contracted Vendor (Agency):</h4>
-                <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
-                  <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>{wo.vendor.company_name}</strong>
-                  <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
-                    Owner: {wo.vendor.owner_name}<br />
-                    PAN Card: {wo.vendor.pan}<br />
-                    GSTIN: {wo.vendor.gst || 'N/A'}<br />
-                    Remittance Contact: {wo.vendor.owner_contact}
+                {/* Order Specifics Info */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem', marginBottom: '2.5rem' }}>
+                  <div>
+                    <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Contracted Vendor (Agency):</h4>
+                    <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+                      <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>{wo.vendor.company_name}</strong>
+                      <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                        Owner: {wo.vendor.owner_name}<br />
+                        PAN Card: {wo.vendor.pan}<br />
+                        GSTIN: {wo.vendor.gst || 'N/A'}<br />
+                        Remittance Contact: {wo.vendor.owner_contact}
+                      </p>
+                      {wo.vendor.address_line1 ? (
+                        <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                          Address: {wo.vendor.address_line1}, {wo.vendor.address_line2}, {wo.vendor.address_line3}
+                        </p>
+                      ) : wo.vendor.owner_address && (
+                        <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>Address: {wo.vendor.owner_address}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Project & Sub-Contractor Context:</h4>
+                    <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+                      <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {project.project_id}</strong>
+                      <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                        Name: {project.name}<br />
+                        Type of Operations: {project.type_of_work}<br />
+                        Location: {project.village_name || project.village_id || 'N/A'}, Taluka: {project.taluka_name || project.taluka_id || 'N/A'}, Dist: {project.district_name || project.district_id || 'N/A'}
+                      </p>
+                      {wo.contractor && (
+                        <p style={{ color: '#475569', marginTop: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem', margin: 0 }}>
+                          <strong>Sub-Contractor Hired:</strong> {wo.contractor.full_name} ({wo.contractor.pan})
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items Summary Table */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem', fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
+                      <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '70%' }}>Description of Assigned Work Scope</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '30%' }}>Value Reference</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top', lineHeight: '1.5' }}>
+                        <strong>Operations under Work Order Reference {wo.wo_number}</strong>
+                        <p style={{ color: '#475569', marginTop: '0.5rem', whiteSpace: 'pre-wrap', margin: 0 }}>
+                          {wo.work_description}
+                        </p>
+                      </td>
+                      <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.95rem', fontWeight: 600, color: '#0f172a', verticalAlign: 'top' }}>
+                        {wo.budget_amount > 0 ? `₹${wo.budget_amount.toLocaleString()}.00` : 'No direct financial cost'}
+                      </td>
+                    </tr>
+                    {wo.budget_amount > 0 && (
+                      <tr style={{ borderTop: '2px solid #e2e8f0' }}>
+                        <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>Approved Contract Value:</td>
+                        <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.15rem', fontWeight: 800, color: '#4F46E5' }}>
+                          ₹{wo.budget_amount.toLocaleString()}.00
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+
+                {/* Delivery and Schedule Terms */}
+                <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '3.5rem', fontSize: '0.8rem', lineHeight: '1.5' }}>
+                  <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem', margin: 0 }}>Standard Delivery Terms & Completion Milestone:</h4>
+                  <p style={{ margin: '0 0 0.5rem', color: '#475569' }}>
+                    The active operations under this Work Order must be physically executed, reviewed, and finalized by the estimated milestone completion date of <strong>{new Date(wo.completion_date).toLocaleDateString()}</strong>.
                   </p>
-                  {wo.vendor.address_line1 ? (
-                    <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
-                      Address: {wo.vendor.address_line1}, {wo.vendor.address_line2}, {wo.vendor.address_line3}
-                    </p>
-                  ) : wo.vendor.owner_address && (
-                    <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>Address: {wo.vendor.owner_address}</p>
+                  <p style={{ margin: 0, color: '#64748b', fontSize: '0.75rem' }}>
+                    * This document represents Version A{wo.version} of the assigned work order number {wo.wo_number} under project registration reference {project.project_id}. Any amendments or modifications override previous version codes.
+                  </p>
+                </div>
+
+                {/* Authorization Signatures */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4rem' }}>
+                  <div style={{ textAlign: 'center', width: '220px' }}>
+                    <div style={{ borderBottom: '1px solid #cbd5e1', height: '45px', marginBottom: '0.5rem' }}></div>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, margin: 0 }}>Contractor / Vendor Representative</p>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Authorized Acceptor Signatory</span>
+                  </div>
+                  <div style={{ textAlign: 'center', width: '220px' }}>
+                    <div style={{ borderBottom: '1px solid #cbd5e1', height: '45px', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {wo.status === 'Completed' && <span style={{ color: '#10b981', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem', display: 'inline-block', transform: 'rotate(-4deg)', border: '2.5px solid #10b981', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>DULY SIGNED</span>}
+                      {wo.status === 'Approved' && <span style={{ color: '#f59e0b', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem', display: 'inline-block', transform: 'rotate(-4deg)', border: '2.5px solid #f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>OFFICIALLY APPROVED</span>}
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, margin: 0 }}>NAAM Foundation Auditor</p>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Audit Board Signature Code</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ---- UPLOADED SIGNED COPY IF EXISTS ---- */}
+              {hasSigned && (
+                <div style={{ pageBreakBefore: 'always', paddingTop: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', textAlign: 'left' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #4F46E5', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                    <div>
+                      <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#4F46E5', margin: 0, textTransform: 'uppercase' }}>Duly Signed Work Order Copy</h2>
+                      <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0' }}>
+                        WO Ref: <strong>{wo.wo_number}</strong> | Version: A{wo.version} | Vendor: {wo.vendor.company_name}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ color: '#10b981', fontWeight: 800, fontSize: '0.85rem', border: '2.5px solid #10b981', padding: '0.2rem 0.6rem', borderRadius: '4px' }}>SIGNED COPY ATTACHED</span>
+                    </div>
+                  </div>
+
+                  {isImage(wo.duly_signed_url) ? (
+                    <div style={{ textAlign: 'center', width: '100%', border: '1px solid #e2e8f0', padding: '1rem', borderRadius: '8px', background: '#fff' }}>
+                      <img
+                        src={getUploadUrl(wo.duly_signed_url)}
+                        alt={`Signed WO ${wo.wo_number}`}
+                        style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      {/* Premium fallback card for PDF during printing */}
+                      <div style={{ border: '2px dashed #cbd5e1', padding: '2.5rem', borderRadius: '8px', textAlign: 'center', background: '#f8fafc', marginBottom: '2rem' }}>
+                        <FileText size={48} style={{ color: '#4F46E5', marginBottom: '1rem', strokeWidth: 1.5 }} />
+                        <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.5rem 0' }}>Signed PDF Document Attached</h3>
+                        <p style={{ fontSize: '0.875rem', color: '#475569', margin: '0 auto 1.5rem auto', maxWidth: '500px', lineHeight: '1.5' }}>
+                          The verified signed PDF copy of this Work Order is stored in the NAAM document system. 
+                          You can scan/click the link below to retrieve or inspect the digital original.
+                        </p>
+                        <a href={getUploadUrl(wo.duly_signed_url)} target="_blank" rel="noreferrer" style={{ display: 'inline-block', fontSize: '0.875rem', fontWeight: 600, color: '#4F46E5', textDecoration: 'underline', wordBreak: 'break-all' }}>
+                          {wo.duly_signed_url}
+                        </a>
+                      </div>
+                      
+                      {/* The interactive screen iframe */}
+                      <iframe
+                        src={getUploadUrl(wo.duly_signed_url)}
+                        title={`Signed WO ${wo.wo_number}`}
+                        style={{ width: '100%', height: '75vh', border: '1px solid #e2e8f0', borderRadius: '4px' }}
+                        className="hide-on-print"
+                      />
+                    </>
                   )}
                 </div>
-              </div>
-
-              <div>
-                <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Project & Sub-Contractor Context:</h4>
-                <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
-                  <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {project.project_id}</strong>
-                  <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
-                    Name: {project.name}<br />
-                    Type of Operations: {project.type_of_work}<br />
-                    Location: {project.village_name || project.village_id || 'N/A'}, Taluka: {project.taluka_name || project.taluka_id || 'N/A'}, Dist: {project.district_name || project.district_id || 'N/A'}
-                  </p>
-                  {wo.contractor && (
-                    <p style={{ color: '#475569', marginTop: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem', margin: 0 }}>
-                      <strong>Sub-Contractor Hired:</strong> {wo.contractor.full_name} ({wo.contractor.pan})
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Items Summary Table */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem', fontSize: '0.85rem' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
-                  <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '70%' }}>Description of Assigned Work Scope</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '30%' }}>Value Reference</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top', lineHeight: '1.5' }}>
-                    <strong>Operations under Work Order Reference {wo.wo_number}</strong>
-                    <p style={{ color: '#475569', marginTop: '0.5rem', whiteSpace: 'pre-wrap', margin: 0 }}>
-                      {wo.work_description}
-                    </p>
-                  </td>
-                  <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.95rem', fontWeight: 600, color: '#0f172a', verticalAlign: 'top' }}>
-                    {wo.budget_amount > 0 ? `₹${wo.budget_amount.toLocaleString()}.00` : 'No direct financial cost'}
-                  </td>
-                </tr>
-                {wo.budget_amount > 0 && (
-                  <tr style={{ borderTop: '2px solid #e2e8f0' }}>
-                    <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>Approved Contract Value:</td>
-                    <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.15rem', fontWeight: 800, color: '#4F46E5' }}>
-                      ₹{wo.budget_amount.toLocaleString()}.00
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-
-            {/* Delivery and Schedule Terms */}
-            <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '3.5rem', fontSize: '0.8rem', lineHeight: '1.5' }}>
-              <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem', margin: 0 }}>Standard Delivery Terms & Completion Milestone:</h4>
-              <p style={{ margin: '0 0 0.5rem', color: '#475569' }}>
-                The active operations under this Work Order must be physically executed, reviewed, and finalized by the estimated milestone completion date of <strong>{new Date(wo.completion_date).toLocaleDateString()}</strong>.
-              </p>
-              <p style={{ margin: 0, color: '#64748b', fontSize: '0.75rem' }}>
-                * This document represents Version A{wo.version} of the assigned work order number {wo.wo_number} under project registration reference {project.project_id}. Any amendments or modifications override previous version codes.
-              </p>
-            </div>
-
-            {/* Authorization Signatures */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4rem' }}>
-              <div style={{ textAlign: 'center', width: '220px' }}>
-                <div style={{ borderBottom: '1px solid #cbd5e1', height: '45px', marginBottom: '0.5rem' }}></div>
-                <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, margin: 0 }}>Contractor / Vendor Representative</p>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Authorized Acceptor Signatory</span>
-              </div>
-              <div style={{ textAlign: 'center', width: '220px' }}>
-                <div style={{ borderBottom: '1px solid #cbd5e1', height: '45px', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {wo.status === 'Completed' && <span style={{ color: '#10b981', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem', display: 'inline-block', transform: 'rotate(-4deg)', border: '2.5px solid #10b981', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>DULY SIGNED</span>}
-                  {wo.status === 'Approved' && <span style={{ color: '#f59e0b', fontStyle: 'italic', fontWeight: 800, fontSize: '0.85rem', display: 'inline-block', transform: 'rotate(-4deg)', border: '2.5px solid #f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>OFFICIALLY APPROVED</span>}
-                </div>
-                <p style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, margin: 0 }}>NAAM Foundation Auditor</p>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Audit Board Signature Code</span>
-              </div>
-            </div>
-              </>
-            )}
-
-          </div>
-        ))}
+              )}
+            </React.Fragment>
+          );
+        })}
 
         {/* ========================================================================= */}
         {/* INVOICES PRINT STACK */}
