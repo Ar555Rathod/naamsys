@@ -39,7 +39,7 @@ router.post('/', async (req, res) => {
       owner_name, owner_contact, owner_address, 
       address_line1, address_line2, address_line3,
       machine_details, operator_details,
-      bank_name, account_no, ifsc, project_ids
+      bank_name, account_no, ifsc, branch, project_ids
     } = req.body;
 
     const count = await prisma.vendor.count() + 1;
@@ -54,7 +54,7 @@ router.post('/', async (req, res) => {
         owner_address: owner_address || [address_line1, address_line2, address_line3].filter(Boolean).join(', '),
         address_line1, address_line2, address_line3,
         machine_details, operator_details,
-        bank_name, account_no, ifsc,
+        bank_name, account_no, ifsc, branch,
         created_by: req.user.id
       }
     });
@@ -95,7 +95,7 @@ router.post('/contractors', async (req, res) => {
     const { 
       full_name, pan, aadhaar, contact, address,
       address_line1, address_line2, address_line3,
-      bank_name, account_no, ifsc,
+      bank_name, account_no, ifsc, branch,
       vendor_id, project_id
     } = req.body;
 
@@ -115,7 +115,7 @@ router.post('/contractors', async (req, res) => {
         pan, aadhaar, contact,
         address: address || [address_line1, address_line2, address_line3].filter(Boolean).join(', '),
         address_line1, address_line2, address_line3,
-        bank_name, account_no, ifsc,
+        bank_name, account_no, ifsc, branch,
         created_by: req.user.id
       }
     });
@@ -177,7 +177,7 @@ router.put('/:id', async (req, res) => {
       owner_name, owner_contact, owner_address, 
       address_line1, address_line2, address_line3,
       machine_details, operator_details,
-      bank_name, account_no, ifsc
+      bank_name, account_no, ifsc, branch
     } = req.body;
 
     const updated = await prisma.vendor.update({
@@ -189,7 +189,7 @@ router.put('/:id', async (req, res) => {
         owner_address: owner_address || [address_line1, address_line2, address_line3].filter(Boolean).join(', '),
         address_line1, address_line2, address_line3,
         machine_details, operator_details,
-        bank_name, account_no, ifsc
+        bank_name, account_no, ifsc, branch
       }
     });
 
@@ -237,7 +237,7 @@ router.put('/contractors/:id', async (req, res) => {
     const { 
       full_name, pan, aadhaar, contact, address,
       address_line1, address_line2, address_line3,
-      bank_name, account_no, ifsc,
+      bank_name, account_no, ifsc, branch,
       vendor_id, project_id
     } = req.body;
 
@@ -248,7 +248,7 @@ router.put('/contractors/:id', async (req, res) => {
         pan, aadhaar, contact,
         address: address || [address_line1, address_line2, address_line3].filter(Boolean).join(', '),
         address_line1, address_line2, address_line3,
-        bank_name, account_no, ifsc
+        bank_name, account_no, ifsc, branch
       }
     });
 

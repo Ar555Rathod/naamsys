@@ -174,7 +174,7 @@ export default function Finance() {
   };
 
   const getRemittanceBankDetails = (inv) => {
-    const vendorObj = inv.purchase_order?.vendor || inv.vendor;
+    const vendorObj = inv.purchase_order?.vendor || inv.vendor || inv.contractor;
     if (vendorObj && vendorObj.bank_name) {
       return {
         bankName: vendorObj.bank_name,
@@ -635,7 +635,7 @@ export default function Finance() {
                     <th style={{ padding: '0.6rem 0.4rem', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr. No.</th>
                     <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name (Vendor/Contractor)</th>
                     <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>PAN Number</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Bank Name</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Bank Name & Branch</th>
                     <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Account Number</th>
                     <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>IFSC Code</th>
                     <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice ID</th>
@@ -650,7 +650,10 @@ export default function Finance() {
                         <td style={{ padding: '0.6rem 0.4rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
                         <td style={{ padding: '0.6rem 0.4rem', fontWeight: 600, color: '#0f172a', border: '1px solid #e2e8f0' }}>{getRemittanceBeneficiaryName(inv)}</td>
                         <td style={{ padding: '0.6rem 0.4rem', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.pan || 'N/A'}</td>
-                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0' }}>{bank?.bankName || 'N/A'}</td>
+                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0' }}>
+                          <strong>{bank?.bankName || 'N/A'}</strong>
+                          {bank?.branch && <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Branch: {bank.branch}</div>}
+                        </td>
                         <td style={{ padding: '0.6rem 0.4rem', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.accountNo || 'N/A'}</td>
                         <td style={{ padding: '0.6rem 0.4rem', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.ifsc || 'N/A'}</td>
                         <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0', color: '#64748b' }}>{inv.invoice_id}</td>

@@ -37,6 +37,7 @@ export default function Vendors() {
   const [machine_details, setMachineDetails] = useState('');
   const [operator_details, setOperatorDetails] = useState('');
   const [bank_name, setBankName] = useState('');
+  const [branch, setBranch] = useState('');
   const [account_no, setAccountNo] = useState('');
   const [ifsc, setIfsc] = useState('');
 
@@ -49,6 +50,7 @@ export default function Vendors() {
   const [contractor_address_line2, setContractorAddressLine2] = useState('');
   const [contractor_address_line3, setContractorAddressLine3] = useState('');
   const [contractor_bank, setContractorBank] = useState('');
+  const [contractor_branch, setContractorBranch] = useState('');
   const [contractor_account, setContractorAccount] = useState('');
   const [contractor_ifsc, setContractorIfsc] = useState('');
   const [selectedVendorId, setSelectedVendorId] = useState('');
@@ -95,7 +97,7 @@ export default function Vendors() {
       const payload = {
         company_name, pan, aadhaar, gst, owner_name, owner_contact,
         address_line1, address_line2, address_line3,
-        machine_details, operator_details, bank_name, account_no, ifsc
+        machine_details, operator_details, bank_name, account_no, ifsc, branch
       };
 
       if (isEditing) {
@@ -128,6 +130,7 @@ export default function Vendors() {
         address_line2: contractor_address_line2,
         address_line3: contractor_address_line3,
         bank_name: contractor_bank,
+        branch: contractor_branch,
         account_no: contractor_account,
         ifsc: contractor_ifsc,
         vendor_id: selectedVendorId,
@@ -160,12 +163,12 @@ export default function Vendors() {
     // Reset vendor form
     setCompanyName(''); setPan(''); setAadhaar(''); setGst(''); setOwnerName(''); setOwnerContact('');
     setAddressLine1(''); setAddressLine2(''); setAddressLine3('');
-    setMachineDetails(''); setOperatorDetails(''); setBankName(''); setAccountNo(''); setIfsc('');
+    setMachineDetails(''); setOperatorDetails(''); setBankName(''); setBranch(''); setAccountNo(''); setIfsc('');
     
     // Reset contractor form
     setContractorName(''); setContractorPan(''); setContractorAadhaar(''); setContractorContact('');
     setContractorAddressLine1(''); setContractorAddressLine2(''); setContractorAddressLine3('');
-    setContractorBank(''); setContractorAccount(''); setContractorIfsc('');
+    setContractorBank(''); setContractorBranch(''); setContractorAccount(''); setContractorIfsc('');
     setSelectedVendorId(''); setSelectedProjectId('');
   };
 
@@ -185,6 +188,7 @@ export default function Vendors() {
     setMachineDetails(v.machine_details || '');
     setOperatorDetails(v.operator_details || '');
     setBankName(v.bank_name || '');
+    setBranch(v.branch || '');
     setAccountNo(v.account_no || '');
     setIfsc(v.ifsc || '');
     setShowForm(true);
@@ -202,6 +206,7 @@ export default function Vendors() {
     setContractorAddressLine2(c.address_line2 || '');
     setContractorAddressLine3(c.address_line3 || '');
     setContractorBank(c.bank_name || '');
+    setContractorBranch(c.branch || '');
     setContractorAccount(c.account_no || '');
     setContractorIfsc(c.ifsc || '');
     
@@ -305,6 +310,10 @@ export default function Vendors() {
                   <input type="text" value={bank_name} onChange={e=>setBankName(e.target.value)} className="input-field" required />
                 </div>
                 <div className="form-group">
+                  <label>Bank Branch</label>
+                  <input type="text" value={branch} onChange={e=>setBranch(e.target.value)} className="input-field" placeholder="e.g. Pune Main" />
+                </div>
+                <div className="form-group">
                   <label>Account Number</label>
                   <input type="text" value={account_no} onChange={e=>setAccountNo(e.target.value)} className="input-field" required />
                 </div>
@@ -369,6 +378,10 @@ export default function Vendors() {
                 <div className="form-group">
                   <label>Bank Name</label>
                   <input type="text" value={contractor_bank} onChange={e=>setContractorBank(e.target.value)} className="input-field" required />
+                </div>
+                <div className="form-group">
+                  <label>Bank Branch</label>
+                  <input type="text" value={contractor_branch} onChange={e=>setContractorBranch(e.target.value)} className="input-field" placeholder="e.g. Pune Main" />
                 </div>
                 <div className="form-group">
                   <label>Account Number</label>
@@ -577,6 +590,10 @@ export default function Vendors() {
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Beneficiary Bank: </span>
                     <strong>{selectedVendor.bank_name || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Bank Branch: </span>
+                    <strong>{selectedVendor.branch || 'N/A'}</strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Account Number: </span>
@@ -926,6 +943,10 @@ export default function Vendors() {
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Beneficiary Bank: </span>
                     <strong>{selectedContractor.bank_name || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Bank Branch: </span>
+                    <strong>{selectedContractor.branch || 'N/A'}</strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Account Number: </span>
