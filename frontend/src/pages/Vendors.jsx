@@ -7,6 +7,8 @@ export default function Vendors() {
   const [showForm, setShowForm] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [selectedContractor, setSelectedContractor] = useState(null);
+  const [showAllVendorInvoices, setShowAllVendorInvoices] = useState(false);
+  const [showAllContractorInvoices, setShowAllContractorInvoices] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
   
@@ -500,7 +502,7 @@ export default function Vendors() {
       {/* VENDOR DETAIL MODAL */}
       {selectedVendor && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card)', padding: '2.5rem', position: 'relative' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '1100px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card)', padding: '2.5rem', position: 'relative' }}>
             
             <button 
               onClick={() => setSelectedVendor(null)} 
@@ -610,23 +612,32 @@ export default function Vendors() {
 
             {/* Linked Purchase Orders, Work Orders, and Invoices */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Receipt size={16} color="var(--primary)" /> Financial Statements & Timeline
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Receipt size={18} color="var(--primary)" /> Financial Statements & Timeline
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 {/* Purchase Orders */}
-                <div>
-                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Approved Purchase Orders:</h4>
+                <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', color: 'var(--text-main)', marginBottom: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Approved Purchase Orders</span>
+                    <span className="badge badge-info" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
+                      {selectedVendor.purchase_orders?.filter(po => po.is_active && (po.status === 'Approved' || po.status === 'Completed')).length || 0} Total
+                    </span>
+                  </h4>
                   {(!selectedVendor.purchase_orders || selectedVendor.purchase_orders.filter(po => po.is_active && (po.status === 'Approved' || po.status === 'Completed')).length === 0) ? (
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>No approved POs issued.</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, padding: '0.5rem 0' }}>No approved POs issued.</p>
                   ) : (
-                    <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
-                      <table className="data-table" style={{ margin: 0, fontSize: '0.75rem' }}>
+                    <div style={{ overflowX: 'auto', width: '100%', maxHeight: '250px' }}>
+                      <table className="data-table" style={{ margin: 0, fontSize: '0.8rem', width: '100%' }}>
                         <thead>
-                          <tr style={{ background: 'rgba(0,0,0,0.01)' }}>
-                            <th style={{ padding: '0.4rem' }}>PO Ref</th>
-                            <th style={{ padding: '0.4rem', textAlign: 'right' }}>Amount</th>
-                            <th style={{ padding: '0.4rem' }}>Status</th>
+                          <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                            <th>PO Ref</th>
+                            <th>Created Date</th>
+                            <th>Project ID & Name</th>
+                            <th>Material / Item Details</th>
+                            <th>Delivery Date</th>
+                            <th style={{ textAlign: 'right' }}>Total Amount</th>
+                            <th>Status</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -640,10 +651,25 @@ export default function Vendors() {
                                 className="clickable-row-hover"
                                 title="Click to view and print PO"
                               >
-                                <td style={{ padding: '0.4rem', fontWeight: 600, color: 'var(--primary)' }}>{po.po_number}</td>
-                                <td style={{ padding: '0.4rem', textAlign: 'right', fontWeight: 500 }}>₹{po.total_amount.toLocaleString()}</td>
-                                <td style={{ padding: '0.4rem' }}>
-                                  <span className={po.status === 'Completed' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem' }}>{po.status}</span>
+                                <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{po.po_number}</td>
+                                <td>{new Date(po.created_at).toLocaleDateString()}</td>
+                                <td>
+                                  {po.project ? (
+                                    <div>
+                                      <strong style={{ color: 'var(--text-main)' }}>{po.project.project_id}</strong>
+                                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {po.project.name}
+                                      </div>
+                                    </div>
+                                  ) : 'N/A'}
+                                </td>
+                                <td style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={po.item_details}>
+                                  {po.item_details || 'N/A'}
+                                </td>
+                                <td>{po.delivery_date ? new Date(po.delivery_date).toLocaleDateString() : 'N/A'}</td>
+                                <td style={{ textAlign: 'right', fontWeight: 600 }}>₹{po.total_amount.toLocaleString('en-IN')}.00</td>
+                                <td>
+                                  <span className={po.status === 'Completed' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>{po.status}</span>
                                 </td>
                               </tr>
                             ))}
@@ -654,18 +680,27 @@ export default function Vendors() {
                 </div>
 
                 {/* Work Orders */}
-                <div>
-                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Approved Work Orders:</h4>
+                <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', color: 'var(--text-main)', marginBottom: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Approved Work Orders</span>
+                    <span className="badge badge-info" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
+                      {selectedVendor.work_orders?.filter(wo => wo.is_active && (wo.status === 'Approved' || wo.status === 'Completed')).length || 0} Total
+                    </span>
+                  </h4>
                   {(!selectedVendor.work_orders || selectedVendor.work_orders.filter(wo => wo.is_active && (wo.status === 'Approved' || wo.status === 'Completed')).length === 0) ? (
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>No approved WOs issued.</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, padding: '0.5rem 0' }}>No approved WOs issued.</p>
                   ) : (
-                    <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
-                      <table className="data-table" style={{ margin: 0, fontSize: '0.75rem' }}>
+                    <div style={{ overflowX: 'auto', width: '100%', maxHeight: '250px' }}>
+                      <table className="data-table" style={{ margin: 0, fontSize: '0.8rem', width: '100%' }}>
                         <thead>
-                          <tr style={{ background: 'rgba(0,0,0,0.01)' }}>
-                            <th style={{ padding: '0.4rem' }}>WO Ref</th>
-                            <th style={{ padding: '0.4rem', textAlign: 'right' }}>Est. Value</th>
-                            <th style={{ padding: '0.4rem' }}>Status</th>
+                          <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                            <th>WO Ref</th>
+                            <th>Created Date</th>
+                            <th>Project ID & Name</th>
+                            <th>Work Description</th>
+                            <th>Completion Date</th>
+                            <th style={{ textAlign: 'right' }}>Est. Value</th>
+                            <th>Status</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -679,10 +714,25 @@ export default function Vendors() {
                                 className="clickable-row-hover"
                                 title="Click to view and print WO"
                               >
-                                <td style={{ padding: '0.4rem', fontWeight: 600, color: 'var(--primary)' }}>{wo.wo_number}</td>
-                                <td style={{ padding: '0.4rem', textAlign: 'right', fontWeight: 500 }}>₹{wo.budget_amount.toLocaleString()}</td>
-                                <td style={{ padding: '0.4rem' }}>
-                                  <span className={wo.status === 'Completed' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem' }}>{wo.status}</span>
+                                <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{wo.wo_number}</td>
+                                <td>{new Date(wo.created_at).toLocaleDateString()}</td>
+                                <td>
+                                  {wo.project ? (
+                                    <div>
+                                      <strong style={{ color: 'var(--text-main)' }}>{wo.project.project_id}</strong>
+                                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {wo.project.name}
+                                      </div>
+                                    </div>
+                                  ) : 'N/A'}
+                                </td>
+                                <td style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={wo.work_description}>
+                                  {wo.work_description || 'N/A'}
+                                </td>
+                                <td>{wo.completion_date ? new Date(wo.completion_date).toLocaleDateString() : 'N/A'}</td>
+                                <td style={{ textAlign: 'right', fontWeight: 600 }}>₹{wo.budget_amount.toLocaleString('en-IN')}.00</td>
+                                <td>
+                                  <span className={wo.status === 'Completed' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>{wo.status}</span>
                                 </td>
                               </tr>
                             ))}
@@ -693,40 +743,98 @@ export default function Vendors() {
                 </div>
 
                 {/* Invoices */}
-                <div>
-                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Billed Invoices:</h4>
-                  {!selectedVendor.invoices || selectedVendor.invoices.length === 0 ? (
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>No invoices generated yet.</p>
-                  ) : (
-                    <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
-                      <table className="data-table" style={{ margin: 0, fontSize: '0.75rem' }}>
-                        <thead>
-                          <tr style={{ background: 'rgba(0,0,0,0.01)' }}>
-                            <th style={{ padding: '0.4rem' }}>Invoice Ref</th>
-                            <th style={{ padding: '0.4rem', textAlign: 'right' }}>Total Amount</th>
-                            <th style={{ padding: '0.4rem' }}>Payment</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedVendor.invoices.map(inv => (
-                            <tr 
-                              key={inv.id} 
-                              style={{ cursor: 'pointer' }} 
-                              onClick={() => handlePreviewItem('Invoice', inv)}
-                              className="clickable-row-hover"
-                              title="Click to view and print Invoice"
-                            >
-                              <td style={{ padding: '0.4rem', fontWeight: 600, color: 'var(--primary)' }}>{inv.invoice_id}</td>
-                              <td style={{ padding: '0.4rem', textAlign: 'right', fontWeight: 500 }}>₹{inv.total_amount.toLocaleString()}</td>
-                              <td style={{ padding: '0.4rem' }}>
-                                <span className={inv.payment_status === 'Paid' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem' }}>{inv.payment_status}</span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem' }}>
+                  {(() => {
+                    const displayedVendorInvoices = selectedVendor.invoices?.filter(inv => {
+                      if (showAllVendorInvoices) return true;
+                      return inv.payment_status === 'Pending';
+                    }) || [];
+                    return (
+                      <>
+                        <h4 style={{ fontSize: '0.95rem', color: 'var(--text-main)', marginBottom: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span>Billed Invoices</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '0.2rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setShowAllVendorInvoices(false); }} 
+                                className="btn" 
+                                style={{ padding: '0.15rem 0.5rem', fontSize: '0.7rem', background: !showAllVendorInvoices ? 'var(--primary)' : 'transparent', color: !showAllVendorInvoices ? 'white' : 'var(--text-muted)', borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+                              >
+                                Pending Only
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setShowAllVendorInvoices(true); }} 
+                                className="btn" 
+                                style={{ padding: '0.15rem 0.5rem', fontSize: '0.7rem', background: showAllVendorInvoices ? 'var(--primary)' : 'transparent', color: showAllVendorInvoices ? 'white' : 'var(--text-muted)', borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+                              >
+                                All Invoices
+                              </button>
+                            </div>
+                            <span className="badge badge-info" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
+                              {displayedVendorInvoices.length} {showAllVendorInvoices ? 'Total' : 'Pending'}
+                            </span>
+                          </div>
+                        </h4>
+                        {displayedVendorInvoices.length === 0 ? (
+                          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, padding: '0.5rem 0' }}>
+                            {showAllVendorInvoices ? 'No invoices generated yet.' : 'No pending invoices.'}
+                          </p>
+                        ) : (
+                          <div style={{ overflowX: 'auto', width: '100%', maxHeight: '250px' }}>
+                            <table className="data-table" style={{ margin: 0, fontSize: '0.8rem', width: '100%' }}>
+                              <thead>
+                                <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                                  <th>Invoice Ref</th>
+                                  <th>Invoice Date</th>
+                                  <th>Project ID & Name</th>
+                                  <th style={{ textAlign: 'right' }}>Subtotal</th>
+                                  <th style={{ textAlign: 'right' }}>GST</th>
+                                  <th style={{ textAlign: 'right' }}>TDS</th>
+                                  <th style={{ textAlign: 'right' }}>Net Total</th>
+                                  <th>Payment Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {displayedVendorInvoices.map(inv => (
+                                  <tr 
+                                    key={inv.id} 
+                                    style={{ cursor: 'pointer' }} 
+                                    onClick={() => handlePreviewItem('Invoice', inv)}
+                                    className="clickable-row-hover"
+                                    title="Click to view and print Invoice"
+                                  >
+                                    <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{inv.invoice_id}</td>
+                                    <td>{new Date(inv.invoice_date).toLocaleDateString()}</td>
+                                    <td>
+                                      {inv.project ? (
+                                        <div>
+                                          <strong style={{ color: 'var(--text-main)' }}>{inv.project.project_id}</strong>
+                                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {inv.project.name}
+                                          </div>
+                                        </div>
+                                      ) : 'N/A'}
+                                    </td>
+                                    <td style={{ textAlign: 'right' }}>₹{inv.subtotal.toLocaleString('en-IN')}.00</td>
+                                    <td style={{ textAlign: 'right', color: '#10b981' }}>
+                                      {inv.gst_rate > 0 ? `₹${inv.gst_amount.toLocaleString('en-IN')} (${inv.gst_rate}%)` : '₹0.00'}
+                                    </td>
+                                    <td style={{ textAlign: 'right', color: '#ef4444' }}>
+                                      {inv.tds_rate > 0 ? `₹${inv.tds_amount.toLocaleString('en-IN')} (${inv.tds_rate}%)` : '₹0.00'}
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontWeight: 700 }}>₹{inv.total_amount.toLocaleString('en-IN')}.00</td>
+                                    <td>
+                                      <span className={inv.payment_status === 'Paid' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>{inv.payment_status}</span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -756,7 +864,7 @@ export default function Vendors() {
       {/* CONTRACTOR DETAIL MODAL */}
       {selectedContractor && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card)', padding: '2.5rem', position: 'relative' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '1100px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card)', padding: '2.5rem', position: 'relative' }}>
             
             <button 
               onClick={() => setSelectedContractor(null)} 
@@ -862,23 +970,32 @@ export default function Vendors() {
 
             {/* Orders and Billing timeline */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Receipt size={16} color="var(--primary)" /> Billing & Claims Ledger
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Receipt size={18} color="var(--primary)" /> Billing & Claims Ledger
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 {/* Purchase Orders */}
-                <div>
-                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Approved Purchase Orders:</h4>
+                <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', color: 'var(--text-main)', marginBottom: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Approved Purchase Orders</span>
+                    <span className="badge badge-info" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
+                      {selectedContractor.purchase_orders?.filter(po => po.is_active && (po.status === 'Approved' || po.status === 'Completed')).length || 0} Total
+                    </span>
+                  </h4>
                   {(!selectedContractor.purchase_orders || selectedContractor.purchase_orders.filter(po => po.is_active && (po.status === 'Approved' || po.status === 'Completed')).length === 0) ? (
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>No approved PO assignments found.</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, padding: '0.5rem 0' }}>No approved POs issued.</p>
                   ) : (
-                    <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
-                      <table className="data-table" style={{ margin: 0, fontSize: '0.75rem' }}>
+                    <div style={{ overflowX: 'auto', width: '100%', maxHeight: '250px' }}>
+                      <table className="data-table" style={{ margin: 0, fontSize: '0.8rem', width: '100%' }}>
                         <thead>
-                          <tr style={{ background: 'rgba(0,0,0,0.01)' }}>
-                            <th style={{ padding: '0.4rem' }}>PO Ref</th>
-                            <th style={{ padding: '0.4rem', textAlign: 'right' }}>Amount</th>
-                            <th style={{ padding: '0.4rem' }}>Status</th>
+                          <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                            <th>PO Ref</th>
+                            <th>Created Date</th>
+                            <th>Project ID & Name</th>
+                            <th>Material / Item Details</th>
+                            <th>Delivery Date</th>
+                            <th style={{ textAlign: 'right' }}>Total Amount</th>
+                            <th>Status</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -892,10 +1009,25 @@ export default function Vendors() {
                                 className="clickable-row-hover"
                                 title="Click to view and print PO"
                               >
-                                <td style={{ padding: '0.4rem', fontWeight: 600, color: 'var(--primary)' }}>{po.po_number}</td>
-                                <td style={{ padding: '0.4rem', textAlign: 'right', fontWeight: 500 }}>₹{po.total_amount.toLocaleString()}</td>
-                                <td style={{ padding: '0.4rem' }}>
-                                  <span className={po.status === 'Completed' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem' }}>{po.status}</span>
+                                <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{po.po_number}</td>
+                                <td>{new Date(po.created_at).toLocaleDateString()}</td>
+                                <td>
+                                  {po.project ? (
+                                    <div>
+                                      <strong style={{ color: 'var(--text-main)' }}>{po.project.project_id}</strong>
+                                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {po.project.name}
+                                      </div>
+                                    </div>
+                                  ) : 'N/A'}
+                                </td>
+                                <td style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={po.item_details}>
+                                  {po.item_details || 'N/A'}
+                                </td>
+                                <td>{po.delivery_date ? new Date(po.delivery_date).toLocaleDateString() : 'N/A'}</td>
+                                <td style={{ textAlign: 'right', fontWeight: 600 }}>₹{po.total_amount.toLocaleString('en-IN')}.00</td>
+                                <td>
+                                  <span className={po.status === 'Completed' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>{po.status}</span>
                                 </td>
                               </tr>
                             ))}
@@ -906,18 +1038,27 @@ export default function Vendors() {
                 </div>
 
                 {/* Work Orders */}
-                <div>
-                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Approved Work Orders:</h4>
+                <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', color: 'var(--text-main)', marginBottom: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Approved Work Orders</span>
+                    <span className="badge badge-info" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
+                      {selectedContractor.work_orders?.filter(wo => wo.is_active && (wo.status === 'Approved' || wo.status === 'Completed')).length || 0} Total
+                    </span>
+                  </h4>
                   {(!selectedContractor.work_orders || selectedContractor.work_orders.filter(wo => wo.is_active && (wo.status === 'Approved' || wo.status === 'Completed')).length === 0) ? (
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>No approved WO assignments found.</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, padding: '0.5rem 0' }}>No approved WOs issued.</p>
                   ) : (
-                    <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
-                      <table className="data-table" style={{ margin: 0, fontSize: '0.75rem' }}>
+                    <div style={{ overflowX: 'auto', width: '100%', maxHeight: '250px' }}>
+                      <table className="data-table" style={{ margin: 0, fontSize: '0.8rem', width: '100%' }}>
                         <thead>
-                          <tr style={{ background: 'rgba(0,0,0,0.01)' }}>
-                            <th style={{ padding: '0.4rem' }}>WO Ref</th>
-                            <th style={{ padding: '0.4rem', textAlign: 'right' }}>Est. Value</th>
-                            <th style={{ padding: '0.4rem' }}>Status</th>
+                          <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                            <th>WO Ref</th>
+                            <th>Created Date</th>
+                            <th>Project ID & Name</th>
+                            <th>Work Description</th>
+                            <th>Completion Date</th>
+                            <th style={{ textAlign: 'right' }}>Est. Value</th>
+                            <th>Status</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -931,10 +1072,25 @@ export default function Vendors() {
                                 className="clickable-row-hover"
                                 title="Click to view and print WO"
                               >
-                                <td style={{ padding: '0.4rem', fontWeight: 600, color: 'var(--primary)' }}>{wo.wo_number}</td>
-                                <td style={{ padding: '0.4rem', textAlign: 'right', fontWeight: 500 }}>₹{wo.budget_amount.toLocaleString()}</td>
-                                <td style={{ padding: '0.4rem' }}>
-                                  <span className={wo.status === 'Completed' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem' }}>{wo.status}</span>
+                                <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{wo.wo_number}</td>
+                                <td>{new Date(wo.created_at).toLocaleDateString()}</td>
+                                <td>
+                                  {wo.project ? (
+                                    <div>
+                                      <strong style={{ color: 'var(--text-main)' }}>{wo.project.project_id}</strong>
+                                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {wo.project.name}
+                                      </div>
+                                    </div>
+                                  ) : 'N/A'}
+                                </td>
+                                <td style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={wo.work_description}>
+                                  {wo.work_description || 'N/A'}
+                                </td>
+                                <td>{wo.completion_date ? new Date(wo.completion_date).toLocaleDateString() : 'N/A'}</td>
+                                <td style={{ textAlign: 'right', fontWeight: 600 }}>₹{wo.budget_amount.toLocaleString('en-IN')}.00</td>
+                                <td>
+                                  <span className={wo.status === 'Completed' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>{wo.status}</span>
                                 </td>
                               </tr>
                             ))}
@@ -945,40 +1101,98 @@ export default function Vendors() {
                 </div>
 
                 {/* Invoices */}
-                <div>
-                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Invoices Filed:</h4>
-                  {!selectedContractor.invoices || selectedContractor.invoices.length === 0 ? (
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>No invoices billed yet.</p>
-                  ) : (
-                    <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
-                      <table className="data-table" style={{ margin: 0, fontSize: '0.75rem' }}>
-                        <thead>
-                          <tr style={{ background: 'rgba(0,0,0,0.01)' }}>
-                            <th style={{ padding: '0.4rem' }}>Invoice Ref</th>
-                            <th style={{ padding: '0.4rem', textAlign: 'right' }}>Total Amount</th>
-                            <th style={{ padding: '0.4rem' }}>Payment</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedContractor.invoices.map(inv => (
-                            <tr 
-                              key={inv.id} 
-                              style={{ cursor: 'pointer' }} 
-                              onClick={() => handlePreviewItem('Invoice', inv)}
-                              className="clickable-row-hover"
-                              title="Click to view and print Invoice"
-                            >
-                              <td style={{ padding: '0.4rem', fontWeight: 600, color: 'var(--primary)' }}>{inv.invoice_id}</td>
-                              <td style={{ padding: '0.4rem', textAlign: 'right', fontWeight: 500 }}>₹{inv.total_amount.toLocaleString()}</td>
-                              <td style={{ padding: '0.4rem' }}>
-                                <span className={inv.payment_status === 'Paid' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem' }}>{inv.payment_status}</span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem' }}>
+                  {(() => {
+                    const displayedContractorInvoices = selectedContractor.invoices?.filter(inv => {
+                      if (showAllContractorInvoices) return true;
+                      return inv.payment_status === 'Pending';
+                    }) || [];
+                    return (
+                      <>
+                        <h4 style={{ fontSize: '0.95rem', color: 'var(--text-main)', marginBottom: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span>Invoices Filed</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '0.2rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setShowAllContractorInvoices(false); }} 
+                                className="btn" 
+                                style={{ padding: '0.15rem 0.5rem', fontSize: '0.7rem', background: !showAllContractorInvoices ? 'var(--primary)' : 'transparent', color: !showAllContractorInvoices ? 'white' : 'var(--text-muted)', borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+                              >
+                                Pending Only
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setShowAllContractorInvoices(true); }} 
+                                className="btn" 
+                                style={{ padding: '0.15rem 0.5rem', fontSize: '0.7rem', background: showAllContractorInvoices ? 'var(--primary)' : 'transparent', color: showAllContractorInvoices ? 'white' : 'var(--text-muted)', borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+                              >
+                                All Invoices
+                              </button>
+                            </div>
+                            <span className="badge badge-info" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
+                              {displayedContractorInvoices.length} {showAllContractorInvoices ? 'Total' : 'Pending'}
+                            </span>
+                          </div>
+                        </h4>
+                        {displayedContractorInvoices.length === 0 ? (
+                          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, padding: '0.5rem 0' }}>
+                            {showAllContractorInvoices ? 'No invoices billed yet.' : 'No pending invoices.'}
+                          </p>
+                        ) : (
+                          <div style={{ overflowX: 'auto', width: '100%', maxHeight: '250px' }}>
+                            <table className="data-table" style={{ margin: 0, fontSize: '0.8rem', width: '100%' }}>
+                              <thead>
+                                <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                                  <th>Invoice Ref</th>
+                                  <th>Invoice Date</th>
+                                  <th>Project ID & Name</th>
+                                  <th style={{ textAlign: 'right' }}>Subtotal</th>
+                                  <th style={{ textAlign: 'right' }}>GST</th>
+                                  <th style={{ textAlign: 'right' }}>TDS</th>
+                                  <th style={{ textAlign: 'right' }}>Net Total</th>
+                                  <th>Payment Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {displayedContractorInvoices.map(inv => (
+                                  <tr 
+                                    key={inv.id} 
+                                    style={{ cursor: 'pointer' }} 
+                                    onClick={() => handlePreviewItem('Invoice', inv)}
+                                    className="clickable-row-hover"
+                                    title="Click to view and print Invoice"
+                                  >
+                                    <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{inv.invoice_id}</td>
+                                    <td>{new Date(inv.invoice_date).toLocaleDateString()}</td>
+                                    <td>
+                                      {inv.project ? (
+                                        <div>
+                                          <strong style={{ color: 'var(--text-main)' }}>{inv.project.project_id}</strong>
+                                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {inv.project.name}
+                                          </div>
+                                        </div>
+                                      ) : 'N/A'}
+                                    </td>
+                                    <td style={{ textAlign: 'right' }}>₹{inv.subtotal.toLocaleString('en-IN')}.00</td>
+                                    <td style={{ textAlign: 'right', color: '#10b981' }}>
+                                      {inv.gst_rate > 0 ? `₹${inv.gst_amount.toLocaleString('en-IN')} (${inv.gst_rate}%)` : '₹0.00'}
+                                    </td>
+                                    <td style={{ textAlign: 'right', color: '#ef4444' }}>
+                                      {inv.tds_rate > 0 ? `₹${inv.tds_amount.toLocaleString('en-IN')} (${inv.tds_rate}%)` : '₹0.00'}
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontWeight: 700 }}>₹{inv.total_amount.toLocaleString('en-IN')}.00</td>
+                                    <td>
+                                      <span className={inv.payment_status === 'Paid' ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>{inv.payment_status}</span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
