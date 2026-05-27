@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PlusCircle, Search, FileCheck2, History, Edit3, CheckCircle, UploadCloud, Printer, XCircle, Building, User, Calendar, FileText } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import api, { getUploadUrl } from '../api';
 
 export default function WorkOrders() {
+  const location = useLocation();
   const [wos, setWos] = useState([]);
   const [projects, setProjects] = useState([]);
   const [vendors, setVendors] = useState([]);
@@ -41,6 +43,15 @@ export default function WorkOrders() {
     fetchWos();
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.selectedId && wos.length > 0) {
+      const found = wos.find(w => w.id === location.state.selectedId);
+      if (found) {
+        setSelectedPrintWo(found);
+      }
+    }
+  }, [location.state, wos]);
 
   const fetchWos = async () => {
     try {

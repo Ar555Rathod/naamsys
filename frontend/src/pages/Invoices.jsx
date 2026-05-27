@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Search, Receipt, Printer, XCircle } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import api from '../api';
 
 export default function Invoices() {
+  const location = useLocation();
   const [showForm, setShowForm] = useState(false);
   const [invoices, setInvoices] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -34,6 +36,15 @@ export default function Invoices() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (location.state?.selectedId && invoices.length > 0) {
+      const found = invoices.find(inv => inv.id === location.state.selectedId);
+      if (found) {
+        setSelectedInvoice(found);
+      }
+    }
+  }, [location.state, invoices]);
 
   const fetchData = async () => {
     try {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Users, FileText, Printer, ArrowLeft, Calendar, Landmark, User, FileCheck2, Receipt, Activity, MapPin, UploadCloud } from 'lucide-react';
 import api, { getUploadUrl } from '../api';
 
@@ -364,9 +364,9 @@ export default function ProjectDetails() {
                 </thead>
                 <tbody>
                   {project.work_orders.filter(w=>w.is_active).map(w => (
-                    <tr key={w.id} onClick={() => navigate('/work-orders')} style={{cursor: 'pointer'}} title="Click to view Work Orders">
+                    <tr key={w.id} onClick={() => navigate('/work-orders', { state: { selectedId: w.id } })} style={{cursor: 'pointer'}} title="Click to view Work Order details">
                       <td style={{fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)'}}>
-                        <Link to="/work-orders" style={{color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px'}}>{w.wo_number} (A{w.version})</Link>
+                        <span style={{color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px'}}>{w.wo_number} (A{w.version})</span>
                       </td>
                       <td style={{fontSize: '0.8rem'}}>{w.vendor.company_name}</td>
                       <td style={{fontSize: '0.8rem'}}>{new Date(w.completion_date).toLocaleDateString()}</td>
@@ -401,9 +401,9 @@ export default function ProjectDetails() {
                 </thead>
                 <tbody>
                   {project.purchase_orders.filter(p=>p.is_active).map(p => (
-                    <tr key={p.id} onClick={() => navigate('/purchase-orders')} style={{cursor: 'pointer'}} title="Click to view Purchase Orders">
+                    <tr key={p.id} onClick={() => navigate('/purchase-orders', { state: { selectedId: p.id } })} style={{cursor: 'pointer'}} title="Click to view Purchase Order details">
                       <td style={{fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)'}}>
-                        <Link to="/purchase-orders" style={{color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px'}}>{p.po_number} (A{p.version})</Link>
+                        <span style={{color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px'}}>{p.po_number} (A{p.version})</span>
                       </td>
                       <td style={{fontSize: '0.8rem'}}>{p.vendor.company_name}</td>
                       <td style={{fontSize: '0.8rem', fontWeight: 600}}>₹{p.total_amount.toLocaleString()}</td>
@@ -441,9 +441,9 @@ export default function ProjectDetails() {
               </thead>
               <tbody>
                 {project.invoices.map(inv => (
-                  <tr key={inv.id} onClick={() => navigate('/invoices')} style={{cursor: 'pointer'}} title="Click to view Invoices">
+                  <tr key={inv.id} onClick={() => navigate('/invoices', { state: { selectedId: inv.id } })} style={{cursor: 'pointer'}} title="Click to view Invoice details">
                     <td style={{fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)'}}>
-                      <Link to="/invoices" style={{color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px'}}>{inv.invoice_id}</Link>
+                      <span style={{color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px'}}>{inv.invoice_id}</span>
                     </td>
                     <td style={{fontSize: '0.8rem'}}>
                       {inv.invoice_type === 'TypeA' ? (

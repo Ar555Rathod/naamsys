@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PlusCircle, Search, FileCheck2, History, Edit3, CheckCircle, UploadCloud, Printer, XCircle, Building, User, Calendar, Receipt } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import api, { getUploadUrl } from '../api';
 
 export default function PurchaseOrders() {
+  const location = useLocation();
   const [pos, setPos] = useState([]);
   const [projects, setProjects] = useState([]);
   const [vendors, setVendors] = useState([]);
@@ -64,6 +66,15 @@ export default function PurchaseOrders() {
     fetchPos();
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.selectedId && pos.length > 0) {
+      const found = pos.find(p => p.id === location.state.selectedId);
+      if (found) {
+        setSelectedPrintPo(found);
+      }
+    }
+  }, [location.state, pos]);
 
   const fetchPos = async () => {
     try {
