@@ -293,7 +293,6 @@ router.put('/working-sheets/:id/approve', requireAdmin, async (req, res) => {
         where: { id: { in: approved_invoice_ids } },
         data: {
           payment_status: 'Paid',
-          amount_paid: { dbrandom_placeholder_todo: 0 }, // Wait, Prisma doesn't support relative sets, we'll loop or set total_amount manually
           payment_date: new Date()
         }
       });
