@@ -17,9 +17,22 @@ export default function Invoices() {
   const [vendor_id, setVendorId] = useState('');
   const [contractor_id, setContractorId] = useState('');
   const [total_amount, setTotalAmount] = useState('');
+  const [gst_rate, setGstRate] = useState('0');
+  const [tds_rate, setTdsRate] = useState('0');
+  const [userRole, setUserRole] = useState('Operator');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchData();
+    const token = localStorage.getItem('naam_token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(payload.role || 'Operator');
+      } catch (e) {
+        console.error(e);
+      }
+    }
   }, []);
 
   const fetchData = async () => {
@@ -44,10 +57,16 @@ export default function Invoices() {
         vendor_id: vendor_id || null,
         contractor_id: contractor_id || null,
         subtotal: total_amount,
-        total_amount
+        gst_rate: parseFloat(gst_rate) || 0,
+        tds_rate: parseFloat(tds_rate) || 0
       });
       setShowForm(false);
-      setTotalAmount(''); setPurchaseOrderId(''); setVendorId(''); setContractorId('');
+      setTotalAmount('');
+      setPurchaseOrderId('');
+      setVendorId('');
+      setContractorId('');
+      setGstRate('0');
+      setTdsRate('0');
       fetchData();
       alert('Invoice processed successfully!');
     } catch (err) {
@@ -55,6 +74,26 @@ export default function Invoices() {
         alert(err.response.data.error);
       } else {
         alert('Failed to process invoice');
+      }
+    }
+  };
+
+  const handleToggleStatus = async (invoiceId, newStatus) => {
+    try {
+      const confirmToggle = window.confirm(`Are you sure you want to change payment status to ${newStatus}? This will trigger project budget adjustments.`);
+      if (!confirmToggle) return;
+
+      await api.put(`/invoices/${invoiceId}/payment-status`, {
+        payment_status: newStatus
+      });
+      alert(`Invoice status successfully updated to ${newStatus}!`);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      if (err.response && err.response.data && err.response.data.error) {
+        alert(err.response.data.error);
+      } else {
+        alert('Failed to update payment status');
       }
     }
   };
@@ -84,12 +123,27 @@ export default function Invoices() {
 
   const modalDetails = getInvoiceDetails(selectedInvoice);
 
+  // Dynamic calculations for preview in form
+  const baseAmount = parseFloat(total_amount) || 0;
+  const gRate = parseFloat(gst_rate) || 0;
+  const tRate = parseFloat(tds_rate) || 0;
+  const gstAmount = baseAmount * (gRate / 100);
+  const tdsAmount = baseAmount * (tRate / 100);
+  const calculatedNetTotal = baseAmount - tdsAmount + gstAmount;
+
+  // Filter invoices based on search
+  const filteredInvoices = invoices.filter(inv => {
+    const term = searchQuery.toLowerCase();
+    const invIdStr = String(inv.invoice_id).toLowerCase();
+    const projIdStr = String(inv.project?.project_id || '').toLowerCase();
+    const vendorName = String(inv.purchase_order?.vendor?.company_name || inv.vendor?.company_name || '').toLowerCase();
+    return invIdStr.includes(term) || projIdStr.includes(term) || vendorName.includes(term);
+  });
+
   return (
     <div className="main-content">
-
-
       <div className="page-header no-print">
-        <h1 className="page-title">Invoice Engine</h1>
+        <h1 className="page-title">Invoice Ledger</h1>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
           <PlusCircle size={18} /> {showForm ? 'Cancel' : 'Generate Invoice'}
         </button>
@@ -102,7 +156,7 @@ export default function Invoices() {
             <div className="form-group">
               <label>Invoice Type</label>
               <select value={invoice_type} onChange={e=>setInvoiceType(e.target.value)} className="input-field">
-                <option value="TypeA">Type A (Payable to Contractor)</option>
+                <option value="TypeA">Type A (Payable to Contractor/Vendor)</option>
                 <option value="TypeB">Type B/C (Receivable from CSR/Govt)</option>
               </select>
             </div>
@@ -129,7 +183,7 @@ export default function Invoices() {
                   }} className="input-field" required>
                     <option value="">-- Select Completed PO --</option>
                     {purchaseOrders.filter(p => p.project_id.toString() === project_id.toString()).map(p => (
-                      <option key={p.id} value={p.id}>{p.po_number} (V{p.version}) - ₹{p.total_amount.toLocaleString()}</option>
+                      <option key={p.id} value={p.id}>{p.po_number} (A{p.version}) - ₹{p.total_amount.toLocaleString()}</option>
                     ))}
                   </select>
                   <small style={{ color: 'var(--text-muted)' }}>Only Completed POs with uploaded signed copies are shown.</small>
@@ -145,18 +199,72 @@ export default function Invoices() {
 
                 <div className="form-group">
                   <label>Vendor / Agency</label>
-                  <select value={vendor_id} onChange={e=>setVendorId(e.target.value)} className="input-field" required disabled={!!purchase_order_id}>
+                  <select value={vendor_id} onChange={e=>setVendorId(e.target.value)} className="input-field" required={!contractor_id} disabled={!!purchase_order_id}>
                     <option value="">-- Select Vendor --</option>
                     {vendors.map(v => <option key={v.id} value={v.id}>{v.company_name}</option>)}
                   </select>
                 </div>
               </>
             )}
+
+            {invoice_type !== 'TypeA' && (
+              <>
+                <div className="form-group">
+                  <label>Vendor (Optional)</label>
+                  <select value={vendor_id} onChange={e=>setVendorId(e.target.value)} className="input-field">
+                    <option value="">-- Select Vendor --</option>
+                    {vendors.map(v => <option key={v.id} value={v.id}>{v.company_name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Contractor (Optional)</label>
+                  <select value={contractor_id} onChange={e=>setContractorId(e.target.value)} className="input-field">
+                    <option value="">-- Select Contractor --</option>
+                    {contractors.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+                  </select>
+                </div>
+              </>
+            )}
             
             <div className="form-group">
-              <label>Total Amount (₹)</label>
-              <input type="number" value={total_amount} onChange={e=>setTotalAmount(e.target.value)} className="input-field" placeholder="Enter total invoice amount" required />
+              <label>Subtotal / Base Amount (₹)</label>
+              <input type="number" value={total_amount} onChange={e=>setTotalAmount(e.target.value)} className="input-field" placeholder="Enter base subtotal amount" required />
             </div>
+
+            <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label>GST Rate (%)</label>
+                <input type="number" min="0" max="100" value={gst_rate} onChange={e=>setGstRate(e.target.value)} className="input-field" />
+              </div>
+              <div>
+                <label>TDS Rate (%)</label>
+                <input type="number" min="0" max="100" value={tds_rate} onChange={e=>setTdsRate(e.target.value)} className="input-field" />
+              </div>
+            </div>
+
+            {baseAmount > 0 && (
+              <div style={{ gridColumn: '1 / -1', background: 'rgba(79, 70, 229, 0.05)', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)', marginTop: '0.5rem' }}>
+                <h4 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--primary)', letterSpacing: '0.05em', marginBottom: '0.75rem', fontWeight: 600 }}>Payment Breakdown (Dynamic Preview)</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', fontSize: '0.9rem' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Subtotal (Base)</span>
+                    <span style={{ fontWeight: 600 }}>₹{baseAmount.toLocaleString('en-IN')}.00</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>GST (+{gRate}%)</span>
+                    <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{gstAmount.toLocaleString('en-IN')}.00</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>TDS (-{tRate}%)</span>
+                    <span style={{ fontWeight: 600, color: '#ef4444' }}>- ₹{tdsAmount.toLocaleString('en-IN')}.00</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem', fontWeight: 700 }}>Net Total Payment</span>
+                    <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.05rem' }}>₹{calculatedNetTotal.toLocaleString('en-IN')}.00</span>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {selectedProject && invoice_type === 'TypeA' && (
               <div className="form-group" style={{ gridColumn: '1 / -1', background: 'rgba(239, 68, 68, 0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--danger)' }}>
@@ -167,8 +275,9 @@ export default function Invoices() {
               </div>
             )}
 
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <button type="submit" className="btn btn-primary">Process Invoice</button>
+            <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+              <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem 2rem' }}>Process & Save Invoice</button>
+              <button type="button" className="btn" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)' }} onClick={() => setShowForm(false)}>Cancel</button>
             </div>
           </form>
         </div>
@@ -179,7 +288,9 @@ export default function Invoices() {
           <Search size={18} color="var(--text-muted)" />
           <input 
             type="text" 
-            placeholder="Search invoices..." 
+            placeholder="Search invoices by ID, Project, or Vendor..." 
+            value={searchQuery}
+            onChange={e=>setSearchQuery(e.target.value)}
             style={{ border: 'none', background: 'transparent', outline: 'none', color: 'var(--text-main)', width: '100%', fontFamily: 'Inter' }} 
           />
         </div>
@@ -188,14 +299,15 @@ export default function Invoices() {
             <tr>
               <th>Invoice ID</th>
               <th>Project ID</th>
+              <th>Vendor / Beneficiary</th>
               <th>Type</th>
               <th>Amount</th>
-              <th>Status</th>
+              <th>Payment Status</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            {invoices.map(inv => (
+            {filteredInvoices.map(inv => (
               <tr key={inv.id}>
                  <td style={{ fontWeight: 500 }}>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -204,16 +316,41 @@ export default function Invoices() {
                    {inv.creator && <small style={{color:'var(--text-muted)', fontSize: '0.7rem', display: 'block', marginTop: '0.15rem'}}>By: {inv.creator.name}</small>}
                  </td>
                 <td>{inv.project?.project_id}</td>
+                <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {inv.purchase_order?.vendor?.company_name || inv.vendor?.company_name || inv.contractor?.full_name || 'N/A'}
+                </td>
                 <td>
                   <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : 'badge badge-success'}>
                     {inv.invoice_type === 'TypeA' ? 'Payable' : 'Receivable'}
                   </span>
                 </td>
-                <td>₹{inv.total_amount.toLocaleString()}</td>
+                <td>₹{inv.total_amount.toLocaleString('en-IN')}</td>
                 <td>
-                  <span className={inv.payment_status === 'Paid' ? 'badge badge-success' : 'badge badge-warning'}>
-                    {inv.payment_status}
-                  </span>
+                  {userRole === 'Admin' || userRole === 'Manager' ? (
+                    <select 
+                      value={inv.payment_status} 
+                      onChange={(e) => handleToggleStatus(inv.id, e.target.value)}
+                      className="badge-dropdown"
+                      style={{
+                        background: inv.payment_status === 'Paid' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                        color: inv.payment_status === 'Paid' ? '#10b981' : '#f59e0b',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '4px',
+                        padding: '0.2rem 0.4rem',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                        outline: 'none',
+                        fontSize: '0.85rem'
+                      }}
+                    >
+                      <option value="Pending" style={{ background: '#1e293b', color: 'white' }}>Pending</option>
+                      <option value="Paid" style={{ background: '#1e293b', color: 'white' }}>Paid</option>
+                    </select>
+                  ) : (
+                    <span className={inv.payment_status === 'Paid' ? 'badge badge-success' : 'badge badge-warning'}>
+                      {inv.payment_status}
+                    </span>
+                  )}
                 </td>
                 <td>
                   <button 
@@ -226,7 +363,7 @@ export default function Invoices() {
                 </td>
               </tr>
             ))}
-            {invoices.length === 0 && <tr><td colSpan="6" style={{textAlign:'center'}}>No invoices processed yet.</td></tr>}
+            {filteredInvoices.length === 0 && <tr><td colSpan="7" style={{textAlign:'center', padding: '2rem', color: 'var(--text-muted)'}}>No invoices found matching criteria.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -276,12 +413,12 @@ export default function Invoices() {
                   <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Billed From (Contractor / Vendor):</h4>
                   {modalDetails.invoice_type === 'TypeA' ? (
                     <div style={{ fontSize: '0.875rem' }}>
-                      <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{modalDetails.contractor?.full_name || 'Individual Contractor'}</strong>
+                      <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{modalDetails.vendor?.company_name || modalDetails.purchase_order?.vendor?.company_name || modalDetails.contractor?.full_name || 'Individual Contractor'}</strong>
                       <p style={{ color: '#475569', marginTop: '0.25rem' }}>
-                        Under Vendor Agency: {modalDetails.vendor?.company_name || 'N/A'}<br />
-                        PAN Number: {modalDetails.contractor?.pan || 'N/A'}<br />
-                        GSTIN: {modalDetails.vendor?.gst || 'N/A'}<br />
-                        Contact: {modalDetails.contractor?.contact}
+                        Owner: {modalDetails.vendor?.owner_name || modalDetails.purchase_order?.vendor?.owner_name || 'N/A'}<br />
+                        PAN Number: {modalDetails.vendor?.pan || modalDetails.purchase_order?.vendor?.pan || 'N/A'}<br />
+                        GSTIN: {modalDetails.vendor?.gst || modalDetails.purchase_order?.vendor?.gst || 'N/A'}<br />
+                        Contact: {modalDetails.vendor?.contact || modalDetails.purchase_order?.vendor?.contact || 'N/A'}
                       </p>
                     </div>
                   ) : (
@@ -303,7 +440,7 @@ export default function Invoices() {
                       Name: {modalDetails.project?.name}<br />
                       Type of Work: {modalDetails.project?.type_of_work}<br />
                       Funding Source: {modalDetails.project?.source_type} ({modalDetails.invoice_type === 'TypeA' ? 'NAAM Financed' : 'CSR/Govt Receivable'})<br />
-                      {modalDetails.purchase_order && <>Linked Purchase Order: <strong>{modalDetails.purchase_order.po_number} (V{modalDetails.purchase_order.version})</strong></>}
+                      {modalDetails.purchase_order && <>Linked Purchase Order: <strong>{modalDetails.purchase_order.po_number} (A{modalDetails.purchase_order.version})</strong></>}
                     </p>
                   </div>
                 </div>
@@ -329,38 +466,46 @@ export default function Invoices() {
                       </p>
                     </td>
                     <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 500, verticalAlign: 'top' }}>
-                      ₹{modalDetails.subtotal?.toLocaleString() || modalDetails.total_amount?.toLocaleString()}.00
+                      ₹{modalDetails.subtotal?.toLocaleString('en-IN') || modalDetails.total_amount?.toLocaleString('en-IN')}.00
                     </td>
                   </tr>
                   
                   {/* Totals Calculation */}
                   <tr>
                     <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#64748b' }}>Subtotal:</td>
-                    <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', fontWeight: 500 }}>₹{modalDetails.subtotal?.toLocaleString() || modalDetails.total_amount?.toLocaleString()}.00</td>
+                    <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', fontWeight: 500 }}>₹{modalDetails.subtotal?.toLocaleString('en-IN') || modalDetails.total_amount?.toLocaleString('en-IN')}.00</td>
                   </tr>
-                  <tr>
-                    <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#64748b' }}>Taxes & Deductions:</td>
-                    <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#64748b' }}>₹0.00</td>
-                  </tr>
+                  {modalDetails.gst_rate > 0 && (
+                    <tr>
+                      <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#64748b' }}>GST ({modalDetails.gst_rate}%):</td>
+                      <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#10b981', fontWeight: 500 }}>+ ₹{modalDetails.gst_amount?.toLocaleString('en-IN')}.00</td>
+                    </tr>
+                  )}
+                  {modalDetails.tds_rate > 0 && (
+                    <tr>
+                      <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#64748b' }}>TDS ({modalDetails.tds_rate}%):</td>
+                      <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#ef4444', fontWeight: 500 }}>- ₹{modalDetails.tds_amount?.toLocaleString('en-IN')}.00</td>
+                    </tr>
+                  )}
                   <tr style={{ borderTop: '2px solid #e2e8f0' }}>
-                    <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Total Amount Billed:</td>
-                    <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.1rem', fontWeight: 800, color: '#4F46E5' }}>₹{modalDetails.total_amount.toLocaleString()}.00</td>
+                    <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Payment (Net Billed Total):</td>
+                    <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.15rem', fontWeight: 800, color: '#4F46E5' }}>₹{modalDetails.total_amount.toLocaleString('en-IN')}.00</td>
                   </tr>
                 </tbody>
               </table>
 
               {/* Payment Info */}
-              {modalDetails.invoice_type === 'TypeA' && modalDetails.vendor?.bank_name && (
+              {modalDetails.invoice_type === 'TypeA' && (modalDetails.vendor?.bank_name || modalDetails.purchase_order?.vendor?.bank_name) && (
                 <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '3rem' }}>
                   <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>Beneficiary Remittance Bank Details:</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.8rem' }}>
                     <div>
-                      Bank Name: <strong>{modalDetails.vendor.bank_name}</strong><br />
-                      Branch: <strong>{modalDetails.vendor.branch || 'Pune main'}</strong>
+                      Bank Name: <strong>{modalDetails.vendor?.bank_name || modalDetails.purchase_order?.vendor?.bank_name}</strong><br />
+                      Branch: <strong>{modalDetails.vendor?.branch || modalDetails.purchase_order?.vendor?.branch || 'Pune main'}</strong>
                     </div>
                     <div>
-                      Account Number: <strong>{modalDetails.vendor.account_no || '••••••••••••'}</strong><br />
-                      IFSC Code: <strong>{modalDetails.vendor.ifsc || 'SBIN0007339'}</strong>
+                      Account Number: <strong>{modalDetails.vendor?.account_no || modalDetails.purchase_order?.vendor?.account_no || '••••••••••••'}</strong><br />
+                      IFSC Code: <strong>{modalDetails.vendor?.ifsc || modalDetails.purchase_order?.vendor?.ifsc || 'SBIN0007339'}</strong>
                     </div>
                   </div>
                 </div>

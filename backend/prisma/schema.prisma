@@ -325,8 +325,10 @@ model Invoice {
   due_date           DateTime?
   subtotal           Float
   gst_id             Int?
+  gst_rate           Float    @default(0)
   gst_amount         Float    @default(0)
   tds_id             Int?
+  tds_rate           Float    @default(0)
   tds_amount         Float    @default(0)
   total_amount       Float
   payment_status     PaymentStatus @default(Pending)
@@ -336,6 +338,9 @@ model Invoice {
   approved_by_naam   Boolean  @default(false)
   created_by         Int
   created_at         DateTime @default(now())
+  
+  working_sheet_id   Int?
+  working_sheet      WorkingSheet? @relation(fields: [working_sheet_id], references: [id])
 
   line_items InvoiceLineItem[]
 }
@@ -416,4 +421,28 @@ model UploadedFile {
   data       Bytes    @db.LongBlob
   created_at DateTime @default(now())
 }
+
+model WorkingSheet {
+  id             Int             @id @default(autoincrement())
+  sheet_number   String          @unique
+  status         String          @default("Draft") // "Draft", "Published", "Approved"
+  total_payment  Float           @default(0)
+  created_by     Int
+  created_at     DateTime        @default(now())
+  approved_by    Int?
+  approved_at    DateTime?
+  
+  invoices       Invoice[]
+  bank_statement BankStatement?
+}
+
+model BankStatement {
+  id               Int          @id @default(autoincrement())
+  statement_number String       @unique
+  working_sheet_id Int          @unique
+  working_sheet    WorkingSheet @relation(fields: [working_sheet_id], references: [id])
+  created_at       DateTime     @default(now())
+  created_by       Int
+}
+
 

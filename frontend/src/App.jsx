@@ -15,6 +15,7 @@ import Donors from './pages/Donors';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
 import ResetPassword from './pages/ResetPassword';
+import Finance from './pages/Finance';
 
 function Sidebar({ onLogout }) {
   const location = useLocation();
@@ -60,6 +61,11 @@ function Sidebar({ onLogout }) {
         <Link to="/invoices" className={`nav-link ${location.pathname === '/invoices' ? 'active' : ''}`}>
           <FileText size={20} /> Invoices
         </Link>
+        {(userRole === 'Admin' || userRole === 'Manager') && (
+          <Link to="/finance" className={`nav-link ${location.pathname === '/finance' ? 'active' : ''}`}>
+            <Landmark size={20} /> Finance
+          </Link>
+        )}
         <Link to="/csr" className={`nav-link ${location.pathname === '/csr' ? 'active' : ''}`}>
           <Building size={20} /> CSR Partners
         </Link>
@@ -124,6 +130,7 @@ function App() {
             <Route path="/work-orders" element={<WorkOrders />} />
             <Route path="/purchase-orders" element={<PurchaseOrders />} />
             <Route path="/invoices" element={<Invoices />} />
+            <Route path="/finance" element={<Finance />} />
             <Route path="/csr" element={<CsrManagement />} />
             <Route path="/donors" element={<Donors />} />
             <Route path="/govt" element={<GovtSchemes />} />

@@ -17,6 +17,7 @@ const purchaseOrderRoutes = require('./src/routes/purchase_orders');
 const donorsRoutes = require('./src/routes/donors');
 const configRoutes = require('./src/routes/config');
 const uploadRoutes = require('./src/routes/upload');
+const financeRoutes = require('./src/routes/finance');
 
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
@@ -60,6 +61,7 @@ app.use('/api/purchase-orders', purchaseOrderRoutes);
 app.use('/api/donors', donorsRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/finance', financeRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'NAAM API is running' });

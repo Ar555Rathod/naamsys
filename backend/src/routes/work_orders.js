@@ -232,6 +232,9 @@ router.post('/amend', async (req, res) => {
 // Update Work Order Status (e.g. Approve)
 router.put('/:id/status', async (req, res) => {
   try {
+    if (req.user.role === 'Operator') {
+      return res.status(403).json({ error: 'Access denied: Operators cannot approve or modify order statuses.' });
+    }
     const { status, remarks } = req.body;
     
     const wo = await prisma.$transaction(async (tx) => {
