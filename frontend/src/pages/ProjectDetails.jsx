@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Users, FileText, Printer, ArrowLeft, Calendar, Landmark, User, FileCheck2, Receipt, Activity, MapPin, UploadCloud } from 'lucide-react';
+import { Users, FileText, Printer, ArrowLeft, Calendar, Landmark, User, FileCheck2, Receipt, Activity, MapPin, UploadCloud, XCircle } from 'lucide-react';
 import api, { getUploadUrl } from '../api';
 
 export default function ProjectDetails() {
@@ -9,6 +9,8 @@ export default function ProjectDetails() {
   const [project, setProject] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [previewType, setPreviewType] = useState(null);
+  const [previewData, setPreviewData] = useState(null);
 
   const fetchProjectDetails = useCallback(async () => {
     try {
@@ -364,7 +366,7 @@ export default function ProjectDetails() {
                 </thead>
                 <tbody>
                   {project.work_orders.filter(w=>w.is_active).map(w => (
-                    <tr key={w.id} onClick={() => navigate('/work-orders', { state: { selectedId: w.id } })} style={{cursor: 'pointer'}} title="Click to view Work Order details">
+                    <tr key={w.id} onClick={() => { setPreviewType('WO'); setPreviewData(w); }} style={{cursor: 'pointer'}} title="Click to view Work Order details">
                       <td style={{fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)'}}>
                         <span style={{color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px'}}>{w.wo_number} (A{w.version})</span>
                       </td>
@@ -401,7 +403,7 @@ export default function ProjectDetails() {
                 </thead>
                 <tbody>
                   {project.purchase_orders.filter(p=>p.is_active).map(p => (
-                    <tr key={p.id} onClick={() => navigate('/purchase-orders', { state: { selectedId: p.id } })} style={{cursor: 'pointer'}} title="Click to view Purchase Order details">
+                    <tr key={p.id} onClick={() => { setPreviewType('PO'); setPreviewData(p); }} style={{cursor: 'pointer'}} title="Click to view Purchase Order details">
                       <td style={{fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)'}}>
                         <span style={{color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px'}}>{p.po_number} (A{p.version})</span>
                       </td>
@@ -441,7 +443,7 @@ export default function ProjectDetails() {
               </thead>
               <tbody>
                 {project.invoices.map(inv => (
-                  <tr key={inv.id} onClick={() => navigate('/invoices', { state: { selectedId: inv.id } })} style={{cursor: 'pointer'}} title="Click to view Invoice details">
+                  <tr key={inv.id} onClick={() => { setPreviewType('Invoice'); setPreviewData(inv); }} style={{cursor: 'pointer'}} title="Click to view Invoice details">
                     <td style={{fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)'}}>
                       <span style={{color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px'}}>{inv.invoice_id}</span>
                     </td>
@@ -795,6 +797,289 @@ export default function ProjectDetails() {
           </div>
         </div>
       </div>
+
+      {/* HIGH-FIDELITY PREVIEW MODAL */}
+      {previewType && previewData && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '2rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'white' }}>
+            
+            {/* Modal Actions */}
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-light)' }}>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button onClick={() => window.print()} className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', gap: '0.25rem', display: 'flex', alignItems: 'center' }}>
+                  <Printer size={16} /> Print Document
+                </button>
+                <button onClick={() => { setPreviewType(null); setPreviewData(null); }} className="btn btn-danger" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', gap: '0.25rem', display: 'flex', alignItems: 'center' }}>
+                  <XCircle size={16} /> Close Preview
+                </button>
+              </div>
+            </div>
+
+            {/* PREVIEW: PURCHASE ORDER */}
+            {previewType === 'PO' && (
+              <div id="printable-po-modal-content" style={{ padding: '3.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2.5rem' }}>
+                  <div>
+                    <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '-0.025em', margin: 0 }}>NAAM Foundation</h1>
+                    <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                      Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
+                      Email: finance@naammh.org | Reg: MAH/1196/2015/Pune
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>PURCHASE ORDER</h2>
+                    <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                      PO Ref: <strong>{previewData.po_number}</strong><br />
+                      Version: <strong>A{previewData.version}</strong><br />
+                      Date: {new Date(previewData.created_at).toLocaleDateString()}<br />
+                      {project.creator && <>Issued By: <strong>{project.creator.name}</strong><br /></>}
+                      {previewData.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Specifics */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem', marginBottom: '2.5rem' }}>
+                  <div>
+                    <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Supplier / Vendor Details:</h4>
+                    <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+                      <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>{previewData.vendor?.company_name}</strong>
+                      <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                        Owner: {previewData.vendor?.owner_name}<br />
+                        PAN Card: {previewData.vendor?.pan}<br />
+                        GSTIN: {previewData.vendor?.gst || 'N/A'}<br />
+                        Contact: {previewData.vendor?.owner_contact}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Project Context:</h4>
+                    <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+                      <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {project.project_id}</strong>
+                      <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                        Name: {project.name}<br />
+                        Type: {project.type_of_work}<br />
+                        Location: {project.village_name || project.village_id || 'N/A'}, Taluka: {project.taluka_name || project.taluka_id || 'N/A'}, Dist: {project.district_name || project.district_id || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Table */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '70%' }}>Description of Goods / Supply Items</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '30%' }}>PO Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top', lineHeight: '1.5' }}>
+                        <strong>Material Supply operations</strong>
+                        <p style={{ color: '#475569', marginTop: '0.5rem', whiteSpace: 'pre-wrap' }}>
+                          {previewData.item_details}
+                        </p>
+                      </td>
+                      <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.95rem', fontWeight: 600, color: '#0f172a', verticalAlign: 'top' }}>
+                        ₹{previewData.total_amount?.toLocaleString()}.00
+                      </td>
+                    </tr>
+                    <tr style={{ borderTop: '2px solid #cbd5e1' }}>
+                      <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>Total PO Value:</td>
+                      <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.15rem', fontWeight: 800, color: '#4F46E5' }}>
+                        ₹{previewData.total_amount?.toLocaleString()}.00
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* PREVIEW: WORK ORDER */}
+            {previewType === 'WO' && (
+              <div id="printable-wo-modal-content" style={{ padding: '3.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #cbd5e1', paddingBottom: '1.5rem', marginBottom: '2.5rem' }}>
+                  <div>
+                    <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '-0.025em', margin: 0 }}>NAAM Foundation</h1>
+                    <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                      Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
+                      Email: operations@naammh.org | Reg: MAH/1196/2015/Pune
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>WORK ORDER</h2>
+                    <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                      WO Ref: <strong>{previewData.wo_number}</strong><br />
+                      Version: <strong>A{previewData.version}</strong><br />
+                      Date: {new Date(previewData.created_at).toLocaleDateString()}<br />
+                      {project.creator && <>Issued By: <strong>{project.creator.name}</strong><br /></>}
+                      {previewData.status === 'Approved' && <>Approved By: <strong>Audit Board</strong></>}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Specifics */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem', marginBottom: '2.5rem' }}>
+                  <div>
+                    <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Contracted Vendor (Agency):</h4>
+                    <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+                      <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>{previewData.vendor?.company_name}</strong>
+                      <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                        Owner: {previewData.vendor?.owner_name}<br />
+                        PAN: {previewData.vendor?.pan}<br />
+                        GSTIN: {previewData.vendor?.gst || 'N/A'}<br />
+                        Contact: {previewData.vendor?.owner_contact}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Project Context:</h4>
+                    <div style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+                      <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {project.project_id}</strong>
+                      <p style={{ color: '#475569', marginTop: '0.3rem', margin: 0 }}>
+                        Name: {project.name}<br />
+                        Type: {project.type_of_work}<br />
+                        Location: {project.village_name || project.village_id || 'N/A'}, Taluka: {project.taluka_name || project.taluka_id || 'N/A'}, Dist: {project.district_name || project.district_id || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Table */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '70%' }}>Description of Assigned Work Scope</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569', width: '30%' }}>Value Reference</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top', lineHeight: '1.5' }}>
+                        <strong>Operations under Work Order</strong>
+                        <p style={{ color: '#475569', marginTop: '0.5rem', whiteSpace: 'pre-wrap' }}>
+                          {previewData.work_description}
+                        </p>
+                      </td>
+                      <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.95rem', fontWeight: 600, color: '#0f172a', verticalAlign: 'top' }}>
+                        {previewData.budget_amount > 0 ? `₹${previewData.budget_amount.toLocaleString()}.00` : 'No direct financial cost'}
+                      </td>
+                    </tr>
+                    {previewData.budget_amount > 0 && (
+                      <tr style={{ borderTop: '2px solid #cbd5e1' }}>
+                        <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>Approved Contract Value:</td>
+                        <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.15rem', fontWeight: 800, color: '#4F46E5' }}>
+                          ₹{previewData.budget_amount.toLocaleString()}.00
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* PREVIEW: INVOICE */}
+            {previewType === 'Invoice' && (
+              <div id="printable-invoice-modal-content" style={{ padding: '3rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', textAlign: 'left', background: 'white' }}>
+                {/* Header Branding */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #e2e8f0', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+                  <div>
+                    <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#4F46E5', letterSpacing: '-0.025em', textTransform: 'uppercase' }}>NAAM Foundation</h1>
+                    <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>
+                      Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
+                      Email: naamvikas@naammh.org | Reg. No: MAH/1196/2015/Pune
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>INVOICE SHEET</h2>
+                    <p style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500, marginTop: '0.25rem' }}>
+                      Invoice Ref: <strong>{previewData.invoice_id}</strong><br />
+                      Date: {new Date(previewData.invoice_date).toLocaleDateString()}<br />
+                      {previewData.creator && <>Generated By: <strong>{previewData.creator.name}</strong></>}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Invoice Specifics */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem' }}>
+                  <div>
+                    <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Billed From (Contractor / Vendor):</h4>
+                    <div style={{ fontSize: '0.875rem' }}>
+                      <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{previewData.vendor?.company_name || previewData.purchase_order?.vendor?.company_name || 'N/A'}</strong>
+                      <p style={{ color: '#475569', marginTop: '0.25rem' }}>
+                        Owner: {previewData.vendor?.owner_name || previewData.purchase_order?.vendor?.owner_name || 'N/A'}<br />
+                        PAN: {previewData.vendor?.pan || previewData.purchase_order?.vendor?.pan || 'N/A'}<br />
+                        GSTIN: {previewData.vendor?.gst || previewData.purchase_order?.vendor?.gst || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Project & Sub-Contractor Context:</h4>
+                    <div style={{ fontSize: '0.875rem' }}>
+                      <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {project.project_id}</strong>
+                      <p style={{ color: '#475569', marginTop: '0.25rem' }}>
+                        Name: {project.name}<br />
+                        Type of Work: {project.type_of_work}<br />
+                        Funding: {project.source_type} ({previewData.invoice_type === 'TypeA' ? 'NAAM Financed' : 'CSR/Govt Receivable'})
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items Summary Table */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569' }}>Description of Work Done / Supply Delivered</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#475569' }}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top' }}>
+                        <strong>{project.type_of_work} Operations</strong>
+                        <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>
+                          Operations completed under reference PO {previewData.purchase_order?.po_number || 'N/A'}.
+                        </p>
+                      </td>
+                      <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 500, verticalAlign: 'top' }}>
+                        ₹{(previewData.subtotal || previewData.total_amount).toLocaleString()}.00
+                      </td>
+                    </tr>
+                    
+                    <tr>
+                      <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#64748b' }}>Subtotal (Amount):</td>
+                      <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', fontWeight: 500 }}>₹{(previewData.subtotal || previewData.total_amount).toLocaleString()}.00</td>
+                    </tr>
+                    {previewData.gst_rate > 0 && (
+                      <tr>
+                        <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#64748b' }}>GST ({previewData.gst_rate}%):</td>
+                        <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#10b981' }}>+ ₹{previewData.gst_amount?.toLocaleString()}.00</td>
+                      </tr>
+                    )}
+                    {previewData.tds_rate > 0 && (
+                      <tr>
+                        <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#64748b' }}>TDS ({previewData.tds_rate}%):</td>
+                        <td style={{ padding: '0.5rem 1rem', textAlign: 'right', fontSize: '0.875rem', color: '#ef4444' }}>- ₹{previewData.tds_amount?.toLocaleString()}.00</td>
+                      </tr>
+                    )}
+                    <tr style={{ borderTop: '2px solid #e2e8f0' }}>
+                      <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Payment (Net Billed Total):</td>
+                      <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.1rem', fontWeight: 800, color: '#4F46E5' }}>₹{previewData.total_amount?.toLocaleString()}.00</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );
