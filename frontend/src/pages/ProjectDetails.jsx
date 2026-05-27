@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Users, FileText, Printer, ArrowLeft, Calendar, Landmark, User, FileCheck2, Receipt, Activity, MapPin, UploadCloud } from 'lucide-react';
 import api, { getUploadUrl } from '../api';
+import PdfPageRenderer from '../components/PdfPageRenderer';
 
 const isImage = (url) => {
   if (!url) return false;
@@ -938,36 +939,18 @@ export default function ProjectDetails() {
                   </div>
 
                   {isImage(po.duly_signed_url) ? (
-                    <div style={{ textAlign: 'center', width: '100%', border: '1px solid #e2e8f0', padding: '1rem', borderRadius: '8px', background: '#fff' }}>
+                    <div style={{ textAlign: 'center', width: '100%' }}>
                       <img
                         src={getUploadUrl(po.duly_signed_url)}
                         alt={`Signed PO ${po.po_number}`}
-                        style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
+                        style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
                       />
                     </div>
                   ) : (
-                    <>
-                      {/* Premium fallback card for PDF during printing */}
-                      <div style={{ border: '2px dashed #cbd5e1', padding: '2.5rem', borderRadius: '8px', textAlign: 'center', background: '#f8fafc', marginBottom: '2rem' }}>
-                        <FileText size={48} style={{ color: '#4F46E5', marginBottom: '1rem', strokeWidth: 1.5 }} />
-                        <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.5rem 0' }}>Signed PDF Document Attached</h3>
-                        <p style={{ fontSize: '0.875rem', color: '#475569', margin: '0 auto 1.5rem auto', maxWidth: '500px', lineHeight: '1.5' }}>
-                          The verified signed PDF copy of this Purchase Order is stored in the NAAM document system. 
-                          You can scan/click the link below to retrieve or inspect the digital original.
-                        </p>
-                        <a href={getUploadUrl(po.duly_signed_url)} target="_blank" rel="noreferrer" style={{ display: 'inline-block', fontSize: '0.875rem', fontWeight: 600, color: '#4F46E5', textDecoration: 'underline', wordBreak: 'break-all' }}>
-                          {po.duly_signed_url}
-                        </a>
-                      </div>
-                      
-                      {/* The interactive screen iframe */}
-                      <iframe
-                        src={getUploadUrl(po.duly_signed_url)}
-                        title={`Signed PO ${po.po_number}`}
-                        style={{ width: '100%', height: '75vh', border: '1px solid #e2e8f0', borderRadius: '4px' }}
-                        className="hide-on-print"
-                      />
-                    </>
+                    <PdfPageRenderer
+                      url={getUploadUrl(po.duly_signed_url)}
+                      title={`Signed PO ${po.po_number}`}
+                    />
                   )}
                 </div>
               )}
@@ -1121,36 +1104,18 @@ export default function ProjectDetails() {
                   </div>
 
                   {isImage(wo.duly_signed_url) ? (
-                    <div style={{ textAlign: 'center', width: '100%', border: '1px solid #e2e8f0', padding: '1rem', borderRadius: '8px', background: '#fff' }}>
+                    <div style={{ textAlign: 'center', width: '100%' }}>
                       <img
                         src={getUploadUrl(wo.duly_signed_url)}
                         alt={`Signed WO ${wo.wo_number}`}
-                        style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
+                        style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
                       />
                     </div>
                   ) : (
-                    <>
-                      {/* Premium fallback card for PDF during printing */}
-                      <div style={{ border: '2px dashed #cbd5e1', padding: '2.5rem', borderRadius: '8px', textAlign: 'center', background: '#f8fafc', marginBottom: '2rem' }}>
-                        <FileText size={48} style={{ color: '#4F46E5', marginBottom: '1rem', strokeWidth: 1.5 }} />
-                        <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.5rem 0' }}>Signed PDF Document Attached</h3>
-                        <p style={{ fontSize: '0.875rem', color: '#475569', margin: '0 auto 1.5rem auto', maxWidth: '500px', lineHeight: '1.5' }}>
-                          The verified signed PDF copy of this Work Order is stored in the NAAM document system. 
-                          You can scan/click the link below to retrieve or inspect the digital original.
-                        </p>
-                        <a href={getUploadUrl(wo.duly_signed_url)} target="_blank" rel="noreferrer" style={{ display: 'inline-block', fontSize: '0.875rem', fontWeight: 600, color: '#4F46E5', textDecoration: 'underline', wordBreak: 'break-all' }}>
-                          {wo.duly_signed_url}
-                        </a>
-                      </div>
-                      
-                      {/* The interactive screen iframe */}
-                      <iframe
-                        src={getUploadUrl(wo.duly_signed_url)}
-                        title={`Signed WO ${wo.wo_number}`}
-                        style={{ width: '100%', height: '75vh', border: '1px solid #e2e8f0', borderRadius: '4px' }}
-                        className="hide-on-print"
-                      />
-                    </>
+                    <PdfPageRenderer
+                      url={getUploadUrl(wo.duly_signed_url)}
+                      title={`Signed WO ${wo.wo_number}`}
+                    />
                   )}
                 </div>
               )}
