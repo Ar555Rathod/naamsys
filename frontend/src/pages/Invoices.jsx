@@ -294,78 +294,80 @@ export default function Invoices() {
             style={{ border: 'none', background: 'transparent', outline: 'none', color: 'var(--text-main)', width: '100%', fontFamily: 'Inter' }} 
           />
         </div>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Invoice ID</th>
-              <th>Project ID</th>
-              <th>Vendor / Beneficiary</th>
-              <th>Type</th>
-              <th>Amount</th>
-              <th>Payment Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredInvoices.map(inv => (
-              <tr key={inv.id}>
-                 <td style={{ fontWeight: 500 }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                     <Receipt size={16} color="var(--primary)" /> {inv.invoice_id}
-                   </div>
-                   {inv.creator && <small style={{color:'var(--text-muted)', fontSize: '0.7rem', display: 'block', marginTop: '0.15rem'}}>By: {inv.creator.name}</small>}
-                 </td>
-                <td>{inv.project?.project_id}</td>
-                <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {inv.purchase_order?.vendor?.company_name || inv.vendor?.company_name || inv.contractor?.full_name || 'N/A'}
-                </td>
-                <td>
-                  <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : 'badge badge-success'}>
-                    {inv.invoice_type === 'TypeA' ? 'Payable' : 'Receivable'}
-                  </span>
-                </td>
-                <td>₹{inv.total_amount.toLocaleString('en-IN')}</td>
-                <td>
-                  {userRole === 'Admin' || userRole === 'Manager' ? (
-                    <select 
-                      value={inv.payment_status} 
-                      onChange={(e) => handleToggleStatus(inv.id, e.target.value)}
-                      className="badge-dropdown"
-                      style={{
-                        background: inv.payment_status === 'Paid' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                        color: inv.payment_status === 'Paid' ? '#10b981' : '#f59e0b',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '4px',
-                        padding: '0.2rem 0.4rem',
-                        cursor: 'pointer',
-                        fontWeight: 600,
-                        outline: 'none',
-                        fontSize: '0.85rem'
-                      }}
-                    >
-                      <option value="Pending" style={{ background: '#1e293b', color: 'white' }}>Pending</option>
-                      <option value="Paid" style={{ background: '#1e293b', color: 'white' }}>Paid</option>
-                    </select>
-                  ) : (
-                    <span className={inv.payment_status === 'Paid' ? 'badge badge-success' : 'badge badge-warning'}>
-                      {inv.payment_status}
-                    </span>
-                  )}
-                </td>
-                <td>
-                  <button 
-                    onClick={() => setSelectedInvoice(inv)} 
-                    className="btn" 
-                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', gap: '0.25rem', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)' }}
-                  >
-                    <Printer size={13} /> View & Print
-                  </button>
-                </td>
+        <div style={{ overflowX: 'auto', width: '100%' }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Invoice ID</th>
+                <th>Project ID</th>
+                <th>Vendor / Beneficiary</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Payment Status</th>
+                <th>Action</th>
               </tr>
-            ))}
-            {filteredInvoices.length === 0 && <tr><td colSpan="7" style={{textAlign:'center', padding: '2rem', color: 'var(--text-muted)'}}>No invoices found matching criteria.</td></tr>}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredInvoices.map(inv => (
+                <tr key={inv.id}>
+                   <td style={{ fontWeight: 500 }}>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                       <Receipt size={16} color="var(--primary)" /> {inv.invoice_id}
+                     </div>
+                     {inv.creator && <small style={{color:'var(--text-muted)', fontSize: '0.7rem', display: 'block', marginTop: '0.15rem'}}>By: {inv.creator.name}</small>}
+                   </td>
+                  <td>{inv.project?.project_id}</td>
+                  <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {inv.purchase_order?.vendor?.company_name || inv.vendor?.company_name || inv.contractor?.full_name || 'N/A'}
+                  </td>
+                  <td>
+                    <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : 'badge badge-success'}>
+                      {inv.invoice_type === 'TypeA' ? 'Payable' : 'Receivable'}
+                    </span>
+                  </td>
+                  <td>₹{inv.total_amount.toLocaleString('en-IN')}</td>
+                  <td>
+                    {userRole === 'Admin' || userRole === 'Manager' ? (
+                      <select 
+                        value={inv.payment_status} 
+                        onChange={(e) => handleToggleStatus(inv.id, e.target.value)}
+                        className="badge-dropdown"
+                        style={{
+                          background: inv.payment_status === 'Paid' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                          color: inv.payment_status === 'Paid' ? '#10b981' : '#f59e0b',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '4px',
+                          padding: '0.2rem 0.4rem',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                          outline: 'none',
+                          fontSize: '0.85rem'
+                        }}
+                      >
+                        <option value="Pending" style={{ background: '#1e293b', color: 'white' }}>Pending</option>
+                        <option value="Paid" style={{ background: '#1e293b', color: 'white' }}>Paid</option>
+                      </select>
+                    ) : (
+                      <span className={inv.payment_status === 'Paid' ? 'badge badge-success' : 'badge badge-warning'}>
+                        {inv.payment_status}
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    <button 
+                      onClick={() => setSelectedInvoice(inv)} 
+                      className="btn" 
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', gap: '0.25rem', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)' }}
+                    >
+                      <Printer size={13} /> View & Print
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {filteredInvoices.length === 0 && <tr><td colSpan="7" style={{textAlign:'center', padding: '2rem', color: 'var(--text-muted)'}}>No invoices found matching criteria.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Elegant High-Fidelity Printable Invoice Modal */}

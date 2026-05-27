@@ -253,7 +253,8 @@ export default function Finance() {
           </div>
 
           <div className="glass-panel" style={{ overflow: 'hidden' }}>
-            <table className="data-table">
+            <div style={{ overflowX: 'auto', width: '100%' }}>
+              <table className="data-table">
               <thead>
                 <tr>
                   <th style={{ width: '40px', textAlign: 'center' }}>Select</th>
@@ -321,13 +322,15 @@ export default function Finance() {
             </table>
           </div>
         </div>
+      </div>
       )}
 
       {/* TAB 2: Working Sheets Ledger */}
       {activeTab === 'sheets' && (
         <div className="no-print">
           <div className="glass-panel" style={{ overflow: 'hidden' }}>
-            <table className="data-table">
+            <div style={{ overflowX: 'auto', width: '100%' }}>
+              <table className="data-table">
               <thead>
                 <tr>
                   <th>Sheet Number</th>
@@ -420,13 +423,15 @@ export default function Finance() {
             </table>
           </div>
         </div>
+      </div>
       )}
 
       {/* TAB 3: Bank Remittance Statements */}
       {activeTab === 'statements' && (
         <div className="no-print">
           <div className="glass-panel" style={{ overflow: 'hidden' }}>
-            <table className="data-table">
+            <div style={{ overflowX: 'auto', width: '100%' }}>
+              <table className="data-table">
               <thead>
                 <tr>
                   <th>Statement Reference</th>
@@ -478,6 +483,7 @@ export default function Finance() {
             </table>
           </div>
         </div>
+      </div>
       )}
 
       {/* ADMIN REVIEW & APPROVAL MODAL */}
@@ -497,7 +503,7 @@ export default function Finance() {
             </div>
 
             {/* Invoices List for Toggle */}
-            <div style={{ overflowY: 'auto', maxHeight: '45vh', border: '1px solid var(--border)', borderRadius: '8px' }}>
+            <div style={{ overflow: 'auto', maxHeight: '45vh', border: '1px solid var(--border)', borderRadius: '8px', width: '100%' }}>
               <table className="data-table" style={{ margin: 0 }}>
                 <thead>
                   <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
