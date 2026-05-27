@@ -20,6 +20,7 @@ export default function Finance() {
 
   // Bank Statement View
   const [selectedStatement, setSelectedStatement] = useState(null);
+  const [selectedSheet, setSelectedSheet] = useState(null);
 
   useEffect(() => {
     // Determine user role on mount
@@ -379,6 +380,13 @@ export default function Finance() {
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                          <button 
+                            onClick={() => setSelectedSheet(sheet)}
+                            className="btn"
+                            style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', display: 'flex', gap: '0.25rem', alignItems: 'center', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)' }}
+                          >
+                            <Printer size={13} /> View & Print
+                          </button>
                           {sheet.status === 'Draft' && (
                             <button 
                               onClick={() => handlePublishSheet(sheet.id)}
@@ -704,6 +712,146 @@ export default function Finance() {
                   <div style={{ borderBottom: '1.5px dashed #cbd5e1', height: '40px', marginBottom: '0.5rem' }}></div>
                   <p style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>Trustee Signatory / Chairperson</p>
                   <p style={{ fontSize: '0.7rem', color: '#64748b' }}>Chief Executive Clearance Sign</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* HIGH-FIDELITY PRINTABLE WORKING SHEET PREVIEW MODAL */}
+      {selectedSheet && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '1000px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'white' }}>
+            
+            {/* Modal Actions */}
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+              <span style={{ fontWeight: 600, color: '#1f2937' }}>Working Sheet Details Clearance</span>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button onClick={window.print} className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
+                  <Printer size={16} /> Print Sheet / Export PDF
+                </button>
+                <button onClick={() => setSelectedSheet(null)} className="btn btn-danger" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', gap: '0.25rem' }}>
+                  <XCircle size={16} /> Close
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Working Sheet Area */}
+            <div id="printable-working-sheet-modal-content" style={{ padding: '3.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
+              
+              {/* Header Letterhead */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2.5px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+                <div>
+                  <h1 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#4F46E5', letterSpacing: '-0.025em', textTransform: 'uppercase' }}>NAAM Foundation</h1>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem', lineHeight: '1.4' }}>
+                    Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
+                    Email: finance@naammh.org | Registered Trust Reg: MAH/1196/2015/Pune
+                  </p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', letterSpacing: '0.025em' }}>FINANCE WORKING SHEET</h2>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 500, marginTop: '0.25rem' }}>
+                    Sheet Ref: <strong>{selectedSheet.sheet_number}</strong><br />
+                    Status: <strong style={{ color: selectedSheet.status === 'Approved' ? '#10b981' : selectedSheet.status === 'Published' ? '#3b82f6' : '#f59e0b' }}>{selectedSheet.status.toUpperCase()}</strong><br />
+                    Compiled Date: {new Date(selectedSheet.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Compilation Info */}
+              <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '2rem', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  Working Sheet consists of <strong>{selectedSheet.invoices?.length || 0} invoices</strong> compiled for release review.
+                </div>
+                <div>
+                  Release Limit Check: <strong style={{ color: '#10b981' }}>Within ₹25L Visual Cap</strong>
+                </div>
+              </div>
+
+              {/* Invoices List Table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem', fontSize: '0.75rem' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
+                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'center', color: '#475569', fontWeight: 600 }}>Sr. No.</th>
+                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>Invoice ID & Date</th>
+                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>Beneficiary Name & PAN</th>
+                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>Project ID & Location</th>
+                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>Type of Work</th>
+                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#475569', fontWeight: 600 }}>Subtotal</th>
+                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#475569', fontWeight: 600 }}>GST</th>
+                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#475569', fontWeight: 600 }}>TDS</th>
+                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#475569', fontWeight: 600 }}>Net Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedSheet.invoices?.map((inv, idx) => {
+                    const p = inv.project;
+                    const loc = p ? [p.village_name, p.taluka_name, p.district_name].filter(Boolean).join(', ') : 'N/A';
+                    const bank = getRemittanceBankDetails(inv);
+                    return (
+                      <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '0.75rem 0.4rem', textAlign: 'center' }}>{idx + 1}</td>
+                        <td style={{ padding: '0.75rem 0.4rem' }}>
+                          <strong>{inv.invoice_id}</strong><br />
+                          <span style={{ color: '#64748b' }}>{new Date(inv.invoice_date).toLocaleDateString()}</span>
+                        </td>
+                        <td style={{ padding: '0.75rem 0.4rem' }}>
+                          <strong>{getRemittanceBeneficiaryName(inv)}</strong><br />
+                          PAN: <span style={{ fontFamily: 'monospace' }}>{bank?.pan || 'N/A'}</span>
+                        </td>
+                        <td style={{ padding: '0.75rem 0.4rem' }}>
+                          <strong>{p?.project_id || 'N/A'}</strong><br />
+                          <span style={{ color: '#64748b', fontSize: '0.65rem' }}>{loc}</span>
+                        </td>
+                        <td style={{ padding: '0.75rem 0.4rem' }}>{p?.type_of_work || 'N/A'}</td>
+                        <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right' }}>₹{inv.subtotal.toLocaleString('en-IN')}.00</td>
+                        <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#10b981' }}>
+                          {inv.gst_rate > 0 ? `+₹${inv.gst_amount.toLocaleString('en-IN')} (${inv.gst_rate}%)` : '₹0.00'}
+                        </td>
+                        <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#ef4444' }}>
+                          {inv.tds_rate > 0 ? `-₹${inv.tds_amount.toLocaleString('en-IN')} (${inv.tds_rate}%)` : '₹0.00'}
+                        </td>
+                        <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', fontWeight: 700 }}>
+                          ₹{inv.total_amount.toLocaleString('en-IN')}.00
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  
+                  {/* Grand Totals */}
+                  <tr style={{ background: '#f8fafc', borderTop: '2.5px solid #cbd5e1', fontWeight: 700 }}>
+                    <td colSpan="5" style={{ padding: '1rem 0.5rem', textAlign: 'right', fontSize: '0.8rem' }}>
+                      Grand Release Totals:
+                    </td>
+                    <td style={{ padding: '1rem 0.4rem', textAlign: 'right' }}>
+                      ₹{selectedSheet.invoices?.reduce((sum, i) => sum + i.subtotal, 0).toLocaleString('en-IN')}.00
+                    </td>
+                    <td style={{ padding: '1rem 0.4rem', textAlign: 'right', color: '#10b981' }}>
+                      +₹{selectedSheet.invoices?.reduce((sum, i) => sum + (i.gst_amount || 0), 0).toLocaleString('en-IN')}.00
+                    </td>
+                    <td style={{ padding: '1rem 0.4rem', textAlign: 'right', color: '#ef4444' }}>
+                      -₹{selectedSheet.invoices?.reduce((sum, i) => sum + (i.tds_amount || 0), 0).toLocaleString('en-IN')}.00
+                    </td>
+                    <td style={{ padding: '1rem 0.4rem', textAlign: 'right', fontSize: '0.85rem', color: '#4F46E5' }}>
+                      ₹{selectedSheet.invoices?.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('en-IN')}.00
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Signatures */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5rem' }}>
+                <div style={{ textAlign: 'center', width: '220px' }}>
+                  <div style={{ borderBottom: '1.5px dashed #cbd5e1', height: '40px', marginBottom: '0.5rem' }}></div>
+                  <p style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>Compiled By Manager</p>
+                  <p style={{ fontSize: '0.7rem', color: '#64748b' }}>Operations Preparing Officer</p>
+                </div>
+                <div style={{ textAlign: 'center', width: '220px' }}>
+                  <div style={{ borderBottom: '1.5px dashed #cbd5e1', height: '40px', marginBottom: '0.5rem' }}></div>
+                  <p style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>Approved Trust Signatory</p>
+                  <p style={{ fontSize: '0.7rem', color: '#64748b' }}>Chief Finance Clearing Officer</p>
                 </div>
               </div>
             </div>
