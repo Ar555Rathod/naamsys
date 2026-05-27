@@ -346,4 +346,14 @@ label {
     page-break-after: always !important;
     break-after: page !important;
   }
+
+  @page landscape-sheet {
+    size: landscape;
+    margin: 1.5cm;
+  }
+
+  #printable-working-sheet-modal-content,
+  #printable-bank-statement-modal-content {
+    page: landscape-sheet !important;
+  }
 }

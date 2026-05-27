@@ -615,48 +615,31 @@ export default function Finance() {
             </div>
 
             {/* Printable Bank Remittance Area */}
-            <div id="printable-bank-statement-modal-content" style={{ padding: '3.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
+            <div id="printable-bank-statement-modal-content" style={{ padding: '2rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
               
-              {/* Header Letterhead */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2.5px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
-                <div>
-                  <h1 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#4F46E5', letterSpacing: '-0.025em', textTransform: 'uppercase' }}>NAAM Foundation</h1>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem', lineHeight: '1.4' }}>
-                    Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
-                    Email: finance@naammh.org | Registered Trust Reg: MAH/1196/2015/Pune
-                  </p>
+              {/* Simplified Header */}
+              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>
+                  NAAM FOUNDATION - BANK STATEMENT
+                </h1>
+                <div style={{ textAlign: 'right', fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>
+                  Date of creation: {new Date(selectedStatement.created_at).toLocaleDateString()}<br />
+                  Ref: {selectedStatement.statement_number}
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', letterSpacing: '0.025em' }}>BANK REMITTANCE ORDER</h2>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 500, marginTop: '0.25rem' }}>
-                    Statement Ref: <strong>{selectedStatement.statement_number}</strong><br />
-                    Linked Working Sheet: <strong>{selectedStatement.working_sheet?.sheet_number}</strong><br />
-                    Clearance Date: {new Date(selectedStatement.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              {/* Remittance Description */}
-              <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '2rem', fontSize: '0.85rem', lineHeight: '1.5' }}>
-                <p>
-                  <strong>TO: The Bank Manager, State Bank of India (SBI), Pune Main Branch</strong><br />
-                  Please authorize and release NEFT/RTGS payments to the following beneficiaries as listed below. 
-                  These payments are cleared and approved against matching vendor invoices compiled in Working Sheet <strong>{selectedStatement.working_sheet?.sheet_number}</strong>. 
-                  Kindly debit the total clearance amount from the <strong>NAAM Trust Operations Current Account</strong>.
-                </p>
               </div>
 
               {/* Beneficiaries Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem', fontSize: '0.8rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
                 <thead>
-                  <tr style={{ background: '#f1f5f9', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
-                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center', color: '#475569', fontWeight: 600 }}>Sr. No.</th>
-                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>Beneficiary Name (Vendor/Contractor)</th>
-                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>PAN Number</th>
-                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>Bank Account Details</th>
-                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>IFSC Code</th>
-                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>Invoice Context</th>
-                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right', color: '#475569', fontWeight: 600 }}>Amount Released</th>
+                  <tr style={{ background: '#f1f5f9', borderTop: '1px solid #0f172a', borderBottom: '1px solid #0f172a' }}>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr. No.</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name (Vendor/Contractor)</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>PAN Number</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Bank Name</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Account Number</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>IFSC Code</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice ID</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Amount Released</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -664,25 +647,14 @@ export default function Finance() {
                     const bank = getRemittanceBankDetails(inv);
                     return (
                       <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>{idx + 1}</td>
-                        <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600, color: '#0f172a' }}>{getRemittanceBeneficiaryName(inv)}</td>
-                        <td style={{ padding: '0.75rem 0.5rem', fontFamily: 'monospace' }}>{bank?.pan || 'N/A'}</td>
-                        <td style={{ padding: '0.75rem 0.5rem' }}>
-                          {bank ? (
-                            <>
-                              <strong>{bank.bankName}</strong><br />
-                              A/C: <span style={{ fontFamily: 'monospace' }}>{bank.accountNo}</span>
-                            </>
-                          ) : (
-                            <span style={{ color: '#ef4444' }}>No bank details on profile</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '0.75rem 0.5rem', fontFamily: 'monospace', fontWeight: 500 }}>{bank?.ifsc || 'N/A'}</td>
-                        <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem', color: '#64748b' }}>
-                          Ref: {inv.invoice_id}<br />
-                          Proj: {inv.project?.project_id}
-                        </td>
-                        <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>
+                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
+                        <td style={{ padding: '0.6rem 0.4rem', fontWeight: 600, color: '#0f172a', border: '1px solid #e2e8f0' }}>{getRemittanceBeneficiaryName(inv)}</td>
+                        <td style={{ padding: '0.6rem 0.4rem', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.pan || 'N/A'}</td>
+                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0' }}>{bank?.bankName || 'N/A'}</td>
+                        <td style={{ padding: '0.6rem 0.4rem', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.accountNo || 'N/A'}</td>
+                        <td style={{ padding: '0.6rem 0.4rem', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.ifsc || 'N/A'}</td>
+                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0', color: '#64748b' }}>{inv.invoice_id}</td>
+                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'right', fontWeight: 700, color: '#0f172a', border: '1px solid #e2e8f0' }}>
                           ₹{inv.total_amount.toLocaleString('en-IN')}.00
                         </td>
                       </tr>
@@ -690,30 +662,16 @@ export default function Finance() {
                   })}
                   
                   {/* Totals */}
-                  <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1' }}>
-                    <td colSpan="6" style={{ padding: '1rem 0.5rem', textAlign: 'right', fontSize: '0.85rem', fontWeight: 800, color: '#0f172a' }}>
-                      Grand Cumulative Net Clearance Release Total:
+                  <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
+                    <td colSpan="7" style={{ padding: '0.75rem 0.5rem', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '0.9rem' }}>
+                      Grand Total:
                     </td>
-                    <td style={{ padding: '1rem 0.5rem', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: '#4F46E5' }}>
+                    <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right', fontSize: '0.95rem', color: '#0f172a', border: '1px solid #e2e8f0' }}>
                       ₹{selectedStatement.working_sheet?.invoices?.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('en-IN')}.00
                     </td>
                   </tr>
                 </tbody>
               </table>
-
-              {/* Signatures */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5rem' }}>
-                <div style={{ textAlign: 'center', width: '220px' }}>
-                  <div style={{ borderBottom: '1.5px dashed #cbd5e1', height: '40px', marginBottom: '0.5rem' }}></div>
-                  <p style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>Finance Officer Signature</p>
-                  <p style={{ fontSize: '0.7rem', color: '#64748b' }}>Prepared By Authorized Signatory</p>
-                </div>
-                <div style={{ textAlign: 'center', width: '220px' }}>
-                  <div style={{ borderBottom: '1.5px dashed #cbd5e1', height: '40px', marginBottom: '0.5rem' }}></div>
-                  <p style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>Trustee Signatory / Chairperson</p>
-                  <p style={{ fontSize: '0.7rem', color: '#64748b' }}>Chief Executive Clearance Sign</p>
-                </div>
-              </div>
             </div>
 
           </div>
@@ -739,50 +697,32 @@ export default function Finance() {
             </div>
 
             {/* Printable Working Sheet Area */}
-            <div id="printable-working-sheet-modal-content" style={{ padding: '3.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
+            <div id="printable-working-sheet-modal-content" style={{ padding: '2rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
               
-              {/* Header Letterhead */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2.5px solid #4F46E5', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
-                <div>
-                  <h1 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#4F46E5', letterSpacing: '-0.025em', textTransform: 'uppercase' }}>NAAM Foundation</h1>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem', lineHeight: '1.4' }}>
-                    Plot No 219, Fergusson College Rd, Shivaji Nagar, Pune, MH, 411016<br />
-                    Email: finance@naammh.org | Registered Trust Reg: MAH/1196/2015/Pune
-                  </p>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', letterSpacing: '0.025em' }}>FINANCE WORKING SHEET</h2>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 500, marginTop: '0.25rem' }}>
-                    Sheet Ref: <strong>{selectedSheet.sheet_number}</strong><br />
-                    Status: <strong style={{ color: selectedSheet.status === 'Approved' ? '#10b981' : selectedSheet.status === 'Published' ? '#3b82f6' : '#f59e0b' }}>{selectedSheet.status.toUpperCase()}</strong><br />
-                    Compiled Date: {new Date(selectedSheet.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              {/* Compilation Info */}
-              <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '2rem', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  Working Sheet consists of <strong>{selectedSheet.invoices?.length || 0} invoices</strong> compiled for release review.
-                </div>
-                <div>
-                  Release Limit Check: <strong style={{ color: '#10b981' }}>Within ₹25L Visual Cap</strong>
+              {/* Simplified Header */}
+              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>
+                  NAAM FOUNDATION - WORKING SHEET
+                </h1>
+                <div style={{ textAlign: 'right', fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>
+                  Date of creation: {new Date(selectedSheet.created_at).toLocaleDateString()}<br />
+                  Ref: {selectedSheet.sheet_number}
                 </div>
               </div>
 
               {/* Invoices List Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2.5rem', fontSize: '0.75rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '0.8rem' }}>
                 <thead>
-                  <tr style={{ background: '#f1f5f9', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
-                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'center', color: '#475569', fontWeight: 600 }}>Sr. No.</th>
-                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>Invoice ID & Date</th>
-                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>Beneficiary Name & PAN</th>
-                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>Project ID & Location</th>
-                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'left', color: '#475569', fontWeight: 600 }}>Type of Work</th>
-                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#475569', fontWeight: 600 }}>Subtotal</th>
-                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#475569', fontWeight: 600 }}>GST</th>
-                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#475569', fontWeight: 600 }}>TDS</th>
-                    <th style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#475569', fontWeight: 600 }}>Net Total</th>
+                  <tr style={{ background: '#f1f5f9', borderTop: '1px solid #0f172a', borderBottom: '1px solid #0f172a' }}>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr. No.</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice ID & Date</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name & PAN</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Project ID & Location</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Type of Work</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Subtotal</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>GST</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>TDS</th>
+                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Net Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -792,28 +732,28 @@ export default function Finance() {
                     const bank = getRemittanceBankDetails(inv);
                     return (
                       <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '0.75rem 0.4rem', textAlign: 'center' }}>{idx + 1}</td>
-                        <td style={{ padding: '0.75rem 0.4rem' }}>
+                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
+                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0' }}>
                           <strong>{inv.invoice_id}</strong><br />
                           <span style={{ color: '#64748b' }}>{new Date(inv.invoice_date).toLocaleDateString()}</span>
                         </td>
-                        <td style={{ padding: '0.75rem 0.4rem' }}>
+                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0' }}>
                           <strong>{getRemittanceBeneficiaryName(inv)}</strong><br />
                           PAN: <span style={{ fontFamily: 'monospace' }}>{bank?.pan || 'N/A'}</span>
                         </td>
-                        <td style={{ padding: '0.75rem 0.4rem' }}>
+                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0' }}>
                           <strong>{p?.project_id || 'N/A'}</strong><br />
-                          <span style={{ color: '#64748b', fontSize: '0.65rem' }}>{loc}</span>
+                          <span style={{ color: '#64748b', fontSize: '0.7rem' }}>{loc}</span>
                         </td>
-                        <td style={{ padding: '0.75rem 0.4rem' }}>{p?.type_of_work || 'N/A'}</td>
-                        <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right' }}>₹{inv.subtotal.toLocaleString('en-IN')}.00</td>
-                        <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#10b981' }}>
+                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0' }}>{p?.type_of_work || 'N/A'}</td>
+                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'right', border: '1px solid #e2e8f0' }}>₹{inv.subtotal.toLocaleString('en-IN')}.00</td>
+                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0' }}>
                           {inv.gst_rate > 0 ? `+₹${inv.gst_amount.toLocaleString('en-IN')} (${inv.gst_rate}%)` : '₹0.00'}
                         </td>
-                        <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#ef4444' }}>
+                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0' }}>
                           {inv.tds_rate > 0 ? `-₹${inv.tds_amount.toLocaleString('en-IN')} (${inv.tds_rate}%)` : '₹0.00'}
                         </td>
-                        <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', fontWeight: 700 }}>
+                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'right', fontWeight: 700, border: '1px solid #e2e8f0' }}>
                           ₹{inv.total_amount.toLocaleString('en-IN')}.00
                         </td>
                       </tr>
@@ -821,39 +761,25 @@ export default function Finance() {
                   })}
                   
                   {/* Grand Totals */}
-                  <tr style={{ background: '#f8fafc', borderTop: '2.5px solid #cbd5e1', fontWeight: 700 }}>
-                    <td colSpan="5" style={{ padding: '1rem 0.5rem', textAlign: 'right', fontSize: '0.8rem' }}>
-                      Grand Release Totals:
+                  <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
+                    <td colSpan="5" style={{ padding: '0.75rem 0.5rem', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}>
+                      Grand Totals:
                     </td>
-                    <td style={{ padding: '1rem 0.4rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', border: '1px solid #e2e8f0' }}>
                       ₹{selectedSheet.invoices?.reduce((sum, i) => sum + i.subtotal, 0).toLocaleString('en-IN')}.00
                     </td>
-                    <td style={{ padding: '1rem 0.4rem', textAlign: 'right', color: '#10b981' }}>
+                    <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0' }}>
                       +₹{selectedSheet.invoices?.reduce((sum, i) => sum + (i.gst_amount || 0), 0).toLocaleString('en-IN')}.00
                     </td>
-                    <td style={{ padding: '1rem 0.4rem', textAlign: 'right', color: '#ef4444' }}>
+                    <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0' }}>
                       -₹{selectedSheet.invoices?.reduce((sum, i) => sum + (i.tds_amount || 0), 0).toLocaleString('en-IN')}.00
                     </td>
-                    <td style={{ padding: '1rem 0.4rem', textAlign: 'right', fontSize: '0.85rem', color: '#4F46E5' }}>
+                    <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', fontSize: '0.9rem', color: '#4F46E5', border: '1px solid #e2e8f0' }}>
                       ₹{selectedSheet.invoices?.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('en-IN')}.00
                     </td>
                   </tr>
                 </tbody>
               </table>
-
-              {/* Signatures */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5rem' }}>
-                <div style={{ textAlign: 'center', width: '220px' }}>
-                  <div style={{ borderBottom: '1.5px dashed #cbd5e1', height: '40px', marginBottom: '0.5rem' }}></div>
-                  <p style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>Compiled By Manager</p>
-                  <p style={{ fontSize: '0.7rem', color: '#64748b' }}>Operations Preparing Officer</p>
-                </div>
-                <div style={{ textAlign: 'center', width: '220px' }}>
-                  <div style={{ borderBottom: '1.5px dashed #cbd5e1', height: '40px', marginBottom: '0.5rem' }}></div>
-                  <p style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>Approved Trust Signatory</p>
-                  <p style={{ fontSize: '0.7rem', color: '#64748b' }}>Chief Finance Clearing Officer</p>
-                </div>
-              </div>
             </div>
 
           </div>
