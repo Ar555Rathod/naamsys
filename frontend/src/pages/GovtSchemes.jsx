@@ -194,6 +194,59 @@ export default function GovtSchemes() {
               <label>Department Name</label>
               <input type="text" value={scheme_dept} onChange={e=>setSchemeDept(e.target.value)} className="input-field" placeholder="e.g. Zilla Parishad" required />
             </div>
+            
+            <div className="form-group">
+              <label>Total MoU Budget (₹)</label>
+              <input type="number" value={budget} onChange={e=>setBudget(e.target.value)} className="input-field" placeholder="e.g. 10000000" required />
+            </div>
+
+            <div className="form-group">
+              <label>Admin Cost Option</label>
+              <select value={admin_cost_type} onChange={e=>{setAdminCostType(e.target.value); setAdminCostValue('');}} className="input-field">
+                <option value="PERCENT">Percentage (%)</option>
+                <option value="RUPEE">Rupees (₹)</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Admin Cost Value {admin_cost_type === 'PERCENT' ? '(%)' : '(₹)'}</label>
+              <input 
+                type="number" 
+                value={admin_cost_value} 
+                onChange={e=>setAdminCostValue(e.target.value)} 
+                className="input-field" 
+                placeholder={admin_cost_type === 'PERCENT' ? 'e.g. 5' : 'e.g. 50000'} 
+                required 
+              />
+            </div>
+
+            {/* Premium Budget Preview Widget */}
+            <div className="form-group" style={{ gridColumn: '1 / -1', background: 'rgba(79, 70, 229, 0.04)', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Calculated Admin Cost:</span>
+                <strong style={{ display: 'block', fontSize: '1.1rem', color: 'var(--text-main)', marginTop: '0.25rem' }}>₹{computedAdminCost.toLocaleString()}</strong>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Available Project Budget:</span>
+                <strong style={{ display: 'block', fontSize: '1.25rem', color: 'var(--success)', marginTop: '0.25rem' }}>₹{computedAvailableBudget.toLocaleString()}</strong>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Contact Person</label>
+              <input type="text" value={contact_person} onChange={e=>setContactPerson(e.target.value)} className="input-field" placeholder="e.g. John Doe" required />
+            </div>
+
+            <div className="form-group">
+              <label>Email</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="input-field" placeholder="e.g. contact@gov.in" required />
+            </div>
+
+            <div className="form-group">
+              <label>Phone Number</label>
+              <input type="text" value={phone} onChange={e=>setPhone(e.target.value)} className="input-field" placeholder="e.g. +91 9876543210" required />
+            </div>
+
             <div className="form-group">
               <label>Type of Work</label>
               <select value={type_of_work} onChange={e=>setTypeOfWork(e.target.value)} className="input-field">
@@ -202,9 +255,10 @@ export default function GovtSchemes() {
                 <option>Infrastructure</option>
               </select>
             </div>
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+
+            <div className="form-group">
               <label>Sub Type / Details</label>
-              <input type="text" value={sub_type} onChange={e=>setSubType(e.target.value)} className="input-field" required />
+              <input type="text" value={sub_type} onChange={e=>setSubType(e.target.value)} className="input-field" placeholder="e.g. Concrete Road Building" required />
             </div>
 
             <div className="form-group">
@@ -240,65 +294,6 @@ export default function GovtSchemes() {
                 <option value="">-- Select Village --</option>
                 {availableVillages.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
               </select>
-            </div>
-
-            <div className="form-group">
-              <label>Total MoU Budget (₹)</label>
-              <input type="number" value={budget} onChange={e=>setBudget(e.target.value)} className="input-field" placeholder="e.g. 5000000" required />
-            </div>
-
-            <div className="form-group">
-              <label>Admin Cost Option</label>
-              <select value={admin_cost_type} onChange={e=>{setAdminCostType(e.target.value); setAdminCostValue('');}} className="input-field">
-                <option value="PERCENT">Percentage (%)</option>
-                <option value="RUPEE">Rupees (₹)</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Admin Cost Value {admin_cost_type === 'PERCENT' ? '(%)' : '(₹)'}</label>
-              <input 
-                type="number" 
-                value={admin_cost_value} 
-                onChange={e=>setAdminCostValue(e.target.value)} 
-                className="input-field" 
-                placeholder={admin_cost_type === 'PERCENT' ? 'e.g. 5' : 'e.g. 50000'} 
-                required 
-              />
-            </div>
-
-            {/* Premium Budget Preview Widget */}
-            <div className="form-group" style={{ gridColumn: '1 / -1', background: 'rgba(79, 70, 229, 0.04)', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Calculated Admin Cost:</span>
-                <strong style={{ display: 'block', fontSize: '1.1rem', color: 'var(--text-main)', marginTop: '0.25rem' }}>₹{computedAdminCost.toLocaleString()}</strong>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Available Project Budget:</span>
-                <strong style={{ display: 'block', fontSize: '1.25rem', color: 'var(--success)', marginTop: '0.25rem' }}>₹{computedAvailableBudget.toLocaleString()}</strong>
-              </div>
-            </div>
-
-            {/* Representative Details Header */}
-            <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-                <User size={18} color="var(--primary)" /> Department Representative Details
-              </h3>
-            </div>
-
-            <div className="form-group">
-              <label>Contact Person</label>
-              <input type="text" value={contact_person} onChange={e=>setContactPerson(e.target.value)} className="input-field" placeholder="e.g. Officer Raj" required />
-            </div>
-
-            <div className="form-group">
-              <label>Email Address</label>
-              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="input-field" placeholder="e.g. raj@gov.in" required />
-            </div>
-
-            <div className="form-group">
-              <label>Phone Number</label>
-              <input type="text" value={phone} onChange={e=>setPhone(e.target.value)} className="input-field" placeholder="e.g. +91 9876543210" required />
             </div>
 
             <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem', marginTop: '1rem' }}>
