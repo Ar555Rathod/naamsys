@@ -64,7 +64,7 @@ export default function Invoices() {
     try {
       await api.post('/invoices', {
         invoice_type,
-        project_id,
+        project_id: project_id ? parseInt(project_id) : null,
         purchase_order_id: invoice_type === 'TypeA' ? (purchase_order_id || null) : null,
         vendor_id: (invoice_type === 'TypeB' || invoice_type === 'TypeC') ? (vendor_id || null) : null,
         contractor_id: contractor_id || null,
@@ -177,8 +177,8 @@ export default function Invoices() {
             </div>
             <div className="form-group">
               <label>Project</label>
-              <select value={project_id} onChange={e=>setProjectId(e.target.value)} className="input-field" required>
-                <option value="">-- Select Project --</option>
+              <select value={project_id} onChange={e=>setProjectId(e.target.value)} className="input-field" required={invoice_type !== 'TypeC'}>
+                <option value="">{invoice_type === 'TypeC' ? '-- Select Project (Optional) --' : '-- Select Project --'}</option>
                 {projects.map(p => <option key={p.id} value={p.id}>{p.project_id} - {p.name}</option>)}
               </select>
             </div>
@@ -468,13 +468,20 @@ export default function Invoices() {
                 <div>
                   <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Billed To / Project Context:</h4>
                   <div style={{ fontSize: '0.875rem' }}>
-                    <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {modalDetails.project?.project_id}</strong>
-                    <p style={{ color: '#475569', marginTop: '0.25rem' }}>
-                      Name: {modalDetails.project?.name}<br />
-                      Type of Work: {modalDetails.project?.type_of_work}<br />
-                      Funding Source: {modalDetails.project?.source_type} ({(modalDetails.invoice_type === 'TypeA' || modalDetails.invoice_type === 'TypeC') ? 'NAAM Financed' : 'CSR/Govt Receivable'})<br />
-                      {modalDetails.purchase_order && <>Linked Purchase Order: <strong>{modalDetails.purchase_order.po_number} (A{modalDetails.purchase_order.version})</strong></>}
-                    </p>
+                    <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {modalDetails.project ? modalDetails.project.project_id : 'N/A (General Business Expense)'}</strong>
+                    {modalDetails.project ? (
+                      <p style={{ color: '#475569', marginTop: '0.25rem' }}>
+                        Name: {modalDetails.project.name}<br />
+                        Type of Work: {modalDetails.project.type_of_work}<br />
+                        Funding Source: {modalDetails.project.source_type} ({(modalDetails.invoice_type === 'TypeA' || modalDetails.invoice_type === 'TypeC') ? 'NAAM Financed' : 'CSR/Govt Receivable'})<br />
+                        {modalDetails.purchase_order && <>Linked Purchase Order: <strong>{modalDetails.purchase_order.po_number} (A{modalDetails.purchase_order.version})</strong></>}
+                      </p>
+                    ) : (
+                      <p style={{ color: '#475569', marginTop: '0.25rem' }}>
+                        Classification: General Office / Operating Cost<br />
+                        Funding Source: NAAM Foundation Internal Funds<br />
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

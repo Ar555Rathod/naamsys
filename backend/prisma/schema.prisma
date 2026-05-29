@@ -309,8 +309,8 @@ model Invoice {
   id                 Int      @id @default(autoincrement())
   invoice_id         String   @unique
   invoice_type       InvoiceType
-  project_id         Int
-  project            Project  @relation(fields: [project_id], references: [id])
+  project_id         Int?
+  project            Project?  @relation(fields: [project_id], references: [id])
   wcc_id             Int?
   wcc                Wcc?     @relation(fields: [wcc_id], references: [id])
   vendor_id          Int?

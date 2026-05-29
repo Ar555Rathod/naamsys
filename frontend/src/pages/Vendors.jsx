@@ -1463,12 +1463,19 @@ export default function Vendors() {
                   <div>
                     <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Project & Sub-Contractor Context:</h4>
                     <div style={{ fontSize: '0.875rem' }}>
-                      <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {previewData.project?.project_id}</strong>
-                      <p style={{ color: '#475569', marginTop: '0.25rem' }}>
-                        Name: {previewData.project?.name}<br />
-                        Type of Work: {previewData.project?.type_of_work}<br />
-                        Funding: {previewData.project?.source_type} ({(previewData.invoice_type === 'TypeA' || previewData.invoice_type === 'TypeC') ? 'NAAM Financed' : 'CSR/Govt Receivable'})
-                      </p>
+                      <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {previewData.project ? previewData.project.project_id : 'N/A (General Business Expense)'}</strong>
+                      {previewData.project ? (
+                        <p style={{ color: '#475569', marginTop: '0.25rem' }}>
+                          Name: {previewData.project.name}<br />
+                          Type of Work: {previewData.project.type_of_work}<br />
+                          Funding: {previewData.project.source_type} ({(previewData.invoice_type === 'TypeA' || previewData.invoice_type === 'TypeC') ? 'NAAM Financed' : 'CSR/Govt Receivable'})
+                        </p>
+                      ) : (
+                        <p style={{ color: '#475569', marginTop: '0.25rem' }}>
+                          Classification: General Office / Operating Cost<br />
+                          Funding Source: NAAM Foundation Internal Funds<br />
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
