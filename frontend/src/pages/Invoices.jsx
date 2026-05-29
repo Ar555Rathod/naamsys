@@ -64,7 +64,7 @@ export default function Invoices() {
     try {
       await api.post('/invoices', {
         invoice_type,
-        project_id: project_id ? parseInt(project_id) : null,
+        project_id: invoice_type === 'TypeC' ? null : (project_id ? parseInt(project_id) : null),
         purchase_order_id: invoice_type === 'TypeA' ? (purchase_order_id || null) : null,
         vendor_id: (invoice_type === 'TypeB' || invoice_type === 'TypeC') ? (vendor_id || null) : null,
         contractor_id: contractor_id || null,
@@ -175,13 +175,15 @@ export default function Invoices() {
                 <option value="TypeC">Type C (General Invoice - Stationery, Food, etc.)</option>
               </select>
             </div>
-            <div className="form-group">
-              <label>Project</label>
-              <select value={project_id} onChange={e=>setProjectId(e.target.value)} className="input-field" required={invoice_type !== 'TypeC'}>
-                <option value="">{invoice_type === 'TypeC' ? '-- Select Project (Optional) --' : '-- Select Project --'}</option>
-                {projects.map(p => <option key={p.id} value={p.id}>{p.project_id} - {p.name}</option>)}
-              </select>
-            </div>
+             {invoice_type !== 'TypeC' && (
+               <div className="form-group">
+                 <label>Project</label>
+                 <select value={project_id} onChange={e=>setProjectId(e.target.value)} className="input-field" required>
+                   <option value="">-- Select Project --</option>
+                   {projects.map(p => <option key={p.id} value={p.id}>{p.project_id} - {p.name}</option>)}
+                 </select>
+               </div>
+             )}
             
             {invoice_type === 'TypeA' && (
               <>
