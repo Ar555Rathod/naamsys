@@ -34,10 +34,25 @@ router.get('/', async (req, res) => {
 // Register a donor
 router.post('/', async (req, res) => {
   try {
-    const { name, pan, contact, email, budget } = req.body;
+    const { 
+      name, pan, contact, email, budget, 
+      admin_cost_type = 'PERCENT', admin_cost_value = 0 
+    } = req.body;
     
     const count = await prisma.individualDonor.count() + 1;
     const donor_id = `IDN-${String(count).padStart(3, '0')}`;
+
+    const originalBudget = parseFloat(budget) || 0;
+    const adminCostType = admin_cost_type || 'PERCENT';
+    const adminCostValue = parseFloat(admin_cost_value) || 0;
+
+    let adminCostAmount = 0;
+    if (adminCostType === 'PERCENT') {
+      adminCostAmount = (originalBudget * adminCostValue) / 100;
+    } else {
+      adminCostAmount = adminCostValue;
+    }
+    const availableBudget = originalBudget - adminCostAmount;
 
     const donor = await prisma.individualDonor.create({
       data: {
@@ -46,38 +61,73 @@ router.post('/', async (req, res) => {
         pan,
         contact,
         email,
-        budget: parseFloat(budget),
-        budget_remaining: parseFloat(budget),
+        budget: originalBudget,
+        budget_remaining: availableBudget,
+        admin_cost_type: adminCostType,
+        admin_cost_value: adminCostValue,
+        admin_cost_amount: adminCostAmount,
+        available_budget: availableBudget,
         created_by: req.user.id
       }
     });
     res.json(donor);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to register donor' });
+    res.status(500).json({ error: 'Failed to register donor', details: error.message });
   }
 });
 
 // Update a donor
 router.put('/:id', async (req, res) => {
   try {
-    const { name, pan, contact, email, budget } = req.body;
+    const { 
+      name, pan, contact, email, budget, 
+      admin_cost_type = 'PERCENT', admin_cost_value = 0 
+    } = req.body;
+    const id = parseInt(req.params.id);
     
-    const oldDonor = await prisma.individualDonor.findUnique({ where: { id: parseInt(req.params.id) } });
+    const oldDonor = await prisma.individualDonor.findUnique({ 
+      where: { id },
+      include: { projects: true }
+    });
     if (!oldDonor) return res.status(404).json({ error: 'Donor not found' });
     
-    const budgetDiff = parseFloat(budget) - oldDonor.budget;
+    const originalBudget = parseFloat(budget) || 0;
+    const adminCostType = admin_cost_type || 'PERCENT';
+    const adminCostValue = parseFloat(admin_cost_value) || 0;
+
+    let adminCostAmount = 0;
+    if (adminCostType === 'PERCENT') {
+      adminCostAmount = (originalBudget * adminCostValue) / 100;
+    } else {
+      adminCostAmount = adminCostValue;
+    }
+    const availableBudget = originalBudget - adminCostAmount;
+
+    const spentBudget = oldDonor.projects?.reduce((sum, p) => sum + p.budget, 0) || 0;
+
+    if (availableBudget < spentBudget) {
+      return res.status(400).json({ 
+        error: `Cannot update: New available budget (₹${availableBudget.toLocaleString()}) is less than total budget already allocated to projects (₹${spentBudget.toLocaleString()}).` 
+      });
+    }
+
+    const budgetRemaining = availableBudget - spentBudget;
 
     const donor = await prisma.individualDonor.update({
-      where: { id: parseInt(req.params.id) },
+      where: { id },
       data: {
         name, pan, contact, email, 
-        budget: parseFloat(budget),
-        budget_remaining: oldDonor.budget_remaining + budgetDiff
+        budget: originalBudget,
+        available_budget: availableBudget,
+        budget_remaining: budgetRemaining,
+        admin_cost_type: adminCostType,
+        admin_cost_value: adminCostValue,
+        admin_cost_amount: adminCostAmount
       }
     });
     res.json(donor);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update donor' });
+    res.status(500).json({ error: 'Failed to update donor', details: error.message });
   }
 });
 

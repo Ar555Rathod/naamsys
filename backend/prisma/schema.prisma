@@ -187,6 +187,10 @@ model IndividualDonor {
   email            String?
   budget           Float
   budget_remaining Float    @default(0)
+  admin_cost_type   String   @default("PERCENT") // "PERCENT" or "RUPEE"
+  admin_cost_value  Float    @default(0)
+  admin_cost_amount Float    @default(0)
+  available_budget  Float    @default(0)
   created_by       Int
   created_at       DateTime @default(now())
 
