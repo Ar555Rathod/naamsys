@@ -85,7 +85,7 @@ export default function ProjectDetails() {
 
   // Calculations
   const totalInvoiced = project.invoices
-    .filter(i => i.invoice_type === 'TypeA')
+    .filter(i => i.invoice_type === 'TypeA' || i.invoice_type === 'TypeC')
     .reduce((sum, inv) => sum + inv.total_amount, 0);
 
   const budgetUsed = project.budget - project.budget_remaining;
@@ -452,11 +452,15 @@ export default function ProjectDetails() {
                         inv.purchase_order ? (
                           <strong>{inv.purchase_order.vendor.company_name}</strong>
                         ) : 'Payable'
+                      ) : inv.invoice_type === 'TypeC' ? (
+                        inv.vendor ? (
+                          <strong>{inv.vendor.company_name}</strong>
+                        ) : 'General Expense'
                       ) : 'NAAM Foundation'}
                     </td>
                     <td>
-                      <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : 'badge badge-success'} style={{fontSize: '0.75rem', padding: '0.15rem 0.4rem'}}>
-                        {inv.invoice_type === 'TypeA' ? 'Payable' : 'Receivable'}
+                      <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : inv.invoice_type === 'TypeC' ? 'badge badge-info' : 'badge badge-success'} style={{fontSize: '0.75rem', padding: '0.15rem 0.4rem', background: inv.invoice_type === 'TypeC' ? 'rgba(59, 130, 246, 0.15)' : undefined, color: inv.invoice_type === 'TypeC' ? '#3b82f6' : undefined}}>
+                        {inv.invoice_type === 'TypeA' ? 'Payable' : inv.invoice_type === 'TypeC' ? 'General' : 'Receivable'}
                       </span>
                     </td>
                     <td style={{fontSize: '0.8rem', fontWeight: 600}}>₹{inv.total_amount.toLocaleString()}</td>
@@ -772,7 +776,7 @@ export default function ProjectDetails() {
                 {project.invoices.map(inv => (
                   <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                     <td style={{ padding: '0.5rem 0.75rem', fontWeight: 700 }}>{inv.invoice_id}</td>
-                    <td style={{ padding: '0.5rem 0.75rem' }}>{inv.invoice_type === 'TypeA' ? 'Payable (Expense)' : 'Receivable (Income)'}</td>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>{inv.invoice_type === 'TypeA' ? 'Payable (Expense)' : inv.invoice_type === 'TypeC' ? 'General Expense' : 'Receivable (Income)'}</td>
                     <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 600 }}>₹{inv.total_amount.toLocaleString()}</td>
                     <td style={{ padding: '0.5rem 0.75rem' }}>{new Date(inv.invoice_date).toLocaleDateString()}</td>
                     <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>{inv.payment_status.toUpperCase()}</td>
@@ -1026,7 +1030,7 @@ export default function ProjectDetails() {
                       <p style={{ color: '#475569', marginTop: '0.25rem' }}>
                         Name: {project.name}<br />
                         Type of Work: {project.type_of_work}<br />
-                        Funding: {project.source_type} ({previewData.invoice_type === 'TypeA' ? 'NAAM Financed' : 'CSR/Govt Receivable'})
+                        Funding: {project.source_type} ({(previewData.invoice_type === 'TypeA' || previewData.invoice_type === 'TypeC') ? 'NAAM Financed' : 'CSR/Govt Receivable'})
                       </p>
                     </div>
                   </div>
@@ -1043,9 +1047,11 @@ export default function ProjectDetails() {
                   <tbody>
                     <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
                       <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top' }}>
-                        <strong>{project.type_of_work} Operations</strong>
+                        <strong>{previewData.invoice_type === 'TypeC' ? 'General Purchase / Particulars' : `${project.type_of_work} Operations`}</strong>
                         <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>
-                          Operations completed under reference PO {previewData.purchase_order?.po_number || 'N/A'}.
+                          {previewData.invoice_type === 'TypeC'
+                            ? `Particulars: ${previewData.particulars || 'N/A'}`
+                            : `Operations completed under reference PO ${previewData.purchase_order?.po_number || 'N/A'}.`}
                         </p>
                       </td>
                       <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 500, verticalAlign: 'top' }}>

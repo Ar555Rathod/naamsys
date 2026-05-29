@@ -1467,7 +1467,7 @@ export default function Vendors() {
                       <p style={{ color: '#475569', marginTop: '0.25rem' }}>
                         Name: {previewData.project?.name}<br />
                         Type of Work: {previewData.project?.type_of_work}<br />
-                        Funding: {previewData.project?.source_type} ({previewData.invoice_type === 'TypeA' ? 'NAAM Financed' : 'CSR/Govt Receivable'})
+                        Funding: {previewData.project?.source_type} ({(previewData.invoice_type === 'TypeA' || previewData.invoice_type === 'TypeC') ? 'NAAM Financed' : 'CSR/Govt Receivable'})
                       </p>
                     </div>
                   </div>
@@ -1484,9 +1484,11 @@ export default function Vendors() {
                   <tbody>
                     <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
                       <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top' }}>
-                        <strong>{previewData.project?.type_of_work} Operations</strong>
+                        <strong>{previewData.invoice_type === 'TypeC' ? 'General Purchase / Particulars' : `${previewData.project?.type_of_work} Operations`}</strong>
                         <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>
-                          Operations completed under reference PO {previewData.purchase_order?.po_number || 'N/A'}.
+                          {previewData.invoice_type === 'TypeC'
+                            ? `Particulars: ${previewData.particulars || 'N/A'}`
+                            : `Operations completed under reference PO ${previewData.purchase_order?.po_number || 'N/A'}.`}
                         </p>
                       </td>
                       <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 500, verticalAlign: 'top' }}>

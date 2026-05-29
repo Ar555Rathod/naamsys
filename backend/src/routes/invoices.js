@@ -92,8 +92,53 @@ router.post('/', async (req, res) => {
       });
 
       return res.json(invoice);
+    } else if (invoice_type === 'TypeC') {
+      // General Invoice (TypeC) - Stationery, Food bills etc.
+      // Requires: vendor_id, project_id, subtotal. Optional: particulars.
+      if (!vendor_id) {
+        return res.status(400).json({ error: 'Invoice Blocked: A Vendor must be selected.' });
+      }
+
+      const invoice = await prisma.$transaction(async (tx) => {
+        const inv = await tx.invoice.create({
+          data: {
+            invoice_id: `GEN-${Date.now()}`,
+            invoice_type,
+            project_id: parseInt(project_id),
+            vendor_id: parseInt(vendor_id),
+            contractor_id: contractor_id ? parseInt(contractor_id) : null,
+            invoice_date: new Date(),
+            subtotal: baseAmount,
+            gst_rate: gRate,
+            gst_amount,
+            tds_rate: tRate,
+            tds_amount,
+            total_amount,
+            payment_status: 'Pending',
+            amount_paid: 0,
+            payment_date: null,
+            particulars: req.body.particulars || null,
+            created_by: req.user.id
+          }
+        });
+
+        // Write AuditLog
+        await tx.auditLog.create({
+          data: {
+            user_id: req.user.id,
+            action: 'Generate Invoice',
+            module: 'Invoices',
+            record_id: String(inv.id),
+            new_value: `Generated Pending General Invoice '${inv.invoice_id}' for project '${project.name}' (Net Total: ₹${total_amount.toLocaleString('en-IN')}, GST: ${gRate}%, TDS: ${tRate}%, Particulars: ${req.body.particulars || 'None'})`
+          }
+        });
+
+        return inv;
+      });
+
+      return res.json(invoice);
     } else {
-      // TypeB / TypeC (Receivables)
+      // TypeB (Receivables)
       const invoice = await prisma.$transaction(async (tx) => {
         const inv = await tx.invoice.create({
           data: {
@@ -163,7 +208,7 @@ router.put('/:id/payment-status', async (req, res) => {
       }
 
       if (payment_status === 'Paid') {
-        if (invoice.invoice_type === 'TypeA') {
+        if (invoice.invoice_type === 'TypeA' || invoice.invoice_type === 'TypeC') {
           if (invoice.project.budget_remaining < invoice.total_amount) {
             throw new Error(`Insufficient project budget to complete payment. Available: ₹${invoice.project.budget_remaining.toLocaleString()}`);
           }
@@ -194,7 +239,7 @@ router.put('/:id/payment-status', async (req, res) => {
 
         return updatedInvoice;
       } else {
-        if (invoice.invoice_type === 'TypeA') {
+        if (invoice.invoice_type === 'TypeA' || invoice.invoice_type === 'TypeC') {
           await tx.project.update({
             where: { id: invoice.project_id },
             data: { budget_remaining: invoice.project.budget_remaining + invoice.total_amount }

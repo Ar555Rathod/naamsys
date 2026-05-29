@@ -341,6 +341,7 @@ model Invoice {
   
   working_sheet_id   Int?
   working_sheet      WorkingSheet? @relation(fields: [working_sheet_id], references: [id])
+  particulars        String?       @db.Text
 
   line_items InvoiceLineItem[]
 }

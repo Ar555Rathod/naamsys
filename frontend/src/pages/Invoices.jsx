@@ -21,6 +21,7 @@ export default function Invoices() {
   const [total_amount, setTotalAmount] = useState('');
   const [gst_rate, setGstRate] = useState('0');
   const [tds_rate, setTdsRate] = useState('0');
+  const [particulars, setParticulars] = useState('');
   const [userRole, setUserRole] = useState('Operator');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -64,12 +65,13 @@ export default function Invoices() {
       await api.post('/invoices', {
         invoice_type,
         project_id,
-        purchase_order_id: purchase_order_id || null,
-        vendor_id: vendor_id || null,
+        purchase_order_id: invoice_type === 'TypeA' ? (purchase_order_id || null) : null,
+        vendor_id: (invoice_type === 'TypeB' || invoice_type === 'TypeC') ? (vendor_id || null) : null,
         contractor_id: contractor_id || null,
         subtotal: total_amount,
         gst_rate: parseFloat(gst_rate) || 0,
-        tds_rate: parseFloat(tds_rate) || 0
+        tds_rate: parseFloat(tds_rate) || 0,
+        particulars: invoice_type === 'TypeC' ? (particulars || '') : null
       });
       setShowForm(false);
       setTotalAmount('');
@@ -78,6 +80,7 @@ export default function Invoices() {
       setContractorId('');
       setGstRate('0');
       setTdsRate('0');
+      setParticulars('');
       fetchData();
       alert('Invoice processed successfully!');
     } catch (err) {
@@ -167,8 +170,9 @@ export default function Invoices() {
             <div className="form-group">
               <label>Invoice Type</label>
               <select value={invoice_type} onChange={e=>setInvoiceType(e.target.value)} className="input-field">
-                <option value="TypeA">Type A (Payable to Contractor/Vendor)</option>
-                <option value="TypeB">Type B/C (Receivable from CSR/Govt)</option>
+                <option value="TypeA">Type A (Payable to Contractor/Vendor via PO)</option>
+                <option value="TypeB">Type B (Receivable from CSR/Govt)</option>
+                <option value="TypeC">Type C (General Invoice - Stationery, Food, etc.)</option>
               </select>
             </div>
             <div className="form-group">
@@ -218,7 +222,7 @@ export default function Invoices() {
               </>
             )}
 
-            {invoice_type !== 'TypeA' && (
+            {invoice_type === 'TypeB' && (
               <>
                 <div className="form-group">
                   <label>Vendor (Optional)</label>
@@ -233,6 +237,22 @@ export default function Invoices() {
                     <option value="">-- Select Contractor --</option>
                     {contractors.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
                   </select>
+                </div>
+              </>
+            )}
+
+            {invoice_type === 'TypeC' && (
+              <>
+                <div className="form-group">
+                  <label>Vendor / Agency</label>
+                  <select value={vendor_id} onChange={e=>setVendorId(e.target.value)} className="input-field" required>
+                    <option value="">-- Select Vendor --</option>
+                    {vendors.map(v => <option key={v.id} value={v.id}>{v.company_name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label>Particulars ( Stationery details, Food details, etc. )</label>
+                  <input type="text" value={particulars} onChange={e=>setParticulars(e.target.value)} className="input-field" placeholder="E.g. Stationary bill, Catering charges for site meet" required />
                 </div>
               </>
             )}
@@ -277,7 +297,7 @@ export default function Invoices() {
               </div>
             )}
             
-            {selectedProject && invoice_type === 'TypeA' && (
+            {selectedProject && (invoice_type === 'TypeA' || invoice_type === 'TypeC') && (
               <div className="form-group" style={{ gridColumn: '1 / -1', background: 'rgba(239, 68, 68, 0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--danger)' }}>
                 <p style={{ fontSize: '0.875rem', color: 'var(--danger)', fontWeight: 500 }}>
                   System Check: Remaining budget for {selectedProject.project_id} is ₹{selectedProject.budget_remaining.toLocaleString()}. 
@@ -332,8 +352,8 @@ export default function Invoices() {
                     {inv.purchase_order?.vendor?.company_name || inv.vendor?.company_name || inv.contractor?.full_name || 'N/A'}
                   </td>
                   <td>
-                    <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : 'badge badge-success'}>
-                      {inv.invoice_type === 'TypeA' ? 'Payable' : 'Receivable'}
+                    <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : inv.invoice_type === 'TypeC' ? 'badge badge-info' : 'badge badge-success'} style={{ background: inv.invoice_type === 'TypeC' ? 'rgba(59, 130, 246, 0.15)' : undefined, color: inv.invoice_type === 'TypeC' ? '#3b82f6' : undefined }}>
+                      {inv.invoice_type === 'TypeA' ? 'Payable (PO)' : inv.invoice_type === 'TypeC' ? 'General Expense' : 'Receivable'}
                     </span>
                   </td>
                   <td>₹{inv.total_amount.toLocaleString('en-IN')}</td>
@@ -424,7 +444,7 @@ export default function Invoices() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem' }}>
                 <div>
                   <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Billed From (Contractor / Vendor):</h4>
-                  {modalDetails.invoice_type === 'TypeA' ? (
+                  {(modalDetails.invoice_type === 'TypeA' || modalDetails.invoice_type === 'TypeC') ? (
                     <div style={{ fontSize: '0.875rem' }}>
                       <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{modalDetails.vendor?.company_name || modalDetails.purchase_order?.vendor?.company_name || modalDetails.contractor?.full_name || 'Individual Contractor'}</strong>
                       <p style={{ color: '#475569', marginTop: '0.25rem' }}>
@@ -452,7 +472,7 @@ export default function Invoices() {
                     <p style={{ color: '#475569', marginTop: '0.25rem' }}>
                       Name: {modalDetails.project?.name}<br />
                       Type of Work: {modalDetails.project?.type_of_work}<br />
-                      Funding Source: {modalDetails.project?.source_type} ({modalDetails.invoice_type === 'TypeA' ? 'NAAM Financed' : 'CSR/Govt Receivable'})<br />
+                      Funding Source: {modalDetails.project?.source_type} ({(modalDetails.invoice_type === 'TypeA' || modalDetails.invoice_type === 'TypeC') ? 'NAAM Financed' : 'CSR/Govt Receivable'})<br />
                       {modalDetails.purchase_order && <>Linked Purchase Order: <strong>{modalDetails.purchase_order.po_number} (A{modalDetails.purchase_order.version})</strong></>}
                     </p>
                   </div>
@@ -470,10 +490,12 @@ export default function Invoices() {
                 <tbody>
                   <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
                     <td style={{ padding: '1.25rem 1rem', fontSize: '0.875rem', verticalAlign: 'top' }}>
-                      <strong>{modalDetails.project?.type_of_work} Operations</strong>
+                      <strong>{modalDetails.invoice_type === 'TypeC' ? 'General Purchase / Particulars' : `${modalDetails.project?.type_of_work} Operations`}</strong>
                       <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>
                         {modalDetails.invoice_type === 'TypeA' 
                           ? `Supply and delivery operations completed under Purchase Order ${modalDetails.purchase_order?.po_number || 'N/A'}.`
+                          : modalDetails.invoice_type === 'TypeC'
+                          ? `Particulars: ${modalDetails.particulars || 'N/A'}`
                           : `CSR / Govt matching funding call for budget allocation under reference ${modalDetails.project?.proposal_id || 'N/A'}.`
                         }
                       </p>
@@ -508,7 +530,7 @@ export default function Invoices() {
               </table>
 
               {/* Payment Info */}
-              {modalDetails.invoice_type === 'TypeA' && (modalDetails.vendor?.bank_name || modalDetails.purchase_order?.vendor?.bank_name) && (
+              {(modalDetails.invoice_type === 'TypeA' || modalDetails.invoice_type === 'TypeC') && (modalDetails.vendor?.bank_name || modalDetails.purchase_order?.vendor?.bank_name) && (
                 <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '3rem' }}>
                   <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>Beneficiary Remittance Bank Details:</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.8rem' }}>

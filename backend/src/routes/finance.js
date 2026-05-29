@@ -274,9 +274,9 @@ router.put('/working-sheets/:id/approve', requireAdmin, async (req, res) => {
         });
       }
 
-      // 2. Process budget deductions for Type A invoices being Paid
+      // 2. Process budget deductions for Type A & Type C invoices being Paid
       for (const inv of associatedInvoices) {
-        if (inv.invoice_type === 'TypeA') {
+        if (inv.invoice_type === 'TypeA' || inv.invoice_type === 'TypeC') {
           const currentProject = await tx.project.findUnique({ where: { id: inv.project_id } });
           if (currentProject.budget_remaining < inv.total_amount) {
             throw new Error(`Invoice Blocked: Insufficient budget remaining for project '${currentProject.name}' to pay Invoice '${inv.invoice_id}'.`);
