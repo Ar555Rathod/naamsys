@@ -105,16 +105,26 @@ model CsrCompany {
 }
 
 model GovtEntry {
-  id           Int      @id @default(autoincrement())
-  govt_id      String   @unique
-  scheme_dept  String
-  type_of_work String
-  sub_type     String
-  district_id  Int?
-  taluka_id    Int?
-  village_id   Int?
-  created_by   Int
-  created_at   DateTime @default(now())
+  id                Int      @id @default(autoincrement())
+  govt_id           String   @unique
+  scheme_dept       String
+  type_of_work      String
+  sub_type          String
+  budget            Float    @default(0)
+  budget_remaining  Float    @default(0)
+  admin_cost_type   String   @default("PERCENT") // "PERCENT" or "RUPEE"
+  admin_cost_value  Float    @default(0)
+  admin_cost_amount Float    @default(0)
+  available_budget  Float    @default(0)
+  mou_pdf           String?
+  contact_person    String?
+  email             String?
+  phone             String?
+  district_id       Int?
+  taluka_id         Int?
+  village_id        Int?
+  created_by        Int
+  created_at        DateTime @default(now())
 
   work_orders GovtWorkOrder[]
 }

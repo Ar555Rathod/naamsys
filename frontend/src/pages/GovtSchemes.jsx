@@ -16,6 +16,13 @@ export default function GovtSchemes() {
   const [type_of_work, setTypeOfWork] = useState('Road Construction');
   const [sub_type, setSubType] = useState('');
   
+  const [budget, setBudget] = useState('');
+  const [admin_cost_type, setAdminCostType] = useState('PERCENT'); // 'PERCENT' or 'RUPEE'
+  const [admin_cost_value, setAdminCostValue] = useState('');
+  const [contact_person, setContactPerson] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+
   const [district_id, setDistrictId] = useState('');
   const [taluka_id, setTalukaId] = useState('');
   const [village_id, setVillageId] = useState('');
@@ -65,6 +72,12 @@ export default function GovtSchemes() {
         scheme_dept, 
         type_of_work, 
         sub_type,
+        budget: parseFloat(budget) || 0,
+        admin_cost_type,
+        admin_cost_value: parseFloat(admin_cost_value) || 0,
+        contact_person,
+        email,
+        phone,
         district_id: district_id ? parseInt(district_id) : null,
         taluka_id: taluka_id ? parseInt(taluka_id) : null,
         village_id: village_id ? parseInt(village_id) : null
@@ -84,16 +97,25 @@ export default function GovtSchemes() {
         setSelectedScheme(null);
       }
     } catch (err) {
-      alert('Failed to save scheme');
+      console.error(err);
+      const errMsg = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to save scheme';
+      alert(`Failed to save scheme: ${errMsg}`);
     }
   };
 
   const handleCreateWO = async (e) => {
     e.preventDefault();
     try {
+      const parsedBudget = parseFloat(wo_budget);
+      const parentScheme = schemes.find(s => s.id === selectedSchemeId);
+      if (parentScheme && parentScheme.budget_remaining < parsedBudget) {
+        alert(`Insufficient budget remaining in the Government Scheme! Available: ₹${parentScheme.budget_remaining.toLocaleString()}`);
+        return;
+      }
+
       await api.post(`/govt/${selectedSchemeId}/work-orders`, {
         work_order_number: wo_number,
-        budget: parseFloat(wo_budget),
+        budget: parsedBudget,
         description: wo_desc
       });
       setShowWOForm(false);
@@ -118,6 +140,12 @@ export default function GovtSchemes() {
     setSchemeDept(s.scheme_dept);
     setTypeOfWork(s.type_of_work);
     setSubType(s.sub_type || '');
+    setBudget(s.budget ? s.budget.toString() : '');
+    setAdminCostType(s.admin_cost_type || 'PERCENT');
+    setAdminCostValue(s.admin_cost_value ? s.admin_cost_value.toString() : '');
+    setContactPerson(s.contact_person || '');
+    setEmail(s.email || '');
+    setPhone(s.phone || '');
     setDistrictId(s.district_id?.toString() || '');
     
     if (s.district_id) {
@@ -138,9 +166,16 @@ export default function GovtSchemes() {
     setEditMode(false);
     setEditId(null);
     setSchemeDept(''); setSubType(''); setDistrictId(''); setTalukaId(''); setVillageId('');
+    setBudget(''); setAdminCostType('PERCENT'); setAdminCostValue('');
+    setContactPerson(''); setEmail(''); setPhone('');
     setAvailableTalukas([]); setAvailableVillages([]);
     setShowForm(false);
   };
+
+  const originalBudget = parseFloat(budget) || 0;
+  const adminCostVal = parseFloat(admin_cost_value) || 0;
+  const computedAdminCost = admin_cost_type === 'PERCENT' ? (originalBudget * adminCostVal) / 100 : adminCostVal;
+  const computedAvailableBudget = originalBudget - computedAdminCost;
 
   return (
     <div className="main-content">
@@ -207,7 +242,66 @@ export default function GovtSchemes() {
               </select>
             </div>
 
-            <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem' }}>
+            <div className="form-group">
+              <label>Total MoU Budget (₹)</label>
+              <input type="number" value={budget} onChange={e=>setBudget(e.target.value)} className="input-field" placeholder="e.g. 5000000" required />
+            </div>
+
+            <div className="form-group">
+              <label>Admin Cost Option</label>
+              <select value={admin_cost_type} onChange={e=>{setAdminCostType(e.target.value); setAdminCostValue('');}} className="input-field">
+                <option value="PERCENT">Percentage (%)</option>
+                <option value="RUPEE">Rupees (₹)</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Admin Cost Value {admin_cost_type === 'PERCENT' ? '(%)' : '(₹)'}</label>
+              <input 
+                type="number" 
+                value={admin_cost_value} 
+                onChange={e=>setAdminCostValue(e.target.value)} 
+                className="input-field" 
+                placeholder={admin_cost_type === 'PERCENT' ? 'e.g. 5' : 'e.g. 50000'} 
+                required 
+              />
+            </div>
+
+            {/* Premium Budget Preview Widget */}
+            <div className="form-group" style={{ gridColumn: '1 / -1', background: 'rgba(79, 70, 229, 0.04)', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Calculated Admin Cost:</span>
+                <strong style={{ display: 'block', fontSize: '1.1rem', color: 'var(--text-main)', marginTop: '0.25rem' }}>₹{computedAdminCost.toLocaleString()}</strong>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Available Project Budget:</span>
+                <strong style={{ display: 'block', fontSize: '1.25rem', color: 'var(--success)', marginTop: '0.25rem' }}>₹{computedAvailableBudget.toLocaleString()}</strong>
+              </div>
+            </div>
+
+            {/* Representative Details Header */}
+            <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                <User size={18} color="var(--primary)" /> Department Representative Details
+              </h3>
+            </div>
+
+            <div className="form-group">
+              <label>Contact Person</label>
+              <input type="text" value={contact_person} onChange={e=>setContactPerson(e.target.value)} className="input-field" placeholder="e.g. Officer Raj" required />
+            </div>
+
+            <div className="form-group">
+              <label>Email Address</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="input-field" placeholder="e.g. raj@gov.in" required />
+            </div>
+
+            <div className="form-group">
+              <label>Phone Number</label>
+              <input type="text" value={phone} onChange={e=>setPhone(e.target.value)} className="input-field" placeholder="e.g. +91 9876543210" required />
+            </div>
+
+            <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem', marginTop: '1rem' }}>
               <button type="submit" className="btn btn-primary">{editMode ? 'Update Scheme' : 'Save Scheme'}</button>
               {editMode && (
                 <button type="button" className="btn" style={{background: 'rgba(0,0,0,0.08)'}} onClick={resetForm}>Cancel</button>
@@ -248,14 +342,18 @@ export default function GovtSchemes() {
               <th>Scheme ID</th>
               <th>Department</th>
               <th>Type of Work</th>
-              <th style={{textAlign: 'right'}}>Total Budget Allocated</th>
+              <th style={{textAlign: 'right'}}>Total MoU Budget</th>
+              <th style={{textAlign: 'right'}}>Available Budget</th>
+              <th style={{textAlign: 'right'}}>Remaining Budget</th>
               <th style={{textAlign: 'center'}}>Work Orders</th>
               <th style={{textAlign: 'center'}}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {schemes.map(s => {
-              const totalAllocatedBudget = s.work_orders?.reduce((sum, wo) => sum + wo.budget, 0) || 0;
+              const totalMoUBudget = s.budget || 0;
+              const availableBudget = s.available_budget || totalMoUBudget;
+              const remainingBudget = s.budget_remaining || 0;
               return (
                 <tr key={s.id} onClick={() => handleRowClick(s)} style={{ cursor: 'pointer' }} className="hover-row">
                   <td style={{ fontWeight: 600, color: 'var(--primary)' }}>
@@ -265,7 +363,9 @@ export default function GovtSchemes() {
                   </td>
                   <td style={{ fontWeight: 500 }}>{s.scheme_dept}</td>
                   <td>{s.type_of_work} <br/><small style={{color:'var(--text-muted)'}}>{s.sub_type}</small></td>
-                  <td style={{textAlign: 'right', fontWeight: 600}}>₹{totalAllocatedBudget.toLocaleString()}</td>
+                  <td style={{textAlign: 'right'}}>₹{totalMoUBudget.toLocaleString()}</td>
+                  <td style={{textAlign: 'right', color: 'var(--success)', fontWeight: 500}}>₹{availableBudget.toLocaleString()}</td>
+                  <td style={{textAlign: 'right', fontWeight: 600}}>₹{remainingBudget.toLocaleString()}</td>
                   <td style={{textAlign: 'center'}}>
                     <span className="badge badge-success" style={{background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)'}}>
                       {s.work_orders?.length || 0} Orders
@@ -274,16 +374,16 @@ export default function GovtSchemes() {
                   <td style={{textAlign: 'center'}} onClick={e=>e.stopPropagation()}>
                     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                       <button 
-                        className="btn" 
-                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', gap: '0.25rem', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)' }}
-                        onClick={(e) => handleEdit(e, s)}
+                         className="btn" 
+                         style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', gap: '0.25rem', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)' }}
+                         onClick={(e) => handleEdit(e, s)}
                       >
                         <Edit3 size={13} /> Edit
                       </button>
                       <button 
-                        className="btn btn-primary" 
-                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', gap: '0.25rem' }}
-                        onClick={() => { setSelectedSchemeId(s.id); setShowWOForm(true); setShowForm(false); }}
+                         className="btn btn-primary" 
+                         style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', gap: '0.25rem' }}
+                         onClick={() => { setSelectedSchemeId(s.id); setShowWOForm(true); setShowForm(false); }}
                       >
                         + Add WO
                       </button>
@@ -292,16 +392,17 @@ export default function GovtSchemes() {
                 </tr>
               );
             })}
-            {schemes.length === 0 && <tr><td colSpan="6" style={{textAlign:'center', padding: '2rem', color: 'var(--text-muted)'}}>No Govt Schemes registered yet.</td></tr>}
+            {schemes.length === 0 && <tr><td colSpan="8" style={{textAlign:'center', padding: '2rem', color: 'var(--text-muted)'}}>No Govt Schemes registered yet.</td></tr>}
           </tbody>
         </table>
       </div>
 
       {/* GORGEOUS HIGH-FIDELITY VIEW DETAILS MODAL */}
       {selectedScheme && (() => {
-        const totalBudget = selectedScheme.work_orders?.reduce((sum, wo) => sum + wo.budget, 0) || 0;
-        const totalRemaining = selectedScheme.work_orders?.reduce((sum, wo) => sum + wo.budget_remaining, 0) || 0;
-        const totalSpent = totalBudget - totalRemaining;
+        const totalBudget = selectedScheme.budget || 0;
+        const adminCostAmount = selectedScheme.admin_cost_amount || 0;
+        const availableBudget = selectedScheme.available_budget || totalBudget;
+        const remainingBudget = selectedScheme.budget_remaining || 0;
         
         // Find all projects linked to this scheme's work orders
         const linkedProjects = selectedScheme.work_orders?.flatMap(wo => 
@@ -334,39 +435,43 @@ export default function GovtSchemes() {
               </div>
 
               {/* Financial Grid Card Dashboard */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem', marginBottom: '2rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
                 <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', padding: '1rem', borderRadius: '8px' }}>
-                  <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Total Scheme Budget</span>
-                  <strong style={{ display: 'block', fontSize: '1.25rem', marginTop: '0.25rem' }}>₹{totalBudget.toLocaleString()}</strong>
+                  <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>MoU Budget</span>
+                  <strong style={{ display: 'block', fontSize: '1.1rem', marginTop: '0.25rem' }}>₹{totalBudget.toLocaleString()}</strong>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', padding: '1rem', borderRadius: '8px' }}>
-                  <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Allocated / Spent</span>
-                  <strong style={{ display: 'block', fontSize: '1.25rem', marginTop: '0.25rem', color: 'var(--danger)' }}>₹{totalSpent.toLocaleString()}</strong>
+                  <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Admin Deducted ({selectedScheme.admin_cost_type === 'PERCENT' ? `${selectedScheme.admin_cost_value}%` : 'Fixed'})</span>
+                  <strong style={{ display: 'block', fontSize: '1.1rem', marginTop: '0.25rem', color: 'var(--danger)' }}>- ₹{adminCostAmount.toLocaleString()}</strong>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', padding: '1rem', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Available Budget</span>
+                  <strong style={{ display: 'block', fontSize: '1.1rem', marginTop: '0.25rem', color: 'var(--success)', fontWeight: 500 }}>₹{availableBudget.toLocaleString()}</strong>
                 </div>
                 <div style={{ background: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.2)', padding: '1rem', borderRadius: '8px' }}>
                   <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--primary)', letterSpacing: '0.05em', fontWeight: 600 }}>Remaining Balance</span>
-                  <strong style={{ display: 'block', fontSize: '1.25rem', marginTop: '0.25rem', color: 'var(--success)' }}>₹{totalRemaining.toLocaleString()}</strong>
+                  <strong style={{ display: 'block', fontSize: '1.15rem', marginTop: '0.25rem', color: 'var(--primary)' }}>₹{remainingBudget.toLocaleString()}</strong>
                 </div>
               </div>
 
-              {/* Details and Location Info */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+              {/* Details, Location, and Representative Contact Info */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
                 <div>
                   <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Info size={16} color="var(--primary)" /> Scheme Specifications
+                    <Info size={16} color="var(--primary)" /> Specifications
                   </h3>
                   <div style={{ fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', color: 'var(--text-main)' }}>
                     <div>
                       <span style={{ color: 'var(--text-muted)' }}>Department: </span>
-                      <strong>{selectedScheme.scheme_dept}</strong>
+                      <strong style={{ display: 'block', marginTop: '0.15rem' }}>{selectedScheme.scheme_dept}</strong>
                     </div>
                     <div>
                       <span style={{ color: 'var(--text-muted)' }}>Work Category: </span>
-                      <strong>{selectedScheme.type_of_work}</strong>
+                      <strong style={{ display: 'block', marginTop: '0.15rem' }}>{selectedScheme.type_of_work}</strong>
                     </div>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Details / Sub-type: </span>
-                      <span>{selectedScheme.sub_type || '—'}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Sub-type / Details: </span>
+                      <span style={{ display: 'block', marginTop: '0.15rem' }}>{selectedScheme.sub_type || '—'}</span>
                     </div>
                   </div>
                 </div>
@@ -378,15 +483,35 @@ export default function GovtSchemes() {
                   <div style={{ fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <div>
                       <span style={{ color: 'var(--text-muted)' }}>District: </span>
-                      <strong>{selectedScheme.district_name || '—'}</strong>
+                      <strong style={{ display: 'block', marginTop: '0.15rem' }}>{selectedScheme.district_name || '—'}</strong>
                     </div>
                     <div>
                       <span style={{ color: 'var(--text-muted)' }}>Taluka: </span>
-                      <strong>{selectedScheme.taluka_name || '—'}</strong>
+                      <strong style={{ display: 'block', marginTop: '0.15rem' }}>{selectedScheme.taluka_name || '—'}</strong>
                     </div>
                     <div>
                       <span style={{ color: 'var(--text-muted)' }}>Village: </span>
-                      <strong>{selectedScheme.village_name || '—'}</strong>
+                      <strong style={{ display: 'block', marginTop: '0.15rem' }}>{selectedScheme.village_name || '—'}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <User size={16} color="var(--primary)" /> Representative
+                  </h3>
+                  <div style={{ fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Contact Person: </span>
+                      <strong style={{ display: 'block', marginTop: '0.15rem' }}>{selectedScheme.contact_person || '—'}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Email Address: </span>
+                      <strong style={{ display: 'block', marginTop: '0.15rem', wordBreak: 'break-all' }}>{selectedScheme.email || '—'}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Phone Number: </span>
+                      <strong style={{ display: 'block', marginTop: '0.15rem' }}>{selectedScheme.phone || '—'}</strong>
                     </div>
                   </div>
                 </div>
