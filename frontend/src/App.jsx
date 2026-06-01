@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, FolderKanban, FileText, Settings as SettingsIcon, LogOut, Building, Landmark, FileSpreadsheet, FileCheck2, Receipt } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, FileText, Settings as SettingsIcon, LogOut, Building, Landmark, FileSpreadsheet, FileCheck2, Receipt, Database } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import Vendors from './pages/Vendors';
@@ -16,6 +16,7 @@ import Login from './pages/Login';
 import Settings from './pages/Settings';
 import ResetPassword from './pages/ResetPassword';
 import Finance from './pages/Finance';
+import Backup from './pages/Backup';
 
 function Sidebar({ onLogout }) {
   const location = useLocation();
@@ -64,6 +65,11 @@ function Sidebar({ onLogout }) {
         {(userRole === 'Admin' || userRole === 'Manager') && (
           <Link to="/finance" className={`nav-link ${location.pathname === '/finance' ? 'active' : ''}`}>
             <Landmark size={20} /> Finance
+          </Link>
+        )}
+        {(userRole === 'Admin' || userRole === 'Manager') && (
+          <Link to="/backup" className={`nav-link ${location.pathname === '/backup' ? 'active' : ''}`}>
+            <Database size={20} /> Backup & Data
           </Link>
         )}
         <Link to="/csr" className={`nav-link ${location.pathname === '/csr' ? 'active' : ''}`}>
@@ -131,6 +137,7 @@ function App() {
             <Route path="/purchase-orders" element={<PurchaseOrders />} />
             <Route path="/invoices" element={<Invoices />} />
             <Route path="/finance" element={<Finance />} />
+            <Route path="/backup" element={<Backup />} />
             <Route path="/csr" element={<CsrManagement />} />
             <Route path="/donors" element={<Donors />} />
             <Route path="/govt" element={<GovtSchemes />} />
