@@ -13,7 +13,7 @@ export default function GovtSchemes() {
   const [schemes, setSchemes] = useState([]);
   
   const [scheme_dept, setSchemeDept] = useState('');
-  const [type_of_work, setTypeOfWork] = useState('Road Construction');
+  const [type_of_work, setTypeOfWork] = useState('');
   const [sub_type, setSubType] = useState('');
   
   const [budget, setBudget] = useState('');
@@ -146,18 +146,33 @@ export default function GovtSchemes() {
     setContactPerson(s.contact_person || '');
     setEmail(s.email || '');
     setPhone(s.phone || '');
-    setDistrictId(s.district_id?.toString() || '');
-    
+
+    // Resolve location names from s.district_id, s.taluka_id, s.village_id
+    let distName = '';
+    let talName = '';
+    let vilName = '';
     if (s.district_id) {
       const district = locations.find(d => d.id === s.district_id);
-      setAvailableTalukas(district ? district.talukas : []);
-      if (s.taluka_id && district) {
-        const taluka = district.talukas.find(t => t.id === s.taluka_id);
-        setAvailableVillages(taluka ? taluka.villages : []);
+      if (district) {
+        distName = district.name;
+        if (s.taluka_id) {
+          const taluka = district.talukas.find(t => t.id === s.taluka_id);
+          if (taluka) {
+            talName = taluka.name;
+            if (s.village_id) {
+              const village = taluka.villages.find(v => v.id === s.village_id);
+              if (village) {
+                vilName = village.name;
+              }
+            }
+          }
+        }
       }
     }
-    setTalukaId(s.taluka_id?.toString() || '');
-    setVillageId(s.village_id?.toString() || '');
+
+    setDistrictId(distName || s.district_id?.toString() || '');
+    setTalukaId(talName || s.taluka_id?.toString() || '');
+    setVillageId(vilName || s.village_id?.toString() || '');
     setShowForm(true);
     setShowWOForm(false);
   };
@@ -165,7 +180,7 @@ export default function GovtSchemes() {
   const resetForm = () => {
     setEditMode(false);
     setEditId(null);
-    setSchemeDept(''); setSubType(''); setDistrictId(''); setTalukaId(''); setVillageId('');
+    setSchemeDept(''); setTypeOfWork(''); setSubType(''); setDistrictId(''); setTalukaId(''); setVillageId('');
     setBudget(''); setAdminCostType('PERCENT'); setAdminCostValue('');
     setContactPerson(''); setEmail(''); setPhone('');
     setAvailableTalukas([]); setAvailableVillages([]);
@@ -249,11 +264,7 @@ export default function GovtSchemes() {
 
             <div className="form-group">
               <label>Type of Work</label>
-              <select value={type_of_work} onChange={e=>setTypeOfWork(e.target.value)} className="input-field">
-                <option>Road Construction</option>
-                <option>Water Conservation</option>
-                <option>Infrastructure</option>
-              </select>
+              <input type="text" value={type_of_work} onChange={e=>setTypeOfWork(e.target.value)} className="input-field" placeholder="e.g. Road Construction" required />
             </div>
 
             <div className="form-group">
@@ -263,37 +274,17 @@ export default function GovtSchemes() {
 
             <div className="form-group">
               <label>District</label>
-              <select value={district_id} onChange={e => {
-                setDistrictId(e.target.value);
-                setTalukaId(''); setVillageId('');
-                const district = locations.find(d => d.id === parseInt(e.target.value));
-                setAvailableTalukas(district ? district.talukas : []);
-                setAvailableVillages([]);
-              }} className="input-field">
-                <option value="">-- Select District --</option>
-                {locations.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
+              <input type="text" value={district_id} onChange={e=>setDistrictId(e.target.value)} className="input-field" placeholder="Enter District" />
             </div>
 
             <div className="form-group">
               <label>Taluka</label>
-              <select value={taluka_id} onChange={e => {
-                setTalukaId(e.target.value);
-                setVillageId('');
-                const taluka = availableTalukas.find(t => t.id === parseInt(e.target.value));
-                setAvailableVillages(taluka ? taluka.villages : []);
-              }} className="input-field" disabled={!district_id}>
-                <option value="">-- Select Taluka --</option>
-                {availableTalukas.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
+              <input type="text" value={taluka_id} onChange={e=>setTalukaId(e.target.value)} className="input-field" placeholder="Enter Taluka" />
             </div>
 
             <div className="form-group">
               <label>Village</label>
-              <select value={village_id} onChange={e=>setVillageId(e.target.value)} className="input-field" disabled={!taluka_id}>
-                <option value="">-- Select Village --</option>
-                {availableVillages.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-              </select>
+              <input type="text" value={village_id} onChange={e=>setVillageId(e.target.value)} className="input-field" placeholder="Enter Village" />
             </div>
 
             <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem', marginTop: '1rem' }}>

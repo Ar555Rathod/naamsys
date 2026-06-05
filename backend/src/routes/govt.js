@@ -42,6 +42,69 @@ router.post('/', async (req, res) => {
     }
     const availableBudget = originalBudget - adminCostAmount;
 
+    // Resolve Location IDs from Name strings or existing numeric IDs
+    let final_district_id = null;
+    let final_taluka_id = null;
+    let final_village_id = null;
+
+    // 1. Resolve District
+    if (district_id) {
+      if (typeof district_id === 'string' && isNaN(Number(district_id))) {
+        const name = district_id.trim();
+        let d = await prisma.locationDistrict.findFirst({ where: { name } });
+        if (!d) {
+          let code = 'D-' + name.substring(0, 3).toUpperCase();
+          const codeExists = await prisma.locationDistrict.findUnique({ where: { code } });
+          if (codeExists) {
+            code = code + '-' + Math.floor(Math.random() * 1000);
+          }
+          d = await prisma.locationDistrict.create({ data: { name, code } });
+        }
+        final_district_id = d.id;
+      } else {
+        const d = await prisma.locationDistrict.findUnique({ where: { id: parseInt(district_id) } });
+        if (d) {
+          final_district_id = d.id;
+        }
+      }
+    }
+
+    // 2. Resolve Taluka
+    if (taluka_id) {
+      if (typeof taluka_id === 'string' && isNaN(Number(taluka_id)) && final_district_id) {
+        const name = taluka_id.trim();
+        let t = await prisma.locationTaluka.findFirst({ where: { name, district_id: final_district_id } });
+        if (!t) {
+          const code = 'T-' + name.substring(0, 3).toUpperCase() + '-' + Math.floor(Math.random() * 1000);
+          t = await prisma.locationTaluka.create({ data: { name, code, district_id: final_district_id } });
+        }
+        final_taluka_id = t.id;
+      } else {
+        const t = await prisma.locationTaluka.findUnique({ where: { id: parseInt(taluka_id) } });
+        if (t) {
+          final_taluka_id = t.id;
+        }
+      }
+    }
+
+    // 3. Resolve Village
+    if (village_id) {
+      if (typeof village_id === 'string' && isNaN(Number(village_id)) && final_taluka_id) {
+        const name = village_id.trim();
+        let v = await prisma.locationVillage.findFirst({ where: { name, taluka_id: final_taluka_id } });
+        if (!v) {
+          const code = 'V-' + name.substring(0, 3).toUpperCase() + '-' + Math.floor(Math.random() * 1000);
+          v = await prisma.locationVillage.create({ data: { name, code, taluka_id: final_taluka_id } });
+        }
+        final_village_id = v.id;
+      } else {
+        const v = await prisma.locationVillage.findUnique({ where: { id: parseInt(village_id) } });
+        if (v) {
+          final_village_id = v.id;
+        }
+      }
+    }
+
     const newScheme = await prisma.govtEntry.create({
       data: {
         govt_id,
@@ -57,9 +120,9 @@ router.post('/', async (req, res) => {
         contact_person,
         email,
         phone,
-        district_id: district_id ? parseInt(district_id) : null,
-        taluka_id: taluka_id ? parseInt(taluka_id) : null,
-        village_id: village_id ? parseInt(village_id) : null,
+        district_id: final_district_id,
+        taluka_id: final_taluka_id,
+        village_id: final_village_id,
         created_by: 1
       }
     });
@@ -206,6 +269,69 @@ router.put('/:id', async (req, res) => {
 
     const budgetRemaining = availableBudget - spentBudget;
 
+    // Resolve Location IDs from Name strings or existing numeric IDs
+    let final_district_id = null;
+    let final_taluka_id = null;
+    let final_village_id = null;
+
+    // 1. Resolve District
+    if (district_id) {
+      if (typeof district_id === 'string' && isNaN(Number(district_id))) {
+        const name = district_id.trim();
+        let d = await prisma.locationDistrict.findFirst({ where: { name } });
+        if (!d) {
+          let code = 'D-' + name.substring(0, 3).toUpperCase();
+          const codeExists = await prisma.locationDistrict.findUnique({ where: { code } });
+          if (codeExists) {
+            code = code + '-' + Math.floor(Math.random() * 1000);
+          }
+          d = await prisma.locationDistrict.create({ data: { name, code } });
+        }
+        final_district_id = d.id;
+      } else {
+        const d = await prisma.locationDistrict.findUnique({ where: { id: parseInt(district_id) } });
+        if (d) {
+          final_district_id = d.id;
+        }
+      }
+    }
+
+    // 2. Resolve Taluka
+    if (taluka_id) {
+      if (typeof taluka_id === 'string' && isNaN(Number(taluka_id)) && final_district_id) {
+        const name = taluka_id.trim();
+        let t = await prisma.locationTaluka.findFirst({ where: { name, district_id: final_district_id } });
+        if (!t) {
+          const code = 'T-' + name.substring(0, 3).toUpperCase() + '-' + Math.floor(Math.random() * 1000);
+          t = await prisma.locationTaluka.create({ data: { name, code, district_id: final_district_id } });
+        }
+        final_taluka_id = t.id;
+      } else {
+        const t = await prisma.locationTaluka.findUnique({ where: { id: parseInt(taluka_id) } });
+        if (t) {
+          final_taluka_id = t.id;
+        }
+      }
+    }
+
+    // 3. Resolve Village
+    if (village_id) {
+      if (typeof village_id === 'string' && isNaN(Number(village_id)) && final_taluka_id) {
+        const name = village_id.trim();
+        let v = await prisma.locationVillage.findFirst({ where: { name, taluka_id: final_taluka_id } });
+        if (!v) {
+          const code = 'V-' + name.substring(0, 3).toUpperCase() + '-' + Math.floor(Math.random() * 1000);
+          v = await prisma.locationVillage.create({ data: { name, code, taluka_id: final_taluka_id } });
+        }
+        final_village_id = v.id;
+      } else {
+        const v = await prisma.locationVillage.findUnique({ where: { id: parseInt(village_id) } });
+        if (v) {
+          final_village_id = v.id;
+        }
+      }
+    }
+
     const updated = await prisma.govtEntry.update({
       where: { id },
       data: {
@@ -221,9 +347,9 @@ router.put('/:id', async (req, res) => {
         contact_person,
         email,
         phone,
-        district_id: district_id ? parseInt(district_id) : null,
-        taluka_id: taluka_id ? parseInt(taluka_id) : null,
-        village_id: village_id ? parseInt(village_id) : null
+        district_id: final_district_id,
+        taluka_id: final_taluka_id,
+        village_id: final_village_id
       }
     });
     res.json(updated);
