@@ -37,10 +37,14 @@ router.post('/', async (req, res) => {
     const { 
       company_name, pan, aadhaar, gst, 
       owner_name, owner_contact, owner_address, 
-      address_line1, address_line2, address_line3,
+      address_line1, address_line2, address_line3, pincode,
       machine_details, operator_details,
       bank_name, account_no, ifsc, branch, project_ids
     } = req.body;
+
+    if (pincode && !/^\d{6}$/.test(pincode)) {
+      return res.status(400).json({ error: 'Pincode must be a 6-digit number.' });
+    }
 
     const count = await prisma.vendor.count() + 1;
     const vendor_id = `VEN-${String(count).padStart(3, '0')}`;
@@ -51,8 +55,8 @@ router.post('/', async (req, res) => {
         company_name,
         pan, aadhaar, gst,
         owner_name, owner_contact,
-        owner_address: owner_address || [address_line1, address_line2, address_line3].filter(Boolean).join(', '),
-        address_line1, address_line2, address_line3,
+        owner_address: owner_address || [address_line1, address_line2, address_line3, pincode].filter(Boolean).join(', '),
+        address_line1, address_line2, address_line3, pincode,
         machine_details, operator_details,
         bank_name, account_no, ifsc, branch,
         created_by: req.user.id
@@ -94,10 +98,14 @@ router.post('/contractors', async (req, res) => {
   try {
     const { 
       full_name, pan, aadhaar, contact, address,
-      address_line1, address_line2, address_line3,
+      address_line1, address_line2, address_line3, pincode,
       bank_name, account_no, ifsc, branch,
       vendor_id, project_id
     } = req.body;
+
+    if (pincode && !/^\d{6}$/.test(pincode)) {
+      return res.status(400).json({ error: 'Pincode must be a 6-digit number.' });
+    }
 
     const count = await prisma.contractor.count() + 1;
     const contractor_id = `CON-${String(count).padStart(3, '0')}`;
@@ -113,8 +121,8 @@ router.post('/contractors', async (req, res) => {
         contractor_id,
         full_name,
         pan, aadhaar, contact,
-        address: address || [address_line1, address_line2, address_line3].filter(Boolean).join(', '),
-        address_line1, address_line2, address_line3,
+        address: address || [address_line1, address_line2, address_line3, pincode].filter(Boolean).join(', '),
+        address_line1, address_line2, address_line3, pincode,
         bank_name, account_no, ifsc, branch,
         created_by: req.user.id
       }
@@ -175,10 +183,14 @@ router.put('/:id', async (req, res) => {
     const { 
       company_name, pan, aadhaar, gst, 
       owner_name, owner_contact, owner_address, 
-      address_line1, address_line2, address_line3,
+      address_line1, address_line2, address_line3, pincode,
       machine_details, operator_details,
       bank_name, account_no, ifsc, branch
     } = req.body;
+
+    if (pincode && !/^\d{6}$/.test(pincode)) {
+      return res.status(400).json({ error: 'Pincode must be a 6-digit number.' });
+    }
 
     const updated = await prisma.vendor.update({
       where: { id },
@@ -186,8 +198,8 @@ router.put('/:id', async (req, res) => {
         company_name,
         pan, aadhaar, gst,
         owner_name, owner_contact,
-        owner_address: owner_address || [address_line1, address_line2, address_line3].filter(Boolean).join(', '),
-        address_line1, address_line2, address_line3,
+        owner_address: owner_address || [address_line1, address_line2, address_line3, pincode].filter(Boolean).join(', '),
+        address_line1, address_line2, address_line3, pincode,
         machine_details, operator_details,
         bank_name, account_no, ifsc, branch
       }
@@ -236,18 +248,22 @@ router.put('/contractors/:id', async (req, res) => {
     const id = parseInt(req.params.id);
     const { 
       full_name, pan, aadhaar, contact, address,
-      address_line1, address_line2, address_line3,
+      address_line1, address_line2, address_line3, pincode,
       bank_name, account_no, ifsc, branch,
       vendor_id, project_id
     } = req.body;
+
+    if (pincode && !/^\d{6}$/.test(pincode)) {
+      return res.status(400).json({ error: 'Pincode must be a 6-digit number.' });
+    }
 
     const updated = await prisma.contractor.update({
       where: { id },
       data: {
         full_name,
         pan, aadhaar, contact,
-        address: address || [address_line1, address_line2, address_line3].filter(Boolean).join(', '),
-        address_line1, address_line2, address_line3,
+        address: address || [address_line1, address_line2, address_line3, pincode].filter(Boolean).join(', '),
+        address_line1, address_line2, address_line3, pincode,
         bank_name, account_no, ifsc, branch
       }
     });

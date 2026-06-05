@@ -17,6 +17,8 @@ export default function Projects() {
   const [govt_work_order_id, setGovtWorkOrderId] = useState('');
   const [individual_donor_id, setIndividualDonorId] = useState('');
   const [sourceMaxBudget, setSourceMaxBudget] = useState(null);
+  const [fundingSources, setFundingSources] = useState([]);
+  const [sourceAmount, setSourceAmount] = useState('');
   
   const [proposal_id, setProposalId] = useState('');
   const [financial_year_id, setFinancialYearId] = useState('');
@@ -87,16 +89,25 @@ export default function Projects() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    const reqBudget = parseFloat(budget) || 0;
+    const sumContributions = fundingSources.reduce((sum, s) => sum + s.amount, 0);
+
+    if (Math.abs(reqBudget - sumContributions) > 0.01) {
+      alert(`The sum of funding source allocations (₹${sumContributions.toLocaleString()}) must exactly match the project budget (₹${reqBudget.toLocaleString()}).`);
+      return;
+    }
+
     try {
       await api.post('/projects', {
         name,
-        budget,
+        budget: reqBudget,
         type_of_work,
         sub_type: type_of_work,
-        source_type,
-        csr_id: source_type === 'CSR' ? parseInt(csr_id) : undefined,
-        govt_work_order_id: source_type === 'GOVT' ? parseInt(govt_work_order_id) : undefined,
-        individual_donor_id: source_type === 'INDIVIDUAL' ? parseInt(individual_donor_id) : undefined,
+        funding_sources: fundingSources.map(s => ({
+          source_type: s.source_type,
+          id: s.id,
+          amount: s.amount
+        })),
         proposal_id,
         financial_year_id: financial_year_id ? parseInt(financial_year_id) : undefined,
         start_date: start_date ? new Date(start_date).toISOString() : undefined,
@@ -108,6 +119,7 @@ export default function Projects() {
       });
       setShowForm(false);
       setName(''); setProposalId(''); setStartDate(''); setEndDate(''); setBudget(''); setSourceMaxBudget(null);
+      setFundingSources([]); setSourceAmount('');
       setTypeOfWork(''); setDistrictId(''); setTalukaId(''); setVillageId(''); setProposalPdf('');
       fetchProjects();
     } catch (err) {
@@ -137,6 +149,11 @@ export default function Projects() {
             <div className="form-group">
               <label>Proposal ID</label>
               <input type="text" value={proposal_id} onChange={e=>setProposalId(e.target.value)} className="input-field" placeholder="e.g. PROP-2026-001" />
+            </div>
+
+            <div className="form-group">
+              <label>Project Budget (₹)</label>
+              <input type="number" value={budget} onChange={e=>setBudget(e.target.value)} className="input-field" placeholder="e.g. 10000000" required />
             </div>
 
             <div className="form-group">
@@ -228,7 +245,36 @@ export default function Projects() {
 
             <div className="form-group" style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
               <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-main)' }}>Funding Source Allocation</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              
+              {fundingSources.length > 0 && (
+                <div style={{ marginBottom: '1.5rem', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem', background: 'rgba(255,255,255,0.01)' }}>
+                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>Added Funding Sources</h4>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {fundingSources.map((src, index) => (
+                      <li key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '0.5rem 0.75rem', borderRadius: '6px', fontSize: '0.9rem' }}>
+                        <div>
+                          <span style={{ fontWeight: 600, color: 'var(--primary)' }}>[{src.source_type}]</span> {src.name}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <strong style={{ color: 'var(--text-main)' }}>₹{parseFloat(src.amount).toLocaleString()}</strong>
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              setFundingSources(fundingSources.filter((_, i) => i !== index));
+                            }} 
+                            className="btn btn-danger" 
+                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '1rem', alignItems: 'end' }}>
                 <div className="form-group">
                   <label>Source Type</label>
                   <select value={source_type} onChange={e=>{
@@ -249,7 +295,7 @@ export default function Projects() {
                       setCsrId(e.target.value);
                       const csr = csrs.find(c => c.id === parseInt(e.target.value));
                       if (csr) setSourceMaxBudget(csr.budget_remaining);
-                    }} className="input-field" required>
+                    }} className="input-field">
                       <option value="">-- Select CSR --</option>
                       {csrs.map(c => <option key={c.id} value={c.id}>{c.name} (Avail: ₹{c.budget_remaining?.toLocaleString()})</option>)}
                     </select>
@@ -263,7 +309,7 @@ export default function Projects() {
                       setGovtWorkOrderId(e.target.value);
                       const wo = govts.flatMap(g=>g.work_orders).find(w => w.id === parseInt(e.target.value));
                       if (wo) setSourceMaxBudget(wo.budget_remaining);
-                    }} className="input-field" required>
+                    }} className="input-field">
                       <option value="">-- Select Work Order --</option>
                       {govts.flatMap(g => g.work_orders.map(wo => (
                         <option key={wo.id} value={wo.id}>{wo.work_order_number} ({g.scheme_dept}) - Avail: ₹{wo.budget_remaining?.toLocaleString()}</option>
@@ -279,23 +325,113 @@ export default function Projects() {
                       setIndividualDonorId(e.target.value);
                       const d = donors.find(d => d.id === parseInt(e.target.value));
                       if (d) setSourceMaxBudget(d.budget_remaining);
-                    }} className="input-field" required>
+                    }} className="input-field">
                       <option value="">-- Select Donor --</option>
                       {donors.map(d => <option key={d.id} value={d.id}>{d.name} (Avail: ₹{d.budget_remaining?.toLocaleString()})</option>)}
                     </select>
                   </div>
                 )}
+
+                <div className="form-group">
+                  <label>Contribution Amount (₹)</label>
+                  <input 
+                    type="number" 
+                    value={sourceAmount} 
+                    onChange={e=>setSourceAmount(e.target.value)} 
+                    className="input-field" 
+                    placeholder="e.g. 500000" 
+                  />
+                  {sourceMaxBudget !== null && (
+                    <small style={{ color: 'var(--success)', fontWeight: 500, display: 'block', marginTop: '0.25rem' }}>
+                      Max Avail: ₹{sourceMaxBudget.toLocaleString()}
+                    </small>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const amt = parseFloat(sourceAmount);
+                      if (isNaN(amt) || amt <= 0) {
+                        alert('Please enter a valid contribution amount.');
+                        return;
+                      }
+                      let selectedId = '';
+                      let selectedName = '';
+                      if (source_type === 'CSR') {
+                        selectedId = csr_id;
+                        const csr = csrs.find(c => c.id === parseInt(csr_id));
+                        selectedName = csr ? csr.name : '';
+                      } else if (source_type === 'GOVT') {
+                        selectedId = govt_work_order_id;
+                        const wo = govts.flatMap(g=>g.work_orders).find(w => w.id === parseInt(govt_work_order_id));
+                        selectedName = wo ? wo.work_order_number : '';
+                      } else if (source_type === 'INDIVIDUAL') {
+                        selectedId = individual_donor_id;
+                        const d = donors.find(d => d.id === parseInt(individual_donor_id));
+                        selectedName = d ? d.name : '';
+                      }
+
+                      if (!selectedId) {
+                        alert('Please select a funding entity.');
+                        return;
+                      }
+
+                      if (sourceMaxBudget !== null && amt > sourceMaxBudget) {
+                        alert(`Contribution amount exceeds available budget (₹${sourceMaxBudget.toLocaleString()}) for this source.`);
+                        return;
+                      }
+
+                      const duplicate = fundingSources.find(s => s.source_type === source_type && s.id === selectedId);
+                      if (duplicate) {
+                        alert('This funding source has already been added.');
+                        return;
+                      }
+
+                      setFundingSources([...fundingSources, {
+                        source_type,
+                        id: selectedId,
+                        name: selectedName,
+                        amount: amt
+                      }]);
+
+                      setCsrId('');
+                      setGovtWorkOrderId('');
+                      setIndividualDonorId('');
+                      setSourceAmount('');
+                      setSourceMaxBudget(null);
+                    }} 
+                    className="btn btn-primary"
+                    style={{ padding: '0.6rem 1rem' }}
+                  >
+                    Add Source
+                  </button>
+                </div>
               </div>
-              
-              <div className="form-group" style={{ marginTop: '1rem' }}>
-                <label>Allocated Project Budget (₹)</label>
-                <input type="number" value={budget} onChange={e=>setBudget(e.target.value)} className="input-field" placeholder="Enter manual budget for this project" required />
-                {sourceMaxBudget !== null && (
-                  <small style={{ color: parseFloat(budget) > sourceMaxBudget ? 'var(--danger)' : 'var(--success)', fontWeight: 500 }}>
-                    Maximum Available from Source: ₹{sourceMaxBudget.toLocaleString()}
-                  </small>
-                )}
-              </div>
+
+              {(() => {
+                const sumContributions = fundingSources.reduce((sum, s) => sum + s.amount, 0);
+                const reqBudget = parseFloat(budget) || 0;
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', padding: '1rem', borderRadius: '8px', background: 'rgba(79, 70, 229, 0.04)', borderLeft: '4px solid var(--primary)', fontSize: '0.9rem' }}>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Project Budget: </span>
+                      <strong style={{ color: 'var(--text-main)' }}>₹{reqBudget.toLocaleString()}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Total Allocated: </span>
+                      <strong style={{ color: 'var(--text-main)' }}>₹{sumContributions.toLocaleString()}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Remaining: </span>
+                      <strong style={{ color: Math.abs(reqBudget - sumContributions) < 0.01 ? 'var(--success)' : 'var(--danger)' }}>
+                        ₹{(reqBudget - sumContributions).toLocaleString()}
+                      </strong>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
             
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>

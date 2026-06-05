@@ -238,46 +238,116 @@ export default function ProjectDetails() {
               <Landmark size={18} color="var(--primary)" /> Funding Source Allocation
             </h2>
             
-            {project.source_type === 'CSR' && project.csr && (
-              <div style={{ fontSize: '0.9rem' }}>
-                <span style={{ fontSize: '0.7rem', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                  CSR PARTNER FUNDING
-                </span>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '0.75rem', marginBottom: '0.75rem' }}>{project.csr.name}</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--text-muted)' }}>
-                  <div>CSR ID: <strong style={{color: 'var(--text-main)'}}>{project.csr.csr_id}</strong></div>
-                  <div>MoU Representative: <strong style={{color: 'var(--text-main)'}}>{project.csr.contact_person}</strong></div>
-                  <div>Email: <span style={{color: 'var(--text-main)'}}>{project.csr.email}</span> | Phone: <span style={{color: 'var(--text-main)'}}>{project.csr.phone}</span></div>
-                </div>
-              </div>
-            )}
+            {project.funding_sources && project.funding_sources.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                {project.funding_sources.map((src, index) => {
+                  const contributionPercent = project.budget > 0 ? (src.amount / project.budget) * 100 : 0;
+                  return (
+                    <div key={src.id || index} style={{ borderBottom: index < project.funding_sources.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: index < project.funding_sources.length - 1 ? '1.5rem' : 0 }}>
+                      {src.source_type === 'CSR' && src.csr && (
+                        <div style={{ fontSize: '0.9rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                            <span style={{ fontSize: '0.7rem', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                              CSR PARTNER FUNDING
+                            </span>
+                            <span style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                              ₹{src.amount.toLocaleString()} ({contributionPercent.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem' }}>{src.csr.name}</h3>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem 1rem', color: 'var(--text-muted)' }}>
+                            <div>CSR ID: <strong style={{color: 'var(--text-main)'}}>{src.csr.csr_id}</strong></div>
+                            <div>MoU Representative: <strong style={{color: 'var(--text-main)'}}>{src.csr.contact_person}</strong></div>
+                            <div style={{ gridColumn: '1 / -1' }}>Email: <span style={{color: 'var(--text-main)'}}>{src.csr.email}</span> | Phone: <span style={{color: 'var(--text-main)'}}>{src.csr.phone}</span></div>
+                          </div>
+                        </div>
+                      )}
 
-            {project.source_type === 'GOVT' && project.govt_work_order && (
-              <div style={{ fontSize: '0.9rem' }}>
-                <span style={{ fontSize: '0.7rem', background: 'rgba(245, 158, 11, 0.08)', color: '#f59e0b', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                  GOVERNMENT WORK ORDER
-                </span>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '0.75rem', marginBottom: '0.75rem' }}>{project.govt_work_order.work_order_number}</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--text-muted)' }}>
-                  <div>Govt Dept / Scheme: <strong style={{color: 'var(--text-main)'}}>{project.govt_work_order.govt?.scheme_dept || '—'}</strong></div>
-                  <div>Type of Work: <strong style={{color: 'var(--text-main)'}}>{project.govt_work_order.govt?.type_of_work || '—'}</strong></div>
-                  <div>Original Budget: <strong style={{color: 'var(--text-main)'}}>₹{project.govt_work_order.budget.toLocaleString()}</strong></div>
-                </div>
-              </div>
-            )}
+                      {src.source_type === 'GOVT' && src.govt_work_order && (
+                        <div style={{ fontSize: '0.9rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                            <span style={{ fontSize: '0.7rem', background: 'rgba(245, 158, 11, 0.08)', color: '#f59e0b', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                              GOVERNMENT WORK ORDER
+                            </span>
+                            <span style={{ fontWeight: 700, color: '#f59e0b' }}>
+                              ₹{src.amount.toLocaleString()} ({contributionPercent.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem' }}>{src.govt_work_order.work_order_number}</h3>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem 1rem', color: 'var(--text-muted)' }}>
+                            <div style={{ gridColumn: '1 / -1' }}>Govt Dept / Scheme: <strong style={{color: 'var(--text-main)'}}>{src.govt_work_order.govt?.scheme_dept || '—'}</strong></div>
+                            <div>Type of Work: <strong style={{color: 'var(--text-main)'}}>{src.govt_work_order.govt?.type_of_work || '—'}</strong></div>
+                            <div>Original Budget: <strong style={{color: 'var(--text-main)'}}>₹{src.govt_work_order.budget.toLocaleString()}</strong></div>
+                          </div>
+                        </div>
+                      )}
 
-            {project.source_type === 'INDIVIDUAL' && project.individual_donor && (
-              <div style={{ fontSize: '0.9rem' }}>
-                <span style={{ fontSize: '0.7rem', background: 'rgba(16, 185, 129, 0.08)', color: 'var(--success)', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                  INDIVIDUAL PHILANTHROPIC DONOR
-                </span>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '0.75rem', marginBottom: '0.75rem' }}>{project.individual_donor.name}</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--text-muted)' }}>
-                  <div>Donor ID: <strong style={{color: 'var(--text-main)'}}>{project.individual_donor.donor_id}</strong></div>
-                  <div>PAN / Identification: <strong style={{color: 'var(--text-main)'}}>{project.individual_donor.pan || '—'}</strong></div>
-                  <div>Contact: <span style={{color: 'var(--text-main)'}}>{project.individual_donor.contact}</span></div>
-                </div>
+                      {src.source_type === 'INDIVIDUAL' && src.individual_donor && (
+                        <div style={{ fontSize: '0.9rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                            <span style={{ fontSize: '0.7rem', background: 'rgba(16, 185, 129, 0.08)', color: 'var(--success)', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                              INDIVIDUAL PHILANTHROPIC DONOR
+                            </span>
+                            <span style={{ fontWeight: 700, color: 'var(--success)' }}>
+                              ₹{src.amount.toLocaleString()} ({contributionPercent.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem' }}>{src.individual_donor.name}</h3>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem 1rem', color: 'var(--text-muted)' }}>
+                            <div>Donor ID: <strong style={{color: 'var(--text-main)'}}>{src.individual_donor.donor_id}</strong></div>
+                            <div>PAN / Identification: <strong style={{color: 'var(--text-main)'}}>{src.individual_donor.pan || '—'}</strong></div>
+                            <div style={{ gridColumn: '1 / -1' }}>Contact: <span style={{color: 'var(--text-main)'}}>{src.individual_donor.contact}</span></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
+            ) : (
+              <>
+                {project.source_type === 'CSR' && project.csr && (
+                  <div style={{ fontSize: '0.9rem' }}>
+                    <span style={{ fontSize: '0.7rem', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                      CSR PARTNER FUNDING
+                    </span>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '0.75rem', marginBottom: '0.75rem' }}>{project.csr.name}</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--text-muted)' }}>
+                      <div>CSR ID: <strong style={{color: 'var(--text-main)'}}>{project.csr.csr_id}</strong></div>
+                      <div>MoU Representative: <strong style={{color: 'var(--text-main)'}}>{project.csr.contact_person}</strong></div>
+                      <div>Email: <span style={{color: 'var(--text-main)'}}>{project.csr.email}</span> | Phone: <span style={{color: 'var(--text-main)'}}>{project.csr.phone}</span></div>
+                    </div>
+                  </div>
+                )}
+
+                {project.source_type === 'GOVT' && project.govt_work_order && (
+                  <div style={{ fontSize: '0.9rem' }}>
+                    <span style={{ fontSize: '0.7rem', background: 'rgba(245, 158, 11, 0.08)', color: '#f59e0b', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                      GOVERNMENT WORK ORDER
+                    </span>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '0.75rem', marginBottom: '0.75rem' }}>{project.govt_work_order.work_order_number}</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--text-muted)' }}>
+                      <div>Govt Dept / Scheme: <strong style={{color: 'var(--text-main)'}}>{project.govt_work_order.govt?.scheme_dept || '—'}</strong></div>
+                      <div>Type of Work: <strong style={{color: 'var(--text-main)'}}>{project.govt_work_order.govt?.type_of_work || '—'}</strong></div>
+                      <div>Original Budget: <strong style={{color: 'var(--text-main)'}}>₹{project.govt_work_order.budget.toLocaleString()}</strong></div>
+                    </div>
+                  </div>
+                )}
+
+                {project.source_type === 'INDIVIDUAL' && project.individual_donor && (
+                  <div style={{ fontSize: '0.9rem' }}>
+                    <span style={{ fontSize: '0.7rem', background: 'rgba(16, 185, 129, 0.08)', color: 'var(--success)', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                      INDIVIDUAL PHILANTHROPIC DONOR
+                    </span>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '0.75rem', marginBottom: '0.75rem' }}>{project.individual_donor.name}</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--text-muted)' }}>
+                      <div>Donor ID: <strong style={{color: 'var(--text-main)'}}>{project.individual_donor.donor_id}</strong></div>
+                      <div>PAN / Identification: <strong style={{color: 'var(--text-main)'}}>{project.individual_donor.pan || '—'}</strong></div>
+                      <div>Contact: <span style={{color: 'var(--text-main)'}}>{project.individual_donor.contact}</span></div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -579,12 +649,30 @@ export default function ProjectDetails() {
                 </td>
               </tr>
               <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '0.6rem 0', color: '#64748b' }}>Funding Source:</td>
+                <td style={{ padding: '0.6rem 0', color: '#64748b' }}>Funding Source(s):</td>
                 <td style={{ padding: '0.6rem 0', fontWeight: 700 }}>
-                  {project.source_type} 
-                  {project.csr && ` (${project.csr.name})`}
-                  {project.govt_work_order && ` (${project.govt_work_order.work_order_number})`}
-                  {project.individual_donor && ` (${project.individual_donor.name})`}
+                  {project.funding_sources && project.funding_sources.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      {project.funding_sources.map((src, i) => {
+                        let details = '';
+                        if (src.source_type === 'CSR' && src.csr) details = ` (${src.csr.name})`;
+                        if (src.source_type === 'GOVT' && src.govt_work_order) details = ` (${src.govt_work_order.work_order_number})`;
+                        if (src.source_type === 'INDIVIDUAL' && src.individual_donor) details = ` (${src.individual_donor.name})`;
+                        return (
+                          <div key={i} style={{ fontWeight: i === 0 ? 700 : 500 }}>
+                            {src.source_type}{details}: ₹{src.amount.toLocaleString()}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <>
+                      {project.source_type} 
+                      {project.csr && ` (${project.csr.name})`}
+                      {project.govt_work_order && ` (${project.govt_work_order.work_order_number})`}
+                      {project.individual_donor && ` (${project.individual_donor.name})`}
+                    </>
+                  )}
                 </td>
                 <td style={{ padding: '0.6rem 0', color: '#64748b' }}>Proposal / MoU Reference:</td>
                 <td style={{ padding: '0.6rem 0', fontWeight: 500 }}>{project.proposal_id || 'N/A'}</td>

@@ -51,8 +51,19 @@ router.post('/', async (req, res) => {
       name, type_of_work, sub_type, budget,
       district_id, taluka_id, village_id, 
       source_type, csr_id, govt_work_order_id, individual_donor_id,
+      funding_sources, // Array of { source_type, id, amount }
       proposal_id, financial_year_id, start_date, end_date, proposal_pdf
     } = req.body;
+
+    // Backward compatibility for single funding source requests
+    let final_funding_sources = funding_sources;
+    if (!final_funding_sources && source_type) {
+      final_funding_sources = [{
+        source_type,
+        id: source_type === 'CSR' ? csr_id : source_type === 'GOVT' ? govt_work_order_id : individual_donor_id,
+        amount: parseFloat(budget)
+      }];
+    }
 
     // Fetch or create locations to construct the ID and save correct associations
     let final_district_id = null;
@@ -128,50 +139,75 @@ router.post('/', async (req, res) => {
     const count = await prisma.project.count() + 1;
     const project_id = `NAAM-${di_code}-${ta_code}-${vi_code}-${String(count).padStart(3, '0')}`;
 
-    // Budget Validation & Deduction
+    // Budget Validation
     const reqBudget = parseFloat(budget);
     if (isNaN(reqBudget) || reqBudget <= 0) {
       return res.status(400).json({ error: 'Project budget must be greater than zero.' });
     }
 
-    // Perform check beforehand
-    if (source_type === 'CSR' && csr_id) {
-      const csr = await prisma.csrCompany.findUnique({ where: { id: parseInt(csr_id) } });
-      if (!csr || csr.budget_remaining < reqBudget) {
-        return res.status(400).json({ error: 'Insufficient budget remaining in the selected CSR Partner.' });
+    if (!final_funding_sources || final_funding_sources.length === 0) {
+      return res.status(400).json({ error: 'At least one Funding Source is required.' });
+    }
+
+    const sumContributions = final_funding_sources.reduce((sum, src) => sum + parseFloat(src.amount || 0), 0);
+    if (Math.abs(sumContributions - reqBudget) > 0.01) {
+      return res.status(400).json({ error: `Sum of contributions (₹${sumContributions.toLocaleString()}) must match the total project budget (₹${reqBudget.toLocaleString()}).` });
+    }
+
+    // Perform check beforehand to ensure all contributors have enough budget remaining
+    for (const src of final_funding_sources) {
+      const srcAmount = parseFloat(src.amount);
+      if (isNaN(srcAmount) || srcAmount <= 0) {
+        return res.status(400).json({ error: 'Contribution amount must be greater than zero.' });
       }
-    } else if (source_type === 'GOVT' && govt_work_order_id) {
-      const wo = await prisma.govtWorkOrder.findUnique({ where: { id: parseInt(govt_work_order_id) } });
-      if (!wo || wo.budget_remaining < reqBudget) {
-        return res.status(400).json({ error: 'Insufficient budget remaining in the selected Govt Work Order.' });
+      if (src.source_type === 'CSR' && src.id) {
+        const csr = await prisma.csrCompany.findUnique({ where: { id: parseInt(src.id) } });
+        if (!csr || csr.budget_remaining < srcAmount) {
+          return res.status(400).json({ error: `Insufficient budget remaining in CSR Partner: ${csr?.name || 'Unknown'}` });
+        }
+      } else if (src.source_type === 'GOVT' && src.id) {
+        const wo = await prisma.govtWorkOrder.findUnique({ where: { id: parseInt(src.id) } });
+        if (!wo || wo.budget_remaining < srcAmount) {
+          return res.status(400).json({ error: `Insufficient budget remaining in Govt Work Order: ${wo?.work_order_number || 'Unknown'}` });
+        }
+      } else if (src.source_type === 'INDIVIDUAL' && src.id) {
+        const donor = await prisma.individualDonor.findUnique({ where: { id: parseInt(src.id) } });
+        if (!donor || donor.budget_remaining < srcAmount) {
+          return res.status(400).json({ error: `Insufficient budget remaining in Individual Donor: ${donor?.name || 'Unknown'}` });
+        }
+      } else {
+        return res.status(400).json({ error: 'Valid Funding Source details are required.' });
       }
-    } else if (source_type === 'INDIVIDUAL' && individual_donor_id) {
-      const donor = await prisma.individualDonor.findUnique({ where: { id: parseInt(individual_donor_id) } });
-      if (!donor || donor.budget_remaining < reqBudget) {
-        return res.status(400).json({ error: 'Insufficient budget remaining in the selected Individual Donor.' });
-      }
-    } else {
-      return res.status(400).json({ error: 'Valid Funding Source is required.' });
     }
 
     const createdProject = await prisma.$transaction(async (tx) => {
-      // 1. Deduct from funding source
-      if (source_type === 'CSR' && csr_id) {
-        await tx.csrCompany.update({
-          where: { id: parseInt(csr_id) },
-          data: { budget_remaining: { decrement: reqBudget } }
-        });
-      } else if (source_type === 'GOVT' && govt_work_order_id) {
-        await tx.govtWorkOrder.update({
-          where: { id: parseInt(govt_work_order_id) },
-          data: { budget_remaining: { decrement: reqBudget } }
-        });
-      } else if (source_type === 'INDIVIDUAL' && individual_donor_id) {
-        await tx.individualDonor.update({
-          where: { id: parseInt(individual_donor_id) },
-          data: { budget_remaining: { decrement: reqBudget } }
-        });
+      // 1. Deduct from all funding sources
+      for (const src of final_funding_sources) {
+        const srcAmount = parseFloat(src.amount);
+        if (src.source_type === 'CSR' && src.id) {
+          await tx.csrCompany.update({
+            where: { id: parseInt(src.id) },
+            data: { budget_remaining: { decrement: srcAmount } }
+          });
+        } else if (src.source_type === 'GOVT' && src.id) {
+          await tx.govtWorkOrder.update({
+            where: { id: parseInt(src.id) },
+            data: { budget_remaining: { decrement: srcAmount } }
+          });
+        } else if (src.source_type === 'INDIVIDUAL' && src.id) {
+          await tx.individualDonor.update({
+            where: { id: parseInt(src.id) },
+            data: { budget_remaining: { decrement: srcAmount } }
+          });
+        }
       }
+
+      // Determine legacy fields from the first source for backward compatibility
+      const primarySource = final_funding_sources[0];
+      const primaryType = primarySource.source_type;
+      const primaryCsrId = primaryType === 'CSR' ? parseInt(primarySource.id) : null;
+      const primaryGovtId = primaryType === 'GOVT' ? parseInt(primarySource.id) : null;
+      const primaryDonorId = primaryType === 'INDIVIDUAL' ? parseInt(primarySource.id) : null;
 
       // 2. Create Project
       const project = await tx.project.create({
@@ -182,10 +218,10 @@ router.post('/', async (req, res) => {
           budget_remaining: reqBudget,
           type_of_work,
           sub_type,
-          source_type,
-          csr_id: csr_id ? parseInt(csr_id) : null,
-          govt_work_order_id: govt_work_order_id ? parseInt(govt_work_order_id) : null,
-          individual_donor_id: individual_donor_id ? parseInt(individual_donor_id) : null,
+          source_type: primaryType,
+          csr_id: primaryCsrId,
+          govt_work_order_id: primaryGovtId,
+          individual_donor_id: primaryDonorId,
           proposal_id,
           proposal_pdf: proposal_pdf || null,
           financial_year_id: financial_year_id ? parseInt(financial_year_id) : null,
@@ -198,14 +234,29 @@ router.post('/', async (req, res) => {
         }
       });
 
-      // 3. Log Audit Activity
+      // 3. Create ProjectFunding mapping records
+      for (const src of final_funding_sources) {
+        const srcAmount = parseFloat(src.amount);
+        await tx.projectFunding.create({
+          data: {
+            project_id: project.id,
+            source_type: src.source_type,
+            csr_id: src.source_type === 'CSR' ? parseInt(src.id) : null,
+            govt_work_order_id: src.source_type === 'GOVT' ? parseInt(src.id) : null,
+            individual_donor_id: src.source_type === 'INDIVIDUAL' ? parseInt(src.id) : null,
+            amount: srcAmount
+          }
+        });
+      }
+
+      // 4. Log Audit Activity
       await tx.auditLog.create({
         data: {
           user_id: req.user.id,
           action: 'Create Project',
           module: 'Projects',
           record_id: String(project.id),
-          new_value: `Created project '${name}' (${project_id}) with budget ₹${reqBudget.toLocaleString('en-IN')}`
+          new_value: `Created project '${name}' (${project_id}) with budget ₹${reqBudget.toLocaleString('en-IN')} and ${final_funding_sources.length} funding sources`
         }
       });
 
@@ -232,6 +283,17 @@ router.get('/:id', async (req, res) => {
           }
         },
         individual_donor: true,
+        funding_sources: {
+          include: {
+            csr: true,
+            govt_work_order: {
+              include: {
+                govt: true
+              }
+            },
+            individual_donor: true
+          }
+        },
         invoices: {
           include: {
             purchase_order: {

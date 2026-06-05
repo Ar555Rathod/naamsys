@@ -40,6 +40,7 @@ export default function Vendors() {
   const [branch, setBranch] = useState('');
   const [account_no, setAccountNo] = useState('');
   const [ifsc, setIfsc] = useState('');
+  const [pincode, setPincode] = useState('');
 
   // Contractor form
   const [contractor_name, setContractorName] = useState('');
@@ -53,6 +54,7 @@ export default function Vendors() {
   const [contractor_branch, setContractorBranch] = useState('');
   const [contractor_account, setContractorAccount] = useState('');
   const [contractor_ifsc, setContractorIfsc] = useState('');
+  const [contractor_pincode, setContractorPincode] = useState('');
   const [selectedVendorId, setSelectedVendorId] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState('');
 
@@ -96,7 +98,7 @@ export default function Vendors() {
     try {
       const payload = {
         company_name, pan, aadhaar, gst, owner_name, owner_contact,
-        address_line1, address_line2, address_line3,
+        address_line1, address_line2, address_line3, pincode,
         machine_details, operator_details, bank_name, account_no, ifsc, branch
       };
 
@@ -129,6 +131,7 @@ export default function Vendors() {
         address_line1: contractor_address_line1,
         address_line2: contractor_address_line2,
         address_line3: contractor_address_line3,
+        pincode: contractor_pincode,
         bank_name: contractor_bank,
         branch: contractor_branch,
         account_no: contractor_account,
@@ -162,12 +165,12 @@ export default function Vendors() {
     
     // Reset vendor form
     setCompanyName(''); setPan(''); setAadhaar(''); setGst(''); setOwnerName(''); setOwnerContact('');
-    setAddressLine1(''); setAddressLine2(''); setAddressLine3('');
+    setAddressLine1(''); setAddressLine2(''); setAddressLine3(''); setPincode('');
     setMachineDetails(''); setOperatorDetails(''); setBankName(''); setBranch(''); setAccountNo(''); setIfsc('');
     
     // Reset contractor form
     setContractorName(''); setContractorPan(''); setContractorAadhaar(''); setContractorContact('');
-    setContractorAddressLine1(''); setContractorAddressLine2(''); setContractorAddressLine3('');
+    setContractorAddressLine1(''); setContractorAddressLine2(''); setContractorAddressLine3(''); setContractorPincode('');
     setContractorBank(''); setContractorBranch(''); setContractorAccount(''); setContractorIfsc('');
     setSelectedVendorId(''); setSelectedProjectId('');
   };
@@ -185,6 +188,7 @@ export default function Vendors() {
     setAddressLine1(v.address_line1 || '');
     setAddressLine2(v.address_line2 || '');
     setAddressLine3(v.address_line3 || '');
+    setPincode(v.pincode || '');
     setMachineDetails(v.machine_details || '');
     setOperatorDetails(v.operator_details || '');
     setBankName(v.bank_name || '');
@@ -205,6 +209,7 @@ export default function Vendors() {
     setContractorAddressLine1(c.address_line1 || '');
     setContractorAddressLine2(c.address_line2 || '');
     setContractorAddressLine3(c.address_line3 || '');
+    setContractorPincode(c.pincode || '');
     setContractorBank(c.bank_name || '');
     setContractorBranch(c.branch || '');
     setContractorAccount(c.account_no || '');
@@ -276,8 +281,8 @@ export default function Vendors() {
             </div>
             
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label style={{fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem'}}>Owner Address (Three-Line Format)</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+              <label style={{fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem'}}>Owner Address</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem' }}>
                 <div className="form-group">
                   <label style={{fontSize: '0.75rem'}}>Address Line 1</label>
                   <input type="text" value={address_line1} onChange={e=>setAddressLine1(e.target.value)} className="input-field" placeholder="Flat/House No, Building" required />
@@ -288,7 +293,20 @@ export default function Vendors() {
                 </div>
                 <div className="form-group">
                   <label style={{fontSize: '0.75rem'}}>Address Line 3</label>
-                  <input type="text" value={address_line3} onChange={e=>setAddressLine3(e.target.value)} className="input-field" placeholder="City, State, Pincode" required />
+                  <input type="text" value={address_line3} onChange={e=>setAddressLine3(e.target.value)} className="input-field" placeholder="City, State" required />
+                </div>
+                <div className="form-group">
+                  <label style={{fontSize: '0.75rem'}}>Pincode</label>
+                  <input 
+                    type="text" 
+                    value={pincode} 
+                    onChange={e=>setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))} 
+                    className="input-field" 
+                    placeholder="6-digit Pincode" 
+                    required 
+                    pattern="\d{6}"
+                    title="Pincode must be exactly 6 digits"
+                  />
                 </div>
               </div>
             </div>
@@ -355,8 +373,8 @@ export default function Vendors() {
               <input type="text" value={contractor_contact} onChange={e=>setContractorContact(e.target.value)} className="input-field" required />
             </div>
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label style={{fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem'}}>Address Details (Three-Line Format)</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+              <label style={{fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem'}}>Address Details</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem' }}>
                 <div className="form-group">
                   <label style={{fontSize: '0.75rem'}}>Address Line 1</label>
                   <input type="text" value={contractor_address_line1} onChange={e=>setContractorAddressLine1(e.target.value)} className="input-field" placeholder="Flat/House No, Building" required />
@@ -367,7 +385,20 @@ export default function Vendors() {
                 </div>
                 <div className="form-group">
                   <label style={{fontSize: '0.75rem'}}>Address Line 3</label>
-                  <input type="text" value={contractor_address_line3} onChange={e=>setContractorAddressLine3(e.target.value)} className="input-field" placeholder="City, State, Pincode" required />
+                  <input type="text" value={contractor_address_line3} onChange={e=>setContractorAddressLine3(e.target.value)} className="input-field" placeholder="City, State" required />
+                </div>
+                <div className="form-group">
+                  <label style={{fontSize: '0.75rem'}}>Pincode</label>
+                  <input 
+                    type="text" 
+                    value={contractor_pincode} 
+                    onChange={e=>setContractorPincode(e.target.value.replace(/\D/g, '').slice(0, 6))} 
+                    className="input-field" 
+                    placeholder="6-digit Pincode" 
+                    required 
+                    pattern="\d{6}"
+                    title="Pincode must be exactly 6 digits"
+                  />
                 </div>
               </div>
             </div>
@@ -447,6 +478,7 @@ export default function Vendors() {
                         {v.address_line1}<br/>
                         {v.address_line2}<br/>
                         {v.address_line3}
+                        {v.pincode && <><br/><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Pincode: {v.pincode}</span></>}
                       </div>
                     ) : v.owner_address || '—'}
                   </td>
@@ -492,6 +524,7 @@ export default function Vendors() {
                         {c.address_line1}<br/>
                         {c.address_line2}<br/>
                         {c.address_line3}
+                        {c.pincode && <><br/><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Pincode: {c.pincode}</span></>}
                       </div>
                     ) : c.address || '—'}
                   </td>
@@ -575,6 +608,7 @@ export default function Vendors() {
                           {selectedVendor.address_line1}<br/>
                           {selectedVendor.address_line2}<br/>
                           {selectedVendor.address_line3}
+                          {selectedVendor.pincode && <><br/><span style={{ color: 'var(--text-muted)' }}>Pincode: {selectedVendor.pincode}</span></>}
                         </>
                       ) : selectedVendor.owner_address || '—'}
                     </span>
@@ -928,6 +962,7 @@ export default function Vendors() {
                           {selectedContractor.address_line1}<br/>
                           {selectedContractor.address_line2}<br/>
                           {selectedContractor.address_line3}
+                          {selectedContractor.pincode && <><br/><span style={{ color: 'var(--text-muted)' }}>Pincode: {selectedContractor.pincode}</span></>}
                         </>
                       ) : selectedContractor.address || '—'}
                     </span>

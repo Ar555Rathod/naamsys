@@ -102,6 +102,7 @@ model CsrCompany {
   created_at        DateTime @default(now())
 
   projects Project[]
+  project_fundings ProjectFunding[]
 }
 
 model GovtEntry {
@@ -141,6 +142,7 @@ model GovtWorkOrder {
   converted_to_project_id Int?
 
   projects Project[]
+  project_fundings ProjectFunding[]
 }
 
 model Project {
@@ -176,6 +178,7 @@ model Project {
   invoices Invoice[]
   work_orders WorkOrder[]
   purchase_orders PurchaseOrder[]
+  funding_sources ProjectFunding[]
 }
 
 model IndividualDonor {
@@ -195,6 +198,7 @@ model IndividualDonor {
   created_at       DateTime @default(now())
 
   projects Project[]
+  project_fundings ProjectFunding[]
 }
 
 enum SourceType {
@@ -223,6 +227,7 @@ model Vendor {
   address_line1        String?
   address_line2        String?
   address_line3        String?
+  pincode              String?
   machine_details      String?  @db.Text
   operator_details     String?  @db.Text
   bank_name            String?
@@ -261,6 +266,7 @@ model Contractor {
   address_line1 String?
   address_line2 String?
   address_line3 String?
+  pincode       String?
   bank_name     String?
   branch        String?
   account_no    String?
@@ -458,6 +464,21 @@ model BankStatement {
   working_sheet    WorkingSheet @relation(fields: [working_sheet_id], references: [id])
   created_at       DateTime     @default(now())
   created_by       Int
+}
+
+model ProjectFunding {
+  id                  Int              @id @default(autoincrement())
+  project_id          Int
+  project             Project          @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  source_type         SourceType
+  csr_id              Int?
+  csr                 CsrCompany?      @relation(fields: [csr_id], references: [id], onDelete: Restrict)
+  govt_work_order_id  Int?
+  govt_work_order     GovtWorkOrder?   @relation(fields: [govt_work_order_id], references: [id], onDelete: Restrict)
+  individual_donor_id Int?
+  individual_donor    IndividualDonor? @relation(fields: [individual_donor_id], references: [id], onDelete: Restrict)
+  amount              Float
+  created_at          DateTime         @default(now())
 }
 
 
