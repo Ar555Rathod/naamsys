@@ -239,6 +239,9 @@ router.put('/working-sheets/:id/approve', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'At least one invoice must be selected for approval.' });
     }
 
+    // Defensive mapping to handle string or numeric IDs
+    const approvedIds = approved_invoice_ids.map(id => parseInt(id)).filter(id => !isNaN(id));
+
     const sheet = await prisma.workingSheet.findUnique({
       where: { id },
       include: { invoices: { include: { project: true } } }
@@ -250,8 +253,8 @@ router.put('/working-sheets/:id/approve', requireAdmin, async (req, res) => {
     }
 
     // Verify all approved invoices actually belong to this sheet
-    const associatedInvoices = sheet.invoices.filter(inv => approved_invoice_ids.includes(inv.id));
-    if (associatedInvoices.length !== approved_invoice_ids.length) {
+    const associatedInvoices = sheet.invoices.filter(inv => approvedIds.includes(inv.id));
+    if (associatedInvoices.length !== approvedIds.length) {
       return res.status(400).json({ error: 'Some selected invoices do not belong to this Working Sheet.' });
     }
 
@@ -265,7 +268,7 @@ router.put('/working-sheets/:id/approve', requireAdmin, async (req, res) => {
       // 1. Disassociate unapproved invoices
       const unapprovedInvoiceIds = sheet.invoices
         .map(i => i.id)
-        .filter(id => !approved_invoice_ids.includes(id));
+        .filter(id => !approvedIds.includes(id));
 
       if (unapprovedInvoiceIds.length > 0) {
         await tx.invoice.updateMany({
@@ -278,6 +281,9 @@ router.put('/working-sheets/:id/approve', requireAdmin, async (req, res) => {
       for (const inv of associatedInvoices) {
         if (inv.project_id && (inv.invoice_type === 'TypeA' || inv.invoice_type === 'TypeC')) {
           const currentProject = await tx.project.findUnique({ where: { id: inv.project_id } });
+          if (!currentProject) {
+            throw new Error(`Project with ID ${inv.project_id} linked to Invoice '${inv.invoice_id}' not found in database.`);
+          }
           if (currentProject.budget_remaining < inv.total_amount) {
             throw new Error(`Invoice Blocked: Insufficient budget remaining for project '${currentProject.name}' to pay Invoice '${inv.invoice_id}'.`);
           }
@@ -290,7 +296,7 @@ router.put('/working-sheets/:id/approve', requireAdmin, async (req, res) => {
 
       // 3. Update all approved invoices to PAID
       await tx.invoice.updateMany({
-        where: { id: { in: approved_invoice_ids } },
+        where: { id: { in: approvedIds } },
         data: {
           payment_status: 'Paid',
           payment_date: new Date()
@@ -341,6 +347,7 @@ router.put('/working-sheets/:id/approve', requireAdmin, async (req, res) => {
 
     res.json(approvedSheet);
   } catch (error) {
+    console.error('Error approving working sheet:', error);
     res.status(500).json({ error: 'Failed to approve working sheet', details: error.message });
   }
 });

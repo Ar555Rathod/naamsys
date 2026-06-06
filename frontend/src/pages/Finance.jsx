@@ -101,7 +101,7 @@ export default function Finance() {
       setActiveTab('sheets');
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || 'Failed to generate working sheet draft');
+      alert(err.response?.data?.details || err.response?.data?.error || 'Failed to generate working sheet draft');
     }
   };
 
@@ -115,7 +115,7 @@ export default function Finance() {
       fetchData();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || 'Failed to publish working sheet');
+      alert(err.response?.data?.details || err.response?.data?.error || 'Failed to publish working sheet');
     }
   };
 
@@ -165,7 +165,7 @@ export default function Finance() {
       setActiveTab('statements');
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || 'Failed to approve working sheet');
+      alert(err.response?.data?.details || err.response?.data?.error || 'Failed to approve working sheet');
     }
   };
 
