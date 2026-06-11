@@ -50,6 +50,15 @@ function Sidebar({ onLogout }) {
         <Link to="/projects" className={`nav-link ${location.pathname === '/projects' ? 'active' : '' || location.pathname.startsWith('/projects/')}`}>
           <FolderKanban size={20} /> Projects
         </Link>
+        <Link to="/csr" className={`nav-link ${location.pathname === '/csr' ? 'active' : ''}`}>
+          <Building size={20} /> CSR Partners
+        </Link>
+        <Link to="/govt" className={`nav-link ${location.pathname === '/govt' ? 'active' : ''}`}>
+          <Landmark size={20} /> Govt Schemes
+        </Link>
+        <Link to="/donors" className={`nav-link ${location.pathname === '/donors' ? 'active' : ''}`}>
+          <Users size={20} /> Individual Donors
+        </Link>
         <Link to="/vendors" className={`nav-link ${location.pathname === '/vendors' ? 'active' : ''}`}>
           <Users size={20} /> Vendors
         </Link>
@@ -67,23 +76,14 @@ function Sidebar({ onLogout }) {
             <Landmark size={20} /> Finance
           </Link>
         )}
+        <Link to="/reports" className={`nav-link ${location.pathname === '/reports' ? 'active' : ''}`}>
+          <FileSpreadsheet size={20} /> Reports
+        </Link>
         {(userRole === 'Admin' || userRole === 'Manager') && (
           <Link to="/backup" className={`nav-link ${location.pathname === '/backup' ? 'active' : ''}`}>
             <Database size={20} /> Backup & Data
           </Link>
         )}
-        <Link to="/csr" className={`nav-link ${location.pathname === '/csr' ? 'active' : ''}`}>
-          <Building size={20} /> CSR Partners
-        </Link>
-        <Link to="/donors" className={`nav-link ${location.pathname === '/donors' ? 'active' : ''}`}>
-          <Users size={20} /> Individual Donors
-        </Link>
-        <Link to="/govt" className={`nav-link ${location.pathname === '/govt' ? 'active' : ''}`}>
-          <Landmark size={20} /> Govt Schemes
-        </Link>
-        <Link to="/reports" className={`nav-link ${location.pathname === '/reports' ? 'active' : ''}`}>
-          <FileSpreadsheet size={20} /> Reports
-        </Link>
       </div>
 
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

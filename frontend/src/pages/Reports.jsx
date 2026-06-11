@@ -7,11 +7,11 @@ import {
   RefreshCw, 
   AlertTriangle, 
   ShieldCheck, 
-  FileSpreadsheet, 
   ChevronRight, 
   Loader2,
   Calendar,
-  XCircle
+  XCircle,
+  Printer
 } from 'lucide-react';
 import api from '../api';
 
@@ -297,58 +297,7 @@ export default function Reports() {
     }, 150);
   };
 
-  // Export as High-Fidelity Excel spreadsheet Format
-  const handleExportExcel = () => {
-    if (filteredData.length === 0) {
-      alert('No rows available in the current view to export.');
-      return;
-    }
 
-    const flattened = filteredData.map(r => flattenRow(r, selectedTable));
-    const headers = Object.keys(flattened[0]);
-
-    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">`;
-    html += `<head><meta charset="utf-8" /><style>table { border-collapse: collapse; } th { background-color: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 8px; } td { border: 1px solid #cbd5e1; padding: 6px 8px; }</style></head>`;
-    html += `<body>`;
-    html += `<h2>NAAM FOUNDATION - CUSTOM REPORT: ${selectedTable.toUpperCase()}</h2>`;
-    html += `<p>Generated Date: ${new Date().toLocaleDateString()} | Rows Count: ${flattened.length}</p>`;
-    if (startDate || endDate) {
-      html += `<p>Date Filter: ${startDate || 'All Time'} to ${endDate || 'Present'}</p>`;
-    }
-    html += `<table>`;
-    
-    // Header
-    html += `<thead><tr>`;
-    headers.forEach(h => {
-      html += `<th>${h}</th>`;
-    });
-    html += `</tr></thead>`;
-
-    // Rows
-    html += `<tbody>`;
-    flattened.forEach(row => {
-      html += `<tr>`;
-      headers.forEach(h => {
-        const val = row[h];
-        html += `<td>${val !== null && val !== undefined ? String(val).replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''}</td>`;
-      });
-      html += `</tr>`;
-    });
-    html += `</tbody></table></body></html>`;
-
-    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `NAAM_Report_${selectedTable}_${new Date().toISOString().split('T')[0]}.xls`;
-    
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    }, 150);
-  };
 
   const renderHeaders = () => {
     if (filteredData.length === 0) return null;
@@ -381,6 +330,32 @@ export default function Reports() {
 
   return (
     <div className="main-content">
+      <style>{`
+        @media print {
+          .no-print {
+            display: none !important;
+          }
+          .print-full-height {
+            max-height: none !important;
+            overflow: visible !important;
+          }
+          .print-no-border {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+          }
+          .glass-panel {
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            padding: 0 !important;
+          }
+          body {
+            background: white !important;
+          }
+        }
+      `}</style>
+
       {/* Page Header */}
       <div className="page-header">
         <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -396,7 +371,7 @@ export default function Reports() {
       </div>
 
       {/* Grid Layout: Left panel telemetry tiles, Right panel export settings */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+      <div className="no-print" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
         
         {/* Left Side: Stats Overview */}
         <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -447,7 +422,7 @@ export default function Reports() {
               <ShieldCheck size={20} color="var(--success)" /> Export Controls
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.4rem', lineHeight: '1.4' }}>
-              Generate structured, human-readable data files immediately. The Excel format includes correct column structures, location references, and pricing.
+              Generate structured, human-readable data files immediately. Export as CSV for spreadsheet analysis or print directly to PDF.
             </p>
           </div>
 
@@ -472,7 +447,7 @@ export default function Reports() {
             </button>
             <button 
               className="btn"
-              onClick={handleExportExcel}
+              onClick={() => window.print()}
               disabled={filteredData.length === 0}
               style={{
                 flex: 1,
@@ -480,13 +455,13 @@ export default function Reports() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.4rem',
-                background: '#10b981',
+                background: 'var(--primary)',
                 color: 'white',
                 padding: '0.65rem',
                 fontSize: '0.85rem'
               }}
             >
-              <FileSpreadsheet size={15} /> Export Excel
+              <Printer size={15} /> Export PDF
             </button>
           </div>
         </div>
@@ -503,7 +478,7 @@ export default function Reports() {
           </div>
 
           {/* Action Row Filters */}
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="no-print" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
             
             {/* Table Dropdown Select */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -580,14 +555,14 @@ export default function Reports() {
         </div>
 
         {/* Data Table Preview */}
-        <div style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'rgba(255, 255, 255, 0.2)' }}>
+        <div className="print-no-border" style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'rgba(255, 255, 255, 0.2)' }}>
           {loadingTable ? (
             <div style={{ padding: '5rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
               <Loader2 className="animate-spin" size={28} color="var(--primary)" />
               <span style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>Processing customized data joints...</span>
             </div>
           ) : filteredData.length > 0 ? (
-            <div style={{ overflowX: 'auto', maxHeight: '400px' }}>
+            <div className="print-full-height" style={{ overflowX: 'auto', maxHeight: '400px' }}>
               <table className="data-table" style={{ whiteSpace: 'nowrap', borderCollapse: 'collapse', width: '100%' }}>
                 <thead style={{ position: 'sticky', top: 0, zIndex: 1, background: 'var(--bg-card)' }}>
                   <tr>
@@ -609,7 +584,7 @@ export default function Reports() {
         </div>
 
         {/* Action Description Footer */}
-        <div style={{ 
+        <div className="no-print" style={{ 
           background: 'rgba(30, 41, 59, 0.02)', 
           border: '1px solid var(--border)', 
           borderRadius: '6px', 
