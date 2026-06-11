@@ -299,4 +299,56 @@ router.put('/:id/upload-signed', async (req, res) => {
   }
 });
 
+// Edit Purchase Order in Draft mode
+router.put('/:id', async (req, res) => {
+  try {
+    const poId = parseInt(req.params.id);
+    const { project_id, vendor_id, contractor_id, item_details, delivery_date, total_amount, status, remarks } = req.body;
+
+    const existingPo = await prisma.purchaseOrder.findUnique({
+      where: { id: poId }
+    });
+
+    if (!existingPo) {
+      return res.status(404).json({ error: 'Purchase Order not found' });
+    }
+
+    if (existingPo.status !== 'Draft') {
+      return res.status(400).json({ error: 'Only Purchase Orders in Draft mode can be edited' });
+    }
+
+    const updatedPo = await prisma.$transaction(async (tx) => {
+      const updated = await tx.purchaseOrder.update({
+        where: { id: poId },
+        data: {
+          project_id: project_id ? parseInt(project_id) : existingPo.project_id,
+          vendor_id: vendor_id ? parseInt(vendor_id) : existingPo.vendor_id,
+          contractor_id: contractor_id !== undefined ? (contractor_id ? parseInt(contractor_id) : null) : existingPo.contractor_id,
+          item_details: item_details || existingPo.item_details,
+          delivery_date: delivery_date ? new Date(delivery_date) : existingPo.delivery_date,
+          total_amount: total_amount !== undefined ? parseFloat(total_amount) : existingPo.total_amount,
+          status: status || existingPo.status,
+          remarks: remarks || existingPo.remarks
+        }
+      });
+
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: 'Edit Purchase Order',
+          module: 'Purchase Orders',
+          record_id: String(updated.id),
+          new_value: `Updated Purchase Order '${updated.po_number}' in Draft mode (Total: ₹${parseFloat(updated.total_amount).toLocaleString('en-IN')})`
+        }
+      });
+
+      return updated;
+    });
+
+    res.json(updatedPo);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update Purchase Order', details: error.message });
+  }
+});
+
 module.exports = router;

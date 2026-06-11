@@ -187,6 +187,87 @@ export default function Finance() {
     return null;
   };
 
+  const handleExportSheetExcel = (sheet) => {
+    if (!sheet || !sheet.invoices || sheet.invoices.length === 0) {
+      alert('No invoices in this sheet to export.');
+      return;
+    }
+
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">`;
+    html += `<head><meta charset="utf-8" /><style>table { border-collapse: collapse; } th { background-color: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1; } td { border: 1px solid #cbd5e1; }</style></head>`;
+    html += `<body>`;
+    html += `<h2>NAAM FOUNDATION - WORKING SHEET: ${sheet.sheet_number}</h2>`;
+    html += `<p>Date of creation: ${new Date(sheet.created_at).toLocaleDateString()}</p>`;
+    html += `<table>`;
+    
+    // Headers
+    html += `<thead><tr>`;
+    html += `<th>Sr No.</th>`;
+    html += `<th>Beneficiary Name</th>`;
+    html += `<th>Invoice No.</th>`;
+    html += `<th>Invoice Date</th>`;
+    html += `<th>PAN No.</th>`;
+    html += `<th>Village</th>`;
+    html += `<th>Taluka</th>`;
+    html += `<th>District</th>`;
+    html += `<th>Type of Work</th>`;
+    html += `<th>Subtotal</th>`;
+    html += `<th>Gst</th>`;
+    html += `<th>TDS</th>`;
+    html += `<th>Net Total</th>`;
+    html += `</tr></thead>`;
+
+    // Rows
+    html += `<tbody>`;
+    sheet.invoices.forEach((inv, idx) => {
+      const p = inv.project;
+      const bank = getRemittanceBankDetails(inv);
+      html += `<tr>`;
+      html += `<td>${idx + 1}</td>`;
+      html += `<td>${getRemittanceBeneficiaryName(inv)}</td>`;
+      html += `<td>${inv.invoice_id}</td>`;
+      html += `<td>${new Date(inv.invoice_date).toLocaleDateString()}</td>`;
+      html += `<td>${bank?.pan || 'N/A'}</td>`;
+      html += `<td>${p?.village_name || p?.village_id || 'N/A'}</td>`;
+      html += `<td>${p?.taluka_name || p?.taluka_id || 'N/A'}</td>`;
+      html += `<td>${p?.district_name || p?.district_id || 'N/A'}</td>`;
+      html += `<td>${p?.type_of_work || 'N/A'}</td>`;
+      html += `<td>${inv.subtotal}</td>`;
+      html += `<td>${inv.gst_amount}</td>`;
+      html += `<td>${inv.tds_amount}</td>`;
+      html += `<td>${inv.total_amount}</td>`;
+      html += `</tr>`;
+    });
+
+    // Grand Totals row
+    const subtotalSum = sheet.invoices.reduce((sum, i) => sum + i.subtotal, 0);
+    const gstSum = sheet.invoices.reduce((sum, i) => sum + (i.gst_amount || 0), 0);
+    const tdsSum = sheet.invoices.reduce((sum, i) => sum + (i.tds_amount || 0), 0);
+    const netSum = sheet.invoices.reduce((sum, i) => sum + i.total_amount, 0);
+
+    html += `<tr style="font-weight: bold;">`;
+    html += `<td colspan="9" style="text-align: right;">Grand Total:</td>`;
+    html += `<td>${subtotalSum}</td>`;
+    html += `<td>${gstSum}</td>`;
+    html += `<td>${tdsSum}</td>`;
+    html += `<td>${netSum}</td>`;
+    html += `</tr>`;
+
+    html += `</tbody></table></body></html>`;
+
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Working_Sheet_${sheet.sheet_number}_${new Date().toISOString().split('T')[0]}.xls`;
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 150);
+  };
+
   const handlePrintStatement = () => {
     window.print();
   };
@@ -629,35 +710,30 @@ export default function Finance() {
               </div>
 
               {/* Beneficiaries Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '10px' }}>
                 <thead>
                   <tr style={{ background: '#f1f5f9', borderTop: '1px solid #0f172a', borderBottom: '1px solid #0f172a' }}>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr. No.</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name (Vendor/Contractor)</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>PAN Number</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Bank Name & Branch</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Account Number</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>IFSC Code</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice ID</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Amount Released</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr. No.</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Bank Name</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Branch</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Account No.</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>IFSC Code</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Payment</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedStatement.working_sheet?.invoices?.map((inv, idx) => {
                     const bank = getRemittanceBankDetails(inv);
                     return (
-                      <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
-                        <td style={{ padding: '0.6rem 0.4rem', fontWeight: 600, color: '#0f172a', border: '1px solid #e2e8f0' }}>{getRemittanceBeneficiaryName(inv)}</td>
-                        <td style={{ padding: '0.6rem 0.4rem', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.pan || 'N/A'}</td>
-                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0' }}>
-                          <strong>{bank?.bankName || 'N/A'}</strong>
-                          {bank?.branch && <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Branch: {bank.branch}</div>}
-                        </td>
-                        <td style={{ padding: '0.6rem 0.4rem', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.accountNo || 'N/A'}</td>
-                        <td style={{ padding: '0.6rem 0.4rem', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.ifsc || 'N/A'}</td>
-                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0', color: '#64748b' }}>{inv.invoice_id}</td>
-                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'right', fontWeight: 700, color: '#0f172a', border: '1px solid #e2e8f0' }}>
+                      <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0', height: '24px' }}>
+                        <td style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
+                        <td style={{ padding: '4px 6px', fontWeight: 600, color: '#0f172a', border: '1px solid #e2e8f0' }}>{getRemittanceBeneficiaryName(inv)}</td>
+                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{bank?.bankName || 'N/A'}</td>
+                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{bank?.branch || 'N/A'}</td>
+                        <td style={{ padding: '4px 6px', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.accountNo || 'N/A'}</td>
+                        <td style={{ padding: '4px 6px', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.ifsc || 'N/A'}</td>
+                        <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 700, color: '#0f172a', border: '1px solid #e2e8f0' }}>
                           ₹{inv.total_amount.toLocaleString('en-IN')}.00
                         </td>
                       </tr>
@@ -666,10 +742,10 @@ export default function Finance() {
                   
                   {/* Totals */}
                   <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
-                    <td colSpan="7" style={{ padding: '0.75rem 0.5rem', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '0.9rem' }}>
+                    <td colSpan="6" style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '10px' }}>
                       Grand Total:
                     </td>
-                    <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right', fontSize: '0.95rem', color: '#0f172a', border: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '10px', color: '#0f172a', border: '1px solid #e2e8f0' }}>
                       ₹{selectedStatement.working_sheet?.invoices?.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('en-IN')}.00
                     </td>
                   </tr>
@@ -690,6 +766,9 @@ export default function Finance() {
             <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
               <span style={{ fontWeight: 600, color: '#1f2937' }}>Working Sheet Details Clearance</span>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button onClick={() => handleExportSheetExcel(selectedSheet)} className="btn" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', background: '#10b981', color: 'white', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <FileSpreadsheet size={16} /> Export Excel
+                </button>
                 <button onClick={window.print} className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
                   <Printer size={16} /> Print Sheet / Export PDF
                 </button>
@@ -714,49 +793,47 @@ export default function Finance() {
               </div>
 
               {/* Invoices List Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '0.8rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '10px' }}>
                 <thead>
                   <tr style={{ background: '#f1f5f9', borderTop: '1px solid #0f172a', borderBottom: '1px solid #0f172a' }}>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr. No.</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice ID & Date</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name & PAN</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Project ID & Location</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Type of Work</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Subtotal</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>GST</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>TDS</th>
-                    <th style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Net Total</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr No.</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice No.</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice Date</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>PAN No.</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Village</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Taluka</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>District</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Type of Work</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Subtotal</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Gst</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>TDS</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Net Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedSheet.invoices?.map((inv, idx) => {
                     const p = inv.project;
-                    const loc = p ? [p.village_name, p.taluka_name, p.district_name].filter(Boolean).join(', ') : 'N/A';
                     const bank = getRemittanceBankDetails(inv);
                     return (
-                      <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
-                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0' }}>
-                          <strong>{inv.invoice_id}</strong><br />
-                          <span style={{ color: '#64748b' }}>{new Date(inv.invoice_date).toLocaleDateString()}</span>
+                      <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0', height: '24px' }}>
+                        <td style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
+                        <td style={{ padding: '4px 6px', fontWeight: 600, color: '#0f172a', border: '1px solid #e2e8f0' }}>{getRemittanceBeneficiaryName(inv)}</td>
+                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0', fontFamily: 'monospace' }}>{inv.invoice_id}</td>
+                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{new Date(inv.invoice_date).toLocaleDateString()}</td>
+                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0', fontFamily: 'monospace' }}>{bank?.pan || 'N/A'}</td>
+                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.village_name || p?.village_id || 'N/A'}</td>
+                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.taluka_name || p?.taluka_id || 'N/A'}</td>
+                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.district_name || p?.district_id || 'N/A'}</td>
+                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.type_of_work || 'N/A'}</td>
+                        <td style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0' }}>₹{inv.subtotal.toLocaleString('en-IN')}.00</td>
+                        <td style={{ padding: '4px 6px', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0' }}>
+                          ₹{inv.gst_amount.toLocaleString('en-IN')}.00
                         </td>
-                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0' }}>
-                          <strong>{getRemittanceBeneficiaryName(inv)}</strong><br />
-                          PAN: <span style={{ fontFamily: 'monospace' }}>{bank?.pan || 'N/A'}</span>
+                        <td style={{ padding: '4px 6px', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0' }}>
+                          ₹{inv.tds_amount.toLocaleString('en-IN')}.00
                         </td>
-                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0' }}>
-                          <strong>{p?.project_id || 'N/A'}</strong><br />
-                          <span style={{ color: '#64748b', fontSize: '0.7rem' }}>{loc}</span>
-                        </td>
-                        <td style={{ padding: '0.6rem 0.4rem', border: '1px solid #e2e8f0' }}>{p?.type_of_work || 'N/A'}</td>
-                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'right', border: '1px solid #e2e8f0' }}>₹{inv.subtotal.toLocaleString('en-IN')}.00</td>
-                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0' }}>
-                          {inv.gst_rate > 0 ? `+₹${inv.gst_amount.toLocaleString('en-IN')} (${inv.gst_rate}%)` : '₹0.00'}
-                        </td>
-                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0' }}>
-                          {inv.tds_rate > 0 ? `-₹${inv.tds_amount.toLocaleString('en-IN')} (${inv.tds_rate}%)` : '₹0.00'}
-                        </td>
-                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'right', fontWeight: 700, border: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 700, border: '1px solid #e2e8f0' }}>
                           ₹{inv.total_amount.toLocaleString('en-IN')}.00
                         </td>
                       </tr>
@@ -765,19 +842,19 @@ export default function Finance() {
                   
                   {/* Grand Totals */}
                   <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
-                    <td colSpan="5" style={{ padding: '0.75rem 0.5rem', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}>
-                      Grand Totals:
+                    <td colSpan="9" style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                      Grand Total:
                     </td>
-                    <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', border: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '10px' }}>
                       ₹{selectedSheet.invoices?.reduce((sum, i) => sum + i.subtotal, 0).toLocaleString('en-IN')}.00
                     </td>
-                    <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0' }}>
-                      +₹{selectedSheet.invoices?.reduce((sum, i) => sum + (i.gst_amount || 0), 0).toLocaleString('en-IN')}.00
+                    <td style={{ padding: '4px 6px', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                      ₹{selectedSheet.invoices?.reduce((sum, i) => sum + (i.gst_amount || 0), 0).toLocaleString('en-IN')}.00
                     </td>
-                    <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0' }}>
-                      -₹{selectedSheet.invoices?.reduce((sum, i) => sum + (i.tds_amount || 0), 0).toLocaleString('en-IN')}.00
+                    <td style={{ padding: '4px 6px', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                      ₹{selectedSheet.invoices?.reduce((sum, i) => sum + (i.tds_amount || 0), 0).toLocaleString('en-IN')}.00
                     </td>
-                    <td style={{ padding: '0.75rem 0.4rem', textAlign: 'right', fontSize: '0.9rem', color: '#4F46E5', border: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '10px', color: '#4F46E5', border: '1px solid #e2e8f0' }}>
                       ₹{selectedSheet.invoices?.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('en-IN')}.00
                     </td>
                   </tr>

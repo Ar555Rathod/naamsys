@@ -49,6 +49,9 @@ export default function PurchaseOrders() {
   // Form states
   const [isAmending, setIsAmending] = useState(false);
   const [amendPoNumber, setAmendPoNumber] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [editPoNumber, setEditPoNumber] = useState('');
 
   const [project_id, setProjectId] = useState('');
   const [vendor_id, setVendorId] = useState('');
@@ -104,7 +107,19 @@ export default function PurchaseOrders() {
         status
       };
 
-      if (isAmending) {
+      if (isEditing) {
+        await api.put(`/purchase-orders/${editId}`, {
+          project_id,
+          vendor_id,
+          contractor_id: contractor_id || null,
+          item_details,
+          delivery_date,
+          total_amount: parseFloat(total_amount),
+          status,
+          remarks: remarks || `In-place edit in Draft mode`
+        });
+        alert('Purchase Order updated successfully.');
+      } else if (isAmending) {
         await api.post('/purchase-orders/amend', {
           po_number: amendPoNumber,
           item_details,
@@ -124,6 +139,9 @@ export default function PurchaseOrders() {
       setShowForm(false);
       setIsAmending(false);
       setAmendPoNumber('');
+      setIsEditing(false);
+      setEditId(null);
+      setEditPoNumber('');
       setProjectId(''); setVendorId(''); setContractorId(''); setItemDetails(''); setDeliveryDate(''); setTotalAmount(''); setStatus('Draft'); setRemarks('');
       fetchPos();
     } catch (err) {
@@ -131,8 +149,27 @@ export default function PurchaseOrders() {
     }
   };
 
+  const handleEditClick = (po) => {
+    setIsEditing(true);
+    setIsAmending(false);
+    setEditId(po.id);
+    setEditPoNumber(po.po_number);
+    setProjectId(po.project_id.toString());
+    setVendorId(po.vendor_id.toString());
+    setContractorId(po.contractor_id ? po.contractor_id.toString() : '');
+    setItemDetails(po.item_details);
+    setDeliveryDate(new Date(po.delivery_date).toISOString().split('T')[0]);
+    setTotalAmount(po.total_amount.toString());
+    setStatus(po.status);
+    setRemarks(po.remarks || '');
+    setShowForm(true);
+  };
+
   const handleAmendClick = (po) => {
     setIsAmending(true);
+    setIsEditing(false);
+    setEditId(null);
+    setEditPoNumber('');
     setAmendPoNumber(po.po_number);
     setProjectId(po.project_id.toString());
     setVendorId(po.vendor_id.toString());
@@ -217,6 +254,9 @@ export default function PurchaseOrders() {
         <h1 className="page-title">Purchase Orders</h1>
         <button className="btn btn-primary" onClick={() => {
           setIsAmending(false);
+          setIsEditing(false);
+          setEditId(null);
+          setEditPoNumber('');
           setAmendPoNumber('');
           setProjectId(''); setVendorId(''); setContractorId(''); setItemDetails(''); setDeliveryDate(''); setTotalAmount(''); setStatus('Draft'); setRemarks('');
           setShowForm(!showForm);
@@ -228,7 +268,7 @@ export default function PurchaseOrders() {
       {showForm && (
         <div className="glass-panel no-print" style={{ padding: '2rem', marginBottom: '2rem' }}>
           <h2 style={{ marginBottom: '1.5rem', fontWeight: 600 }}>
-            {isAmending ? `Amend Purchase Order: ${amendPoNumber} (Creates Next Version)` : 'Create New Purchase Order'}
+            {isEditing ? `Edit Purchase Order: ${editPoNumber} (Draft Mode)` : isAmending ? `Amend Purchase Order: ${amendPoNumber} (Creates Next Version)` : 'Create New Purchase Order'}
           </h2>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             
@@ -274,9 +314,9 @@ export default function PurchaseOrders() {
               </select>
             </div>
 
-            {isAmending && (
+            {(isAmending || isEditing) && (
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label>Amendment Remarks / Rationale</label>
+                <label>Remarks / Rationale</label>
                 <input type="text" value={remarks} onChange={e=>setRemarks(e.target.value)} className="input-field" placeholder="e.g. Price adjustment, modified specifications" required={isAmending} />
               </div>
             )}
@@ -288,7 +328,7 @@ export default function PurchaseOrders() {
 
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
               <button type="submit" className="btn btn-primary">
-                {isAmending ? 'Generate Amended Version' : 'Save Purchase Order'}
+                {isEditing ? 'Save Changes' : isAmending ? 'Generate Amended Version' : 'Save Purchase Order'}
               </button>
             </div>
           </form>
@@ -355,9 +395,15 @@ export default function PurchaseOrders() {
                     </button>
 
                     {p.status !== 'Completed' && (
-                      <button onClick={() => handleAmendClick(p)} className="btn btn-icon" style={{background: 'rgba(0,0,0,0.05)', padding: '0.4rem'}} title="Amend Order">
-                        <Edit3 size={15} />
-                      </button>
+                      p.status === 'Draft' ? (
+                        <button onClick={() => handleEditClick(p)} className="btn btn-icon" style={{background: 'rgba(59, 130, 246, 0.08)', color: 'var(--primary)', padding: '0.4rem'}} title="Edit Draft Order">
+                          <Edit3 size={15} />
+                        </button>
+                      ) : (
+                        <button onClick={() => handleAmendClick(p)} className="btn btn-icon" style={{background: 'rgba(0,0,0,0.05)', padding: '0.4rem'}} title="Amend Order">
+                          <Edit3 size={15} />
+                        </button>
+                      )
                     )}
 
                     {(p.status === 'Draft' || p.status === 'SentToVendor') && (

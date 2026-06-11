@@ -1,306 +1,629 @@
 import React, { useState, useEffect } from 'react';
-import { Download, FileSpreadsheet, Settings as SettingsIcon } from 'lucide-react';
+import { 
+  Database, 
+  Download, 
+  Search, 
+  Table, 
+  RefreshCw, 
+  AlertTriangle, 
+  ShieldCheck, 
+  FileSpreadsheet, 
+  ChevronRight, 
+  Loader2,
+  Calendar,
+  XCircle
+} from 'lucide-react';
 import api from '../api';
 
-const ALL_COLUMNS = [
-  { key: 'Project_ID', label: 'Project ID' },
-  { key: 'Name', label: 'Name' },
-  { key: 'Type', label: 'Type of Work' },
-  { key: 'Source', label: 'Funding Source' },
-  { key: 'Funding_Entity', label: 'Funding Entity' },
-  { key: 'Total_Budget', label: 'Total Budget' },
-  { key: 'Budget_Utilized', label: 'Utilized' },
-  { key: 'Remaining_Budget', label: 'Remaining' },
-  { key: 'Utilized_Percentage', label: '% Used' },
-  { key: 'Invoices_Count', label: 'Invoices' },
-  { key: 'Status', label: 'Status' }
+const AVAILABLE_TABLES = [
+  { key: 'projects', label: 'Projects', description: 'Active and completed welfare initiatives' },
+  { key: 'vendors', label: 'Vendors', description: 'Registered contractors and vendors' },
+  { key: 'contractors', label: 'Contractors', description: 'Assigned field workers' },
+  { key: 'invoices', label: 'Invoices', description: 'All financial invoice logs' },
+  { key: 'workOrders', label: 'Work Orders', description: 'Vendor work agreements and parameters' },
+  { key: 'purchaseOrders', label: 'Purchase Orders', description: 'Materials procurement agreements' },
+  { key: 'workingSheets', label: 'Working Sheets', description: 'Aggregated payroll and payout schedules' },
+  { key: 'bankStatements', label: 'Bank Statements', description: 'Reconciled bank statement release orders' },
+  { key: 'auditLogs', label: 'Audit Logs', description: 'Traceability and operator action records' }
 ];
 
+// Flat formatter for human-readable reports
+const flattenRow = (row, table) => {
+  if (table === 'projects') {
+    return {
+      'Project ID': row.project_id,
+      'Project Name': row.name,
+      'Total Budget': `₹${row.budget.toLocaleString('en-IN')}`,
+      'Budget Remaining': `₹${row.budget_remaining.toLocaleString('en-IN')}`,
+      'Type of Work': row.type_of_work,
+      'Sub Type': row.sub_type,
+      'Funding Source': row.source_type,
+      'Funding Entity': row.source_type === 'CSR' ? (row.csr?.name || 'N/A') : (row.govt_work_order?.work_order_number || row.individual_donor?.donor_id || 'N/A'),
+      'District': row.district_name || 'N/A',
+      'Taluka': row.taluka_name || 'N/A',
+      'Village': row.village_name || 'N/A',
+      'Status': row.status,
+      'Created At': new Date(row.created_at).toLocaleDateString()
+    };
+  }
+  if (table === 'invoices') {
+    return {
+      'Invoice ID': row.invoice_id,
+      'Invoice Type': row.invoice_type,
+      'Project ID': row.project?.project_id || 'N/A',
+      'Project Name': row.project?.name || 'N/A',
+      'Beneficiary': row.vendor?.company_name || row.contractor?.full_name || 'N/A',
+      'Invoice Date': new Date(row.invoice_date).toLocaleDateString(),
+      'Subtotal': `₹${row.subtotal.toLocaleString('en-IN')}`,
+      'GST Rate (%)': row.gst_rate,
+      'GST Amount': `₹${row.gst_amount.toLocaleString('en-IN')}`,
+      'TDS Rate (%)': row.tds_rate,
+      'TDS Amount': `₹${row.tds_amount.toLocaleString('en-IN')}`,
+      'Net Total': `₹${row.total_amount.toLocaleString('en-IN')}`,
+      'Payment Status': row.payment_status,
+      'Amount Paid': `₹${row.amount_paid.toLocaleString('en-IN')}`,
+      'Particulars': row.particulars || 'N/A',
+      'Created At': new Date(row.created_at).toLocaleDateString()
+    };
+  }
+  if (table === 'workOrders') {
+    return {
+      'WO Number': row.wo_number,
+      'Version': `A${row.version}`,
+      'Project ID': row.project?.project_id || 'N/A',
+      'Project Name': row.project?.name || 'N/A',
+      'Vendor': row.vendor?.company_name || 'N/A',
+      'Contractor': row.contractor?.full_name || 'N/A',
+      'Budget Amount': `₹${row.budget_amount.toLocaleString('en-IN')}`,
+      'Status': row.status,
+      'Completion Date': new Date(row.completion_date).toLocaleDateString(),
+      'Work Scope': row.work_description,
+      'Created At': new Date(row.created_at).toLocaleDateString()
+    };
+  }
+  if (table === 'purchaseOrders') {
+    return {
+      'PO Number': row.po_number,
+      'Version': `A${row.version}`,
+      'Project ID': row.project?.project_id || 'N/A',
+      'Project Name': row.project?.name || 'N/A',
+      'Vendor': row.vendor?.company_name || 'N/A',
+      'Contractor': row.contractor?.full_name || 'N/A',
+      'Total Amount': `₹${row.total_amount.toLocaleString('en-IN')}`,
+      'Status': row.status,
+      'Delivery Date': new Date(row.delivery_date).toLocaleDateString(),
+      'Item Scope': row.item_details,
+      'Created At': new Date(row.created_at).toLocaleDateString()
+    };
+  }
+  if (table === 'workingSheets') {
+    return {
+      'Sheet Number': row.sheet_number,
+      'Status': row.status,
+      'Total Payout': `₹${row.total_payment.toLocaleString('en-IN')}`,
+      'Invoices Linked': row.invoices?.length || 0,
+      'Created At': new Date(row.created_at).toLocaleDateString()
+    };
+  }
+  if (table === 'bankStatements') {
+    return {
+      'Statement Number': row.statement_number,
+      'Working Sheet Ref': row.working_sheet?.sheet_number || 'N/A',
+      'Total Cleared Payout': `₹${(row.working_sheet?.total_payment || 0).toLocaleString('en-IN')}`,
+      'Beneficiaries Cleared': row.working_sheet?.invoices?.length || 0,
+      'Settled At': new Date(row.created_at).toLocaleDateString()
+    };
+  }
+  if (table === 'vendors') {
+    return {
+      'Vendor ID': row.vendor_id,
+      'Company Name': row.company_name,
+      'PAN': row.pan,
+      'GST': row.gst || 'N/A',
+      'Owner': row.owner_name,
+      'Contact': row.owner_contact,
+      'Bank': row.bank_name || 'N/A',
+      'Account Number': row.account_no || 'N/A',
+      'IFSC': row.ifsc || 'N/A',
+      'Created At': new Date(row.created_at).toLocaleDateString()
+    };
+  }
+  if (table === 'contractors') {
+    return {
+      'Contractor ID': row.contractor_id,
+      'Full Name': row.full_name,
+      'PAN': row.pan,
+      'Contact': row.contact,
+      'Bank': row.bank_name || 'N/A',
+      'Account Number': row.account_no || 'N/A',
+      'IFSC': row.ifsc || 'N/A',
+      'Created At': new Date(row.created_at).toLocaleDateString()
+    };
+  }
+  if (table === 'auditLogs') {
+    return {
+      'Log ID': row.id,
+      'User ID': row.user_id,
+      'Action': row.action,
+      'Module': row.module,
+      'Record ID': row.record_id || 'N/A',
+      'Log Message': row.new_value || row.old_value || '',
+      'Timestamp': new Date(row.timestamp).toLocaleString()
+    };
+  }
+  // Fallback simple copy
+  const flat = {};
+  Object.keys(row).forEach(k => {
+    if (typeof row[k] !== 'object') {
+      flat[k] = row[k];
+    }
+  });
+  return flat;
+};
+
+// Date extraction logic from raw records
+const getRowDateValue = (row, table) => {
+  if (table === 'invoices') return new Date(row.invoice_date);
+  if (table === 'auditLogs') return new Date(row.timestamp);
+  if (table === 'workOrders') return new Date(row.created_at);
+  if (table === 'purchaseOrders') return new Date(row.created_at);
+  return new Date(row.created_at);
+};
+
 export default function Reports() {
-  const [reportData, setReportData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedColumns, setSelectedColumns] = useState([
-    'Project_ID',
-    'Name',
-    'Source',
-    'Funding_Entity',
-    'Total_Budget',
-    'Budget_Utilized',
-    'Remaining_Budget',
-    'Utilized_Percentage',
-    'Status'
-  ]);
-  const [selectedRows, setSelectedRows] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [selectedTable, setSelectedTable] = useState('projects');
+  const [tableData, setTableData] = useState([]);
+  const [loadingTable, setLoadingTable] = useState(false);
+  
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
-    fetchReport();
+    fetchStats();
+    fetchTableData('projects');
   }, []);
 
-  const fetchReport = async () => {
+  const fetchStats = async () => {
+    setLoadingStats(true);
     try {
-      const res = await api.get('/reports/summary');
-      setReportData(res.data);
-      setSelectedRows(res.data.map(p => p.Project_ID));
-      setLoading(false);
+      const res = await api.get('/reports/stats');
+      setStats(res.data);
     } catch (err) {
-      console.error(err);
-      setLoading(false);
+      console.error('Failed to fetch stats:', err);
+    } finally {
+      setLoadingStats(false);
     }
   };
 
-  const handleColumnToggle = (key) => {
-    setSelectedColumns(prev => 
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-    );
-  };
-
-  const handleRowToggle = (projectId) => {
-    setSelectedRows(prev => 
-      prev.includes(projectId) ? prev.filter(id => id !== projectId) : [...prev, projectId]
-    );
-  };
-
-  const handleSelectAllRows = () => {
-    if (selectedRows.length === reportData.length) {
-      setSelectedRows([]);
-    } else {
-      setSelectedRows(reportData.map(p => p.Project_ID));
+  const fetchTableData = async (tableName) => {
+    setLoadingTable(true);
+    setSearchQuery('');
+    setStartDate('');
+    setEndDate('');
+    try {
+      const res = await api.get(`/reports/table/${tableName}`);
+      setTableData(res.data);
+    } catch (err) {
+      console.error(`Failed to fetch report table data for ${tableName}:`, err);
+      setTableData([]);
+    } finally {
+      setLoadingTable(false);
     }
   };
 
-  const selectAllColumns = () => {
-    setSelectedColumns(ALL_COLUMNS.map(c => c.key));
+  const handleTableChange = (e) => {
+    const table = e.target.value;
+    setSelectedTable(table);
+    fetchTableData(table);
   };
 
-  const deselectAllColumns = () => {
-    setSelectedColumns([]);
+  const handleRefresh = () => {
+    fetchStats();
+    fetchTableData(selectedTable);
   };
 
+  // Live filter operations
+  const filteredData = tableData.filter(row => {
+    // 1. Search Query Filter (checks inside the human-readable flattened values)
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const flat = flattenRow(row, selectedTable);
+      const matchesSearch = Object.values(flat).some(value => 
+        String(value !== null && value !== undefined ? value : '').toLowerCase().includes(query)
+      );
+      if (!matchesSearch) return false;
+    }
+
+    // 2. Date Range Filter
+    if (startDate || endDate) {
+      const rowDate = getRowDateValue(row, selectedTable);
+      if (isNaN(rowDate.getTime())) return true; // Keep row if date is missing/invalid
+      
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0,0,0,0);
+        if (rowDate < start) return false;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23,59,59,999);
+        if (rowDate > end) return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Export as CSV Format
   const handleExportCSV = () => {
-    const rowsToExport = reportData.filter(row => selectedRows.includes(row.Project_ID));
-    if (rowsToExport.length === 0) {
-      alert('Please select at least one project row to export.');
-      return;
-    }
-    if (selectedColumns.length === 0) {
-      alert('Please select at least one column to include.');
+    if (filteredData.length === 0) {
+      alert('No rows available in the current view to export.');
       return;
     }
 
-    // Get selected headers
-    const headers = ALL_COLUMNS.filter(col => selectedColumns.includes(col.key));
-    
-    // Create CSV rows
+    const flattened = filteredData.map(r => flattenRow(r, selectedTable));
+    const headers = Object.keys(flattened[0]);
     const csvRows = [];
-    csvRows.push(headers.map(h => h.label).join(',')); // Add header row
 
-    for (const row of rowsToExport) {
-      const values = headers.map(header => {
-        const val = row[header.key];
-        // Escape quotes and wrap in quotes to handle commas in data
+    // Headers row
+    csvRows.push(headers.map(h => h.toUpperCase()).join(','));
+
+    // Data rows
+    flattened.forEach(row => {
+      const values = headers.map(h => {
+        const val = row[h];
         return `"${String(val !== undefined && val !== null ? val : '').replace(/"/g, '""')}"`;
       });
       csvRows.push(values.join(','));
-    }
+    });
 
-    // Add UTF-8 Byte Order Mark (BOM) so Excel reads standard characters and punctuation perfectly
+    // Add UTF-8 BOM so excel processes Rupee symbols
     const csvData = '\uFEFF' + csvRows.join('\n');
     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `NAAM_Report_${selectedTable}_${new Date().toISOString().split('T')[0]}.csv`;
     
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `NAAM_Customized_Report_${new Date().toISOString().split('T')[0]}.csv`;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    
-    // Defer removal and revocation to ensure the browser successfully processes the download request before the elements are garbage collected
+    document.body.appendChild(link);
+    link.click();
     setTimeout(() => {
-      document.body.removeChild(a);
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     }, 150);
   };
 
+  // Export as High-Fidelity Excel spreadsheet Format
+  const handleExportExcel = () => {
+    if (filteredData.length === 0) {
+      alert('No rows available in the current view to export.');
+      return;
+    }
+
+    const flattened = filteredData.map(r => flattenRow(r, selectedTable));
+    const headers = Object.keys(flattened[0]);
+
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">`;
+    html += `<head><meta charset="utf-8" /><style>table { border-collapse: collapse; } th { background-color: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 8px; } td { border: 1px solid #cbd5e1; padding: 6px 8px; }</style></head>`;
+    html += `<body>`;
+    html += `<h2>NAAM FOUNDATION - CUSTOM REPORT: ${selectedTable.toUpperCase()}</h2>`;
+    html += `<p>Generated Date: ${new Date().toLocaleDateString()} | Rows Count: ${flattened.length}</p>`;
+    if (startDate || endDate) {
+      html += `<p>Date Filter: ${startDate || 'All Time'} to ${endDate || 'Present'}</p>`;
+    }
+    html += `<table>`;
+    
+    // Header
+    html += `<thead><tr>`;
+    headers.forEach(h => {
+      html += `<th>${h}</th>`;
+    });
+    html += `</tr></thead>`;
+
+    // Rows
+    html += `<tbody>`;
+    flattened.forEach(row => {
+      html += `<tr>`;
+      headers.forEach(h => {
+        const val = row[h];
+        html += `<td>${val !== null && val !== undefined ? String(val).replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''}</td>`;
+      });
+      html += `</tr>`;
+    });
+    html += `</tbody></table></body></html>`;
+
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `NAAM_Report_${selectedTable}_${new Date().toISOString().split('T')[0]}.xls`;
+    
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 150);
+  };
+
+  const renderHeaders = () => {
+    if (filteredData.length === 0) return null;
+    const flat = flattenRow(filteredData[0], selectedTable);
+    return Object.keys(flat).map(key => (
+      <th key={key}>{key}</th>
+    ));
+  };
+
+  const renderRows = () => {
+    return filteredData.map((row, index) => {
+      const flat = flattenRow(row, selectedTable);
+      return (
+        <tr key={row.id || index} className="hover-row">
+          {Object.entries(flat).map(([key, val], idx) => {
+            const displayedVal = String(val !== null && val !== undefined ? val : '');
+            return (
+              <td key={idx} style={{ 
+                fontFamily: (key.includes('ID') || key.includes('Number') || key.includes('Ref') || key.includes('PAN')) ? 'monospace' : 'inherit',
+                fontWeight: key.includes('ID') ? 600 : 'normal'
+              }}>
+                {displayedVal}
+              </td>
+            );
+          })}
+        </tr>
+      );
+    });
+  };
+
   return (
     <div className="main-content">
+      {/* Page Header */}
       <div className="page-header">
-        <h1 className="page-title">Reports & Analytics</h1>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Database size={32} color="var(--primary)" /> Customized Reports Engine
+        </h1>
         <button 
-          className="btn btn-primary" 
-          onClick={handleExportCSV} 
-          disabled={reportData.length === 0 || selectedColumns.length === 0 || selectedRows.length === 0}
+          className="btn" 
+          style={{ background: 'rgba(30, 41, 59, 0.05)', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          onClick={handleRefresh}
         >
-          <Download size={18} /> Export Custom Report ({selectedRows.length} rows)
+          <RefreshCw size={18} /> Refresh Live Data
         </button>
       </div>
 
-      {/* Dynamic Column & Row Configurator Dashboard */}
-      <div className="glass-panel" style={{ padding: '1.75rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        <h3 style={{ fontWeight: 600, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', margin: 0 }}>
-          <SettingsIcon size={18} style={{ opacity: 0.8 }} /> Customized Export & View Configurator
-        </h3>
+      {/* Grid Layout: Left panel telemetry tiles, Right panel export settings */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
         
-        {/* Columns Grid Checklist */}
-        <div>
-          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>
-            SELECT COLUMNS TO INCLUDE:
-          </span>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
-            {ALL_COLUMNS.map(col => {
-              const isChecked = selectedColumns.includes(col.key);
-              return (
-                <label key={col.key} style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.4rem 0.85rem',
-                  background: isChecked ? 'rgba(30, 41, 59, 0.05)' : 'rgba(255, 255, 255, 0.4)',
-                  border: `1px solid ${isChecked ? 'var(--primary)' : 'var(--border)'}`,
-                  color: isChecked ? 'var(--primary)' : 'var(--text-muted)',
-                  borderRadius: '20px',
-                  fontSize: '0.8rem',
-                  fontWeight: isChecked ? 600 : 400,
-                  cursor: 'pointer',
-                  margin: 0,
-                  transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)'
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => handleColumnToggle(col.key)}
-                    style={{ cursor: 'pointer', margin: 0 }}
-                  />
-                  {col.label}
-                </label>
-              );
-            })}
-          </div>
+        {/* Left Side: Stats Overview */}
+        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Table size={18} color="var(--primary)" /> Live Reporting Telemetry
+          </h3>
+
+          {loadingStats ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+              <Loader2 className="animate-spin" size={24} /> &nbsp;Loading report telemetry...
+            </div>
+          ) : stats ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem', maxHeight: '180px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+              {Object.entries(stats).map(([key, data]) => (
+                <div 
+                  key={key} 
+                  onClick={() => { setSelectedTable(key); fetchTableData(key); }}
+                  style={{ 
+                    padding: '0.65rem 0.85rem', 
+                    background: selectedTable === key ? 'rgba(30, 41, 59, 0.07)' : 'rgba(255, 255, 255, 0.4)', 
+                    border: `1px solid ${selectedTable === key ? 'var(--primary)' : 'var(--border)'}`,
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {data.label}
+                  </span>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '0.15rem' }}>
+                    {data.count.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ color: 'var(--danger)', fontSize: '0.9rem' }}>Failed to retrieve data statistics.</div>
+          )}
         </div>
 
-        {/* Action Controls */}
-        <div style={{ display: 'flex', gap: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button 
-            onClick={selectAllColumns} 
-            className="btn" 
-            style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', background: 'rgba(30, 41, 59, 0.06)', color: 'var(--primary)' }}
-          >
-            Select All Columns
-          </button>
-          <button 
-            onClick={deselectAllColumns} 
-            className="btn" 
-            style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
-          >
-            Clear All Columns
-          </button>
-          
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.825rem', color: 'var(--text-muted)' }}>
-              Active View: <strong>{selectedColumns.length} columns</strong> & <strong>{selectedRows.length}</strong> of <strong>{reportData.length}</strong> project rows selected
-            </span>
+        {/* Right Side: Quick Export Actions */}
+        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.75rem' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ShieldCheck size={20} color="var(--success)" /> Export Controls
+            </h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.4rem', lineHeight: '1.4' }}>
+              Generate structured, human-readable data files immediately. The Excel format includes correct column structures, location references, and pricing.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button 
+              className="btn"
+              onClick={handleExportCSV}
+              disabled={filteredData.length === 0}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.4rem',
+                background: 'rgba(30, 41, 59, 0.04)',
+                color: 'var(--primary)',
+                padding: '0.65rem',
+                fontSize: '0.85rem'
+              }}
+            >
+              <Download size={15} /> Export CSV
+            </button>
+            <button 
+              className="btn"
+              onClick={handleExportExcel}
+              disabled={filteredData.length === 0}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.4rem',
+                background: '#10b981',
+                color: 'white',
+                padding: '0.65rem',
+                fontSize: '0.85rem'
+              }}
+            >
+              <FileSpreadsheet size={15} /> Export Excel
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="glass-panel" style={{ overflow: 'hidden' }}>
-        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <FileSpreadsheet size={18} color="var(--primary)" />
-          <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Interactive Master Budget Table Preview</span>
-        </div>
-        
-        {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading report data...</div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table" style={{ whiteSpace: 'nowrap' }}>
-              <thead>
-                <tr>
-                  <th style={{ width: '40px', paddingLeft: '1.5rem' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={reportData.length > 0 && selectedRows.length === reportData.length}
-                      ref={input => {
-                        if (input) {
-                          input.indeterminate = selectedRows.length > 0 && selectedRows.length < reportData.length;
-                        }
-                      }}
-                      onChange={handleSelectAllRows}
-                      style={{ cursor: 'pointer' }}
-                    />
-                  </th>
-                  {ALL_COLUMNS.filter(col => selectedColumns.includes(col.key)).map(col => (
-                    <th key={col.key}>{col.label}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {reportData.map((row, idx) => {
-                  const isRowSelected = selectedRows.includes(row.Project_ID);
-                  return (
-                    <tr key={idx} style={{ 
-                      opacity: isRowSelected ? 1 : 0.45, 
-                      background: isRowSelected ? 'transparent' : 'rgba(15, 23, 42, 0.02)',
-                      transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
-                    }}>
-                      <td style={{ paddingLeft: '1.5rem' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={isRowSelected}
-                          onChange={() => handleRowToggle(row.Project_ID)}
-                          style={{ cursor: 'pointer' }}
-                        />
-                      </td>
-                      {selectedColumns.includes('Project_ID') && <td style={{ fontWeight: 600 }}>{row.Project_ID}</td>}
-                      {selectedColumns.includes('Name') && <td>{row.Name}</td>}
-                      {selectedColumns.includes('Type') && <td>{row.Type}</td>}
-                      {selectedColumns.includes('Source') && (
-                        <td>
-                          <span className={`badge ${
-                            row.Source === 'CSR' ? 'badge-success' : 
-                            row.Source === 'GOVT' ? 'badge-warning' : 'badge-danger'
-                          }`} style={{ fontSize: '0.7rem' }}>
-                            {row.Source}
-                          </span>
-                        </td>
-                      )}
-                      {selectedColumns.includes('Funding_Entity') && <td>{row.Funding_Entity || 'N/A'}</td>}
-                      {selectedColumns.includes('Total_Budget') && <td>₹{row.Total_Budget.toLocaleString()}</td>}
-                      {selectedColumns.includes('Budget_Utilized') && <td>₹{row.Budget_Utilized.toLocaleString()}</td>}
-                      {selectedColumns.includes('Remaining_Budget') && (
-                        <td style={{ color: row.Remaining_Budget < (row.Total_Budget * 0.2) ? 'var(--danger)' : 'inherit', fontWeight: row.Remaining_Budget < (row.Total_Budget * 0.2) ? 600 : 'normal' }}>
-                          ₹{row.Remaining_Budget.toLocaleString()}
-                        </td>
-                      )}
-                      {selectedColumns.includes('Utilized_Percentage') && (
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <div style={{ width: '50px', height: '6px', background: 'rgba(0,0,0,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                              <div style={{ width: row.Utilized_Percentage, height: '100%', background: 'var(--primary)', borderRadius: '3px' }}></div>
-                            </div>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{row.Utilized_Percentage}</span>
-                          </div>
-                        </td>
-                      )}
-                      {selectedColumns.includes('Invoices_Count') && <td>{row.Invoices_Count}</td>}
-                      {selectedColumns.includes('Status') && (
-                        <td>
-                          <span className={`badge ${
-                            row.Status === 'Active' ? 'badge-success' : 
-                            row.Status === 'Completed' ? 'badge-success' : 'badge-danger'
-                          }`} style={{ fontSize: '0.7rem' }}>
-                            {row.Status}
-                          </span>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-                {reportData.length === 0 && <tr><td colSpan={selectedColumns.length + 1} style={{textAlign:'center', padding: '2rem', color: 'var(--text-muted)'}}>No budget records found.</td></tr>}
-              </tbody>
-            </table>
+      {/* Main Bottom Section: Interactive Customized Reports Explorer */}
+      <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>Customized Table Explorer</h3>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              Query and search tables with location names, budgets, and beneficiary relationships resolved.
+            </span>
           </div>
-        )}
+
+          {/* Action Row Filters */}
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            
+            {/* Table Dropdown Select */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>TABLE:</span>
+              <select 
+                value={selectedTable} 
+                onChange={handleTableChange}
+                style={{
+                  padding: '0.4rem 1.75rem 0.4rem 0.75rem',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border)',
+                  background: 'white',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: 'var(--text-main)',
+                  cursor: 'pointer'
+                }}
+              >
+                {AVAILABLE_TABLES.map(t => (
+                  <option key={t.key} value={t.key}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Custom Date Range Pickers */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'white', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.2rem 0.5rem' }}>
+              <Calendar size={14} color="var(--text-muted)" />
+              <input 
+                type="date" 
+                value={startDate} 
+                onChange={e => setStartDate(e.target.value)} 
+                title="From Date"
+                style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.75rem', color: 'var(--text-main)', width: '110px' }}
+              />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>to</span>
+              <input 
+                type="date" 
+                value={endDate} 
+                onChange={e => setEndDate(e.target.value)} 
+                title="To Date"
+                style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.75rem', color: 'var(--text-main)', width: '110px' }}
+              />
+              {(startDate || endDate) && (
+                <button 
+                  onClick={() => { setStartDate(''); setEndDate(''); }}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                  title="Clear Date Filter"
+                >
+                  <XCircle size={14} color="var(--text-muted)" />
+                </button>
+              )}
+            </div>
+
+            {/* Search Input */}
+            <div style={{ position: 'relative' }}>
+              <Search size={14} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input 
+                type="text"
+                placeholder={`Search ${selectedTable}...`}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{
+                  padding: '0.4rem 0.75rem 0.4rem 2rem',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border)',
+                  fontSize: '0.8rem',
+                  width: '180px',
+                  background: 'rgba(255, 255, 255, 0.7)'
+                }}
+              />
+            </div>
+
+          </div>
+        </div>
+
+        {/* Data Table Preview */}
+        <div style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'rgba(255, 255, 255, 0.2)' }}>
+          {loadingTable ? (
+            <div style={{ padding: '5rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+              <Loader2 className="animate-spin" size={28} color="var(--primary)" />
+              <span style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>Processing customized data joints...</span>
+            </div>
+          ) : filteredData.length > 0 ? (
+            <div style={{ overflowX: 'auto', maxHeight: '400px' }}>
+              <table className="data-table" style={{ whiteSpace: 'nowrap', borderCollapse: 'collapse', width: '100%' }}>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 1, background: 'var(--bg-card)' }}>
+                  <tr>
+                    {renderHeaders()}
+                  </tr>
+                </thead>
+                <tbody>
+                  {renderRows()}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+              <Table size={28} style={{ opacity: 0.5 }} />
+              <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>No matching records found in table "{selectedTable}"</span>
+              {(searchQuery || startDate || endDate) && <span style={{ fontSize: '0.75rem' }}>Try clearing filters or date ranges.</span>}
+            </div>
+          )}
+        </div>
+
+        {/* Action Description Footer */}
+        <div style={{ 
+          background: 'rgba(30, 41, 59, 0.02)', 
+          border: '1px solid var(--border)', 
+          borderRadius: '6px', 
+          padding: '0.5rem 0.75rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.4rem',
+          fontSize: '0.75rem',
+          color: 'var(--text-muted)'
+        }}>
+          <ChevronRight size={14} />
+          <span><strong>Table Schema Description:</strong> {AVAILABLE_TABLES.find(t => t.key === selectedTable)?.description}</span>
+          <span style={{ marginLeft: 'auto' }}>Showing <strong>{filteredData.length}</strong> of <strong>{tableData.length}</strong> records</span>
+        </div>
       </div>
     </div>
   );

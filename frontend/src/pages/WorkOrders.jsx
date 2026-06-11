@@ -26,6 +26,9 @@ export default function WorkOrders() {
   // Form states
   const [isAmending, setIsAmending] = useState(false);
   const [amendWoNumber, setAmendWoNumber] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [editWoNumber, setEditWoNumber] = useState('');
 
   const [project_id, setProjectId] = useState('');
   const [vendor_id, setVendorId] = useState('');
@@ -71,7 +74,19 @@ export default function WorkOrders() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (isAmending) {
+      if (isEditing) {
+        await api.put(`/work-orders/${editId}`, {
+          project_id,
+          vendor_id,
+          contractor_id: contractor_id || null,
+          work_description,
+          completion_date,
+          budget_amount: budget_amount ? parseFloat(budget_amount) : 0,
+          status,
+          remarks: remarks || `In-place edit in Draft mode`
+        });
+        alert('Work Order updated successfully.');
+      } else if (isAmending) {
         await api.post('/work-orders/amend', {
           wo_number: amendWoNumber,
           work_description,
@@ -99,6 +114,9 @@ export default function WorkOrders() {
       setShowForm(false);
       setIsAmending(false);
       setAmendWoNumber('');
+      setIsEditing(false);
+      setEditId(null);
+      setEditWoNumber('');
       setProjectId(''); setVendorId(''); setContractorId(''); setWorkDescription(''); setCompletionDate(''); setBudgetAmount(''); setStatus('Draft'); setRemarks('');
       fetchWos();
     } catch (err) {
@@ -106,8 +124,27 @@ export default function WorkOrders() {
     }
   };
 
+  const handleEditClick = (wo) => {
+    setIsEditing(true);
+    setIsAmending(false);
+    setEditId(wo.id);
+    setEditWoNumber(wo.wo_number);
+    setProjectId(wo.project_id.toString());
+    setVendorId(wo.vendor_id.toString());
+    setContractorId(wo.contractor_id ? wo.contractor_id.toString() : '');
+    setWorkDescription(wo.work_description);
+    setCompletionDate(new Date(wo.completion_date).toISOString().split('T')[0]);
+    setBudgetAmount(wo.budget_amount ? wo.budget_amount.toString() : '');
+    setStatus(wo.status);
+    setRemarks(wo.remarks || '');
+    setShowForm(true);
+  };
+
   const handleAmendClick = (wo) => {
     setIsAmending(true);
+    setIsEditing(false);
+    setEditId(null);
+    setEditWoNumber('');
     setAmendWoNumber(wo.wo_number);
     setProjectId(wo.project_id.toString());
     setVendorId(wo.vendor_id.toString());
@@ -212,6 +249,9 @@ export default function WorkOrders() {
         <h1 className="page-title">Work Orders</h1>
         <button className="btn btn-primary" onClick={() => {
           setIsAmending(false);
+          setIsEditing(false);
+          setEditId(null);
+          setEditWoNumber('');
           setAmendWoNumber('');
           setProjectId(''); setVendorId(''); setContractorId(''); setWorkDescription(''); setCompletionDate(''); setBudgetAmount(''); setStatus('Draft'); setRemarks('');
           setShowForm(!showForm);
@@ -223,7 +263,7 @@ export default function WorkOrders() {
       {showForm && (
         <div className="glass-panel no-print" style={{ padding: '2rem', marginBottom: '2rem' }}>
           <h2 style={{ marginBottom: '1.5rem', fontWeight: 600 }}>
-            {isAmending ? `Amend Work Order: ${amendWoNumber} (Creates Next Version)` : 'Create New Work Order'}
+            {isEditing ? `Edit Work Order: ${editWoNumber} (Draft Mode)` : isAmending ? `Amend Work Order: ${amendWoNumber} (Creates Next Version)` : 'Create New Work Order'}
           </h2>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             
@@ -269,9 +309,9 @@ export default function WorkOrders() {
               </select>
             </div>
 
-            {isAmending && (
+            {(isAmending || isEditing) && (
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label>Amendment Remarks / Rationale</label>
+                <label>Remarks / Rationale</label>
                 <input type="text" value={remarks} onChange={e=>setRemarks(e.target.value)} className="input-field" placeholder="e.g. Scope extension, adjusted completion timeline" required={isAmending} />
               </div>
             )}
@@ -283,7 +323,7 @@ export default function WorkOrders() {
 
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
               <button type="submit" className="btn btn-primary">
-                {isAmending ? 'Generate Amended Version' : 'Save Work Order'}
+                {isEditing ? 'Save Changes' : isAmending ? 'Generate Amended Version' : 'Save Work Order'}
               </button>
             </div>
           </form>
@@ -350,9 +390,15 @@ export default function WorkOrders() {
                     </button>
 
                     {w.status !== 'Completed' && (
-                      <button onClick={() => handleAmendClick(w)} className="btn btn-icon" style={{background: 'rgba(0,0,0,0.05)', padding: '0.4rem'}} title="Amend Order">
-                        <Edit3 size={15} />
-                      </button>
+                      w.status === 'Draft' ? (
+                        <button onClick={() => handleEditClick(w)} className="btn btn-icon" style={{background: 'rgba(59, 130, 246, 0.08)', color: 'var(--primary)', padding: '0.4rem'}} title="Edit Draft Order">
+                          <Edit3 size={15} />
+                        </button>
+                      ) : (
+                        <button onClick={() => handleAmendClick(w)} className="btn btn-icon" style={{background: 'rgba(0,0,0,0.05)', padding: '0.4rem'}} title="Amend Order">
+                          <Edit3 size={15} />
+                        </button>
+                      )
                     )}
 
                     {(w.status === 'Draft' || w.status === 'SentToVendor') && (

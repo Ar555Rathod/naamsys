@@ -299,4 +299,56 @@ router.put('/:id/upload-signed', async (req, res) => {
   }
 });
 
+// Edit Work Order in Draft mode
+router.put('/:id', async (req, res) => {
+  try {
+    const woId = parseInt(req.params.id);
+    const { project_id, vendor_id, contractor_id, work_description, completion_date, budget_amount, status, remarks } = req.body;
+
+    const existingWo = await prisma.workOrder.findUnique({
+      where: { id: woId }
+    });
+
+    if (!existingWo) {
+      return res.status(404).json({ error: 'Work Order not found' });
+    }
+
+    if (existingWo.status !== 'Draft') {
+      return res.status(400).json({ error: 'Only Work Orders in Draft mode can be edited' });
+    }
+
+    const updatedWo = await prisma.$transaction(async (tx) => {
+      const updated = await tx.workOrder.update({
+        where: { id: woId },
+        data: {
+          project_id: project_id ? parseInt(project_id) : existingWo.project_id,
+          vendor_id: vendor_id ? parseInt(vendor_id) : existingWo.vendor_id,
+          contractor_id: contractor_id !== undefined ? (contractor_id ? parseInt(contractor_id) : null) : existingWo.contractor_id,
+          work_description: work_description || existingWo.work_description,
+          completion_date: completion_date ? new Date(completion_date) : existingWo.completion_date,
+          budget_amount: budget_amount !== undefined ? parseFloat(budget_amount) : existingWo.budget_amount,
+          status: status || existingWo.status,
+          remarks: remarks || existingWo.remarks
+        }
+      });
+
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: 'Edit Work Order',
+          module: 'Work Orders',
+          record_id: String(updated.id),
+          new_value: `Updated Work Order '${updated.wo_number}' in Draft mode (Budget: ₹${parseFloat(updated.budget_amount).toLocaleString('en-IN')})`
+        }
+      });
+
+      return updated;
+    });
+
+    res.json(updatedWo);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update Work Order', details: error.message });
+  }
+});
+
 module.exports = router;
