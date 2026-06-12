@@ -861,32 +861,32 @@ export default function Finance() {
                 <div key={sheet.id} style={{ marginBottom: index === selectedSheetsToPrint.length - 1 ? 0 : '3rem', paddingBottom: index === selectedSheetsToPrint.length - 1 ? 0 : '3rem', borderBottom: index === selectedSheetsToPrint.length - 1 ? 'none' : '2px dashed #cbd5e1' }}>
                   {/* Simplified Header */}
                   <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>
-                      NAAM FOUNDATION - WORKING SHEET
+                    <h1 style={{ fontSize: '1.25rem', fontWeight: 'normal', color: '#0f172a', margin: 0 }}>
+                      Naam Foundation - Working Sheet
                     </h1>
-                    <div style={{ textAlign: 'right', fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>
+                    <div style={{ textAlign: 'right', fontSize: '0.9rem', color: '#0f172a', fontWeight: 'normal' }}>
                       Date of creation: {new Date(sheet.created_at).toLocaleDateString()}<br />
                       Ref: {sheet.sheet_number}
                     </div>
                   </div>
 
                   {/* Invoices List Table */}
-                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '10px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '9px' }}>
                     <thead>
                       <tr style={{ background: '#f1f5f9', borderTop: '1px solid #0f172a', borderBottom: '1px solid #0f172a' }}>
-                        <th style={{ padding: '4px 6px', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr No.</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice No.</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice Date</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>PAN No.</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Village</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Taluka</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>District</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Type of Work</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Subtotal</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Gst</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>TDS</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Net Total</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'center', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Sr No.</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Beneficiary Name</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Invoice No.</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Invoice Date</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>PAN No.</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Village</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Taluka</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>District</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Type of Work</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'right', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Subtotal</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'right', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Gst</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'right', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>TDS</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'right', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Net Total</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -894,24 +894,24 @@ export default function Finance() {
                         const p = inv.project;
                         const bank = getRemittanceBankDetails(inv);
                         return (
-                          <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0', height: '24px' }}>
-                            <td style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
-                            <td style={{ padding: '4px 6px', fontWeight: 600, color: '#0f172a', border: '1px solid #e2e8f0' }}>{getRemittanceBeneficiaryName(inv)}</td>
-                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0', fontFamily: 'monospace' }}>{inv.invoice_id}</td>
-                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{new Date(inv.invoice_date).toLocaleDateString()}</td>
-                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0', fontFamily: 'monospace' }}>{bank?.pan || 'N/A'}</td>
-                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.village_name || p?.village_id || 'N/A'}</td>
-                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.taluka_name || p?.taluka_id || 'N/A'}</td>
-                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.district_name || p?.district_id || 'N/A'}</td>
-                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.type_of_work || 'N/A'}</td>
-                            <td style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0' }}>₹{inv.subtotal.toLocaleString('en-IN')}.00</td>
-                            <td style={{ padding: '4px 6px', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0' }}>
+                          <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '2px 4px', textAlign: 'center', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{idx + 1}</td>
+                            <td style={{ padding: '2px 4px', fontWeight: 'normal', color: '#0f172a', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{getRemittanceBeneficiaryName(inv)}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{inv.invoice_id}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{new Date(inv.invoice_date).toLocaleDateString()}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{bank?.pan || 'N/A'}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{p?.village_name || p?.village_id || 'N/A'}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{p?.taluka_name || p?.taluka_id || 'N/A'}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{p?.district_name || p?.district_id || 'N/A'}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{p?.type_of_work || 'N/A'}</td>
+                            <td style={{ padding: '2px 4px', textAlign: 'right', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>₹{inv.subtotal.toLocaleString('en-IN')}.00</td>
+                            <td style={{ padding: '2px 4px', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
                               ₹{inv.gst_amount.toLocaleString('en-IN')}.00
                             </td>
-                            <td style={{ padding: '4px 6px', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '2px 4px', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
                               ₹{inv.tds_amount.toLocaleString('en-IN')}.00
                             </td>
-                            <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 700, border: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '2px 4px', textAlign: 'right', fontWeight: 'normal', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
                               ₹{inv.total_amount.toLocaleString('en-IN')}.00
                             </td>
                           </tr>
@@ -919,20 +919,20 @@ export default function Finance() {
                       })}
                       
                       {/* Grand Totals */}
-                      <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
-                        <td colSpan="9" style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                      <tr style={{ background: '#f8fafc', fontWeight: 'normal' }}>
+                        <td colSpan="9" style={{ padding: '2px 4px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '9px', whiteSpace: 'nowrap' }}>
                           Grand Total:
                         </td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                        <td style={{ padding: '2px 4px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '9px', whiteSpace: 'nowrap' }}>
                           ₹{sheet.invoices?.reduce((sum, i) => sum + i.subtotal, 0).toLocaleString('en-IN')}.00
                         </td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                        <td style={{ padding: '2px 4px', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0', fontSize: '9px', whiteSpace: 'nowrap' }}>
                           ₹{sheet.invoices?.reduce((sum, i) => sum + (i.gst_amount || 0), 0).toLocaleString('en-IN')}.00
                         </td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                        <td style={{ padding: '2px 4px', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0', fontSize: '9px', whiteSpace: 'nowrap' }}>
                           ₹{sheet.invoices?.reduce((sum, i) => sum + (i.tds_amount || 0), 0).toLocaleString('en-IN')}.00
                         </td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '10px', color: '#4F46E5', border: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '2px 4px', textAlign: 'right', fontSize: '9px', color: '#4F46E5', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
                           ₹{sheet.invoices?.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('en-IN')}.00
                         </td>
                       </tr>
