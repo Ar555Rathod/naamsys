@@ -19,8 +19,12 @@ export default function Finance() {
   const [approvedInvoiceIds, setApprovedInvoiceIds] = useState([]);
 
   // Bank Statement View
-  const [selectedStatement, setSelectedStatement] = useState(null);
-  const [selectedSheet, setSelectedSheet] = useState(null);
+  const [selectedStatementsToPrint, setSelectedStatementsToPrint] = useState(null);
+  const [selectedSheetsToPrint, setSelectedSheetsToPrint] = useState(null);
+
+  // Multi-select for bulk printing
+  const [selectedSheetIds, setSelectedSheetIds] = useState([]);
+  const [selectedStatementIds, setSelectedStatementIds] = useState([]);
 
   useEffect(() => {
     // Determine user role on mount
@@ -410,11 +414,34 @@ export default function Finance() {
       {/* TAB 2: Working Sheets Ledger */}
       {activeTab === 'sheets' && (
         <div className="no-print">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+            <button 
+              className="btn btn-primary"
+              disabled={selectedSheetIds.length === 0}
+              onClick={() => {
+                const selected = workingSheets.filter(s => selectedSheetIds.includes(s.id));
+                setSelectedSheetsToPrint(selected);
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
+            >
+              <Printer size={16} /> Print Selected Sheets ({selectedSheetIds.length})
+            </button>
+          </div>
           <div className="glass-panel" style={{ overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto', width: '100%' }}>
               <table className="data-table">
               <thead>
                 <tr>
+                  <th style={{ width: '40px', textAlign: 'center' }}>
+                    <input 
+                      type="checkbox" 
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedSheetIds(workingSheets.map(s => s.id));
+                        else setSelectedSheetIds([]);
+                      }}
+                      checked={selectedSheetIds.length > 0 && selectedSheetIds.length === workingSheets.length}
+                    />
+                  </th>
                   <th>Sheet Number</th>
                   <th>Status</th>
                   <th>Invoices Linked</th>
@@ -428,9 +455,19 @@ export default function Finance() {
                 {workingSheets.map(sheet => {
                   const dateStr = new Date(sheet.created_at).toLocaleDateString();
                   const appDateStr = sheet.approved_at ? new Date(sheet.approved_at).toLocaleDateString() : null;
+                  const isChecked = selectedSheetIds.includes(sheet.id);
 
                   return (
-                    <tr key={sheet.id}>
+                    <tr key={sheet.id} style={{ background: isChecked ? 'rgba(79, 70, 229, 0.05)' : undefined }}>
+                      <td style={{ textAlign: 'center' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={isChecked}
+                          onChange={() => {
+                            setSelectedSheetIds(prev => prev.includes(sheet.id) ? prev.filter(id => id !== sheet.id) : [...prev, sheet.id]);
+                          }}
+                        />
+                      </td>
                       <td style={{ fontWeight: 600 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <FileSpreadsheet size={16} color="var(--primary)" /> {sheet.sheet_number}
@@ -462,7 +499,7 @@ export default function Finance() {
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                           <button 
-                            onClick={() => setSelectedSheet(sheet)}
+                            onClick={() => setSelectedSheetsToPrint([sheet])}
                             className="btn"
                             style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', display: 'flex', gap: '0.25rem', alignItems: 'center', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)' }}
                           >
@@ -518,11 +555,34 @@ export default function Finance() {
       {/* TAB 3: Bank Remittance Statements */}
       {activeTab === 'statements' && (
         <div className="no-print">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+            <button 
+              className="btn btn-primary"
+              disabled={selectedStatementIds.length === 0}
+              onClick={() => {
+                const selected = bankStatements.filter(s => selectedStatementIds.includes(s.id));
+                setSelectedStatementsToPrint(selected);
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
+            >
+              <Printer size={16} /> Print Selected Statements ({selectedStatementIds.length})
+            </button>
+          </div>
           <div className="glass-panel" style={{ overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto', width: '100%' }}>
               <table className="data-table">
               <thead>
                 <tr>
+                  <th style={{ width: '40px', textAlign: 'center' }}>
+                    <input 
+                      type="checkbox" 
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedStatementIds(bankStatements.map(s => s.id));
+                        else setSelectedStatementIds([]);
+                      }}
+                      checked={selectedStatementIds.length > 0 && selectedStatementIds.length === bankStatements.length}
+                    />
+                  </th>
                   <th>Statement Reference</th>
                   <th>Source Working Sheet</th>
                   <th>Beneficiaries Included</th>
@@ -536,9 +596,19 @@ export default function Finance() {
                 {bankStatements.map(stmt => {
                   const dateStr = new Date(stmt.created_at).toLocaleDateString();
                   const totalRemit = stmt.working_sheet?.invoices?.reduce((sum, i) => sum + i.total_amount, 0) || 0;
+                  const isChecked = selectedStatementIds.includes(stmt.id);
 
                   return (
-                    <tr key={stmt.id}>
+                    <tr key={stmt.id} style={{ background: isChecked ? 'rgba(79, 70, 229, 0.05)' : undefined }}>
+                      <td style={{ textAlign: 'center' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={isChecked}
+                          onChange={() => {
+                            setSelectedStatementIds(prev => prev.includes(stmt.id) ? prev.filter(id => id !== stmt.id) : [...prev, stmt.id]);
+                          }}
+                        />
+                      </td>
                       <td style={{ fontWeight: 600 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <Landmark size={16} color="var(--primary)" /> {stmt.statement_number}
@@ -551,7 +621,7 @@ export default function Finance() {
                       <td>{dateStr}</td>
                       <td style={{ textAlign: 'right' }}>
                         <button 
-                          onClick={() => setSelectedStatement(stmt)}
+                          onClick={() => setSelectedStatementsToPrint([stmt])}
                           className="btn" 
                           style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', gap: '0.25rem', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)' }}
                         >
@@ -678,18 +748,18 @@ export default function Finance() {
       )}
 
       {/* HIGH-FIDELITY PRINTABLE BANK REMITTANCE STATEMENT MODAL */}
-      {selectedStatement && (
+      {selectedStatementsToPrint && selectedStatementsToPrint.length > 0 && (
         <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '850px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'white' }}>
             
             {/* Modal Actions */}
-            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
-              <span style={{ fontWeight: 600, color: '#1f2937' }}>Bank Remittance Clearance Sheet</span>
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', position: 'sticky', top: 0, zIndex: 10 }}>
+              <span style={{ fontWeight: 600, color: '#1f2937' }}>Bank Remittance Clearance Sheet ({selectedStatementsToPrint.length} Selected)</span>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button onClick={handlePrintStatement} className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
                   <Printer size={16} /> Print Release Order
                 </button>
-                <button onClick={() => setSelectedStatement(null)} className="btn btn-danger" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', gap: '0.25rem' }}>
+                <button onClick={() => setSelectedStatementsToPrint(null)} className="btn btn-danger" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', gap: '0.25rem' }}>
                   <XCircle size={16} /> Close
                 </button>
               </div>
@@ -698,59 +768,63 @@ export default function Finance() {
             {/* Printable Bank Remittance Area */}
             <div id="printable-bank-statement-modal-content" style={{ padding: '2rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
               
-              {/* Simplified Header */}
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>
-                  NAAM FOUNDATION - BANK STATEMENT
-                </h1>
-                <div style={{ textAlign: 'right', fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>
-                  Date of creation: {new Date(selectedStatement.created_at).toLocaleDateString()}<br />
-                  Ref: {selectedStatement.statement_number}
-                </div>
-              </div>
+              {selectedStatementsToPrint.map((stmt, index) => (
+                <div key={stmt.id} style={{ marginBottom: index === selectedStatementsToPrint.length - 1 ? 0 : '3rem', paddingBottom: index === selectedStatementsToPrint.length - 1 ? 0 : '3rem', borderBottom: index === selectedStatementsToPrint.length - 1 ? 'none' : '2px dashed #cbd5e1' }}>
+                  {/* Simplified Header */}
+                  <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>
+                      NAAM FOUNDATION - BANK STATEMENT
+                    </h1>
+                    <div style={{ textAlign: 'right', fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>
+                      Date of creation: {new Date(stmt.created_at).toLocaleDateString()}<br />
+                      Ref: {stmt.statement_number}
+                    </div>
+                  </div>
 
-              {/* Beneficiaries Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '10px' }}>
-                <thead>
-                  <tr style={{ background: '#f1f5f9', borderTop: '1px solid #0f172a', borderBottom: '1px solid #0f172a' }}>
-                    <th style={{ padding: '4px 6px', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr. No.</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Bank Name</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Branch</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Account No.</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>IFSC Code</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Payment</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedStatement.working_sheet?.invoices?.map((inv, idx) => {
-                    const bank = getRemittanceBankDetails(inv);
-                    return (
-                      <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0', height: '24px' }}>
-                        <td style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
-                        <td style={{ padding: '4px 6px', fontWeight: 600, color: '#0f172a', border: '1px solid #e2e8f0' }}>{getRemittanceBeneficiaryName(inv)}</td>
-                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{bank?.bankName || 'N/A'}</td>
-                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{bank?.branch || 'N/A'}</td>
-                        <td style={{ padding: '4px 6px', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.accountNo || 'N/A'}</td>
-                        <td style={{ padding: '4px 6px', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.ifsc || 'N/A'}</td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 700, color: '#0f172a', border: '1px solid #e2e8f0' }}>
-                          ₹{inv.total_amount.toLocaleString('en-IN')}.00
+                  {/* Beneficiaries Table */}
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '10px' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderTop: '1px solid #0f172a', borderBottom: '1px solid #0f172a' }}>
+                        <th style={{ padding: '4px 6px', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr. No.</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Bank Name</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Branch</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Account No.</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>IFSC Code</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Payment</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stmt.working_sheet?.invoices?.map((inv, idx) => {
+                        const bank = getRemittanceBankDetails(inv);
+                        return (
+                          <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0', height: '24px' }}>
+                            <td style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
+                            <td style={{ padding: '4px 6px', fontWeight: 600, color: '#0f172a', border: '1px solid #e2e8f0' }}>{getRemittanceBeneficiaryName(inv)}</td>
+                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{bank?.bankName || 'N/A'}</td>
+                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{bank?.branch || 'N/A'}</td>
+                            <td style={{ padding: '4px 6px', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.accountNo || 'N/A'}</td>
+                            <td style={{ padding: '4px 6px', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.ifsc || 'N/A'}</td>
+                            <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 700, color: '#0f172a', border: '1px solid #e2e8f0' }}>
+                              ₹{inv.total_amount.toLocaleString('en-IN')}.00
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      
+                      {/* Totals */}
+                      <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
+                        <td colSpan="6" style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                          Grand Total:
+                        </td>
+                        <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '10px', color: '#0f172a', border: '1px solid #e2e8f0' }}>
+                          ₹{stmt.working_sheet?.invoices?.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('en-IN')}.00
                         </td>
                       </tr>
-                    );
-                  })}
-                  
-                  {/* Totals */}
-                  <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
-                    <td colSpan="6" style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '10px' }}>
-                      Grand Total:
-                    </td>
-                    <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '10px', color: '#0f172a', border: '1px solid #e2e8f0' }}>
-                      ₹{selectedStatement.working_sheet?.invoices?.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('en-IN')}.00
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                    </tbody>
+                  </table>
+                </div>
+              ))}
             </div>
 
           </div>
@@ -758,21 +832,23 @@ export default function Finance() {
       )}
 
       {/* HIGH-FIDELITY PRINTABLE WORKING SHEET PREVIEW MODAL */}
-      {selectedSheet && (
+      {selectedSheetsToPrint && selectedSheetsToPrint.length > 0 && (
         <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '1000px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'white' }}>
             
             {/* Modal Actions */}
-            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
-              <span style={{ fontWeight: 600, color: '#1f2937' }}>Working Sheet Details Clearance</span>
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', position: 'sticky', top: 0, zIndex: 10 }}>
+              <span style={{ fontWeight: 600, color: '#1f2937' }}>Working Sheet Details Clearance ({selectedSheetsToPrint.length} Selected)</span>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button onClick={() => handleExportSheetExcel(selectedSheet)} className="btn" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', background: '#10b981', color: 'white', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <FileSpreadsheet size={16} /> Export Excel
-                </button>
+                {selectedSheetsToPrint.length === 1 && (
+                  <button onClick={() => handleExportSheetExcel(selectedSheetsToPrint[0])} className="btn" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', background: '#10b981', color: 'white', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <FileSpreadsheet size={16} /> Export Excel
+                  </button>
+                )}
                 <button onClick={window.print} className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
                   <Printer size={16} /> Print Sheet / Export PDF
                 </button>
-                <button onClick={() => setSelectedSheet(null)} className="btn btn-danger" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', gap: '0.25rem' }}>
+                <button onClick={() => setSelectedSheetsToPrint(null)} className="btn btn-danger" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', gap: '0.25rem' }}>
                   <XCircle size={16} /> Close
                 </button>
               </div>
@@ -781,85 +857,89 @@ export default function Finance() {
             {/* Printable Working Sheet Area */}
             <div id="printable-working-sheet-modal-content" style={{ padding: '2rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
               
-              {/* Simplified Header */}
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>
-                  NAAM FOUNDATION - WORKING SHEET
-                </h1>
-                <div style={{ textAlign: 'right', fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>
-                  Date of creation: {new Date(selectedSheet.created_at).toLocaleDateString()}<br />
-                  Ref: {selectedSheet.sheet_number}
-                </div>
-              </div>
+              {selectedSheetsToPrint.map((sheet, index) => (
+                <div key={sheet.id} style={{ marginBottom: index === selectedSheetsToPrint.length - 1 ? 0 : '3rem', paddingBottom: index === selectedSheetsToPrint.length - 1 ? 0 : '3rem', borderBottom: index === selectedSheetsToPrint.length - 1 ? 'none' : '2px dashed #cbd5e1' }}>
+                  {/* Simplified Header */}
+                  <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>
+                      NAAM FOUNDATION - WORKING SHEET
+                    </h1>
+                    <div style={{ textAlign: 'right', fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>
+                      Date of creation: {new Date(sheet.created_at).toLocaleDateString()}<br />
+                      Ref: {sheet.sheet_number}
+                    </div>
+                  </div>
 
-              {/* Invoices List Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '10px' }}>
-                <thead>
-                  <tr style={{ background: '#f1f5f9', borderTop: '1px solid #0f172a', borderBottom: '1px solid #0f172a' }}>
-                    <th style={{ padding: '4px 6px', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr No.</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice No.</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice Date</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>PAN No.</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Village</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Taluka</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>District</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Type of Work</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Subtotal</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Gst</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>TDS</th>
-                    <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Net Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedSheet.invoices?.map((inv, idx) => {
-                    const p = inv.project;
-                    const bank = getRemittanceBankDetails(inv);
-                    return (
-                      <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0', height: '24px' }}>
-                        <td style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
-                        <td style={{ padding: '4px 6px', fontWeight: 600, color: '#0f172a', border: '1px solid #e2e8f0' }}>{getRemittanceBeneficiaryName(inv)}</td>
-                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0', fontFamily: 'monospace' }}>{inv.invoice_id}</td>
-                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{new Date(inv.invoice_date).toLocaleDateString()}</td>
-                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0', fontFamily: 'monospace' }}>{bank?.pan || 'N/A'}</td>
-                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.village_name || p?.village_id || 'N/A'}</td>
-                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.taluka_name || p?.taluka_id || 'N/A'}</td>
-                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.district_name || p?.district_id || 'N/A'}</td>
-                        <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.type_of_work || 'N/A'}</td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0' }}>₹{inv.subtotal.toLocaleString('en-IN')}.00</td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0' }}>
-                          ₹{inv.gst_amount.toLocaleString('en-IN')}.00
+                  {/* Invoices List Table */}
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '10px' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderTop: '1px solid #0f172a', borderBottom: '1px solid #0f172a' }}>
+                        <th style={{ padding: '4px 6px', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr No.</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice No.</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Invoice Date</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>PAN No.</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Village</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Taluka</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>District</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Type of Work</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Subtotal</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Gst</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>TDS</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Net Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sheet.invoices?.map((inv, idx) => {
+                        const p = inv.project;
+                        const bank = getRemittanceBankDetails(inv);
+                        return (
+                          <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0', height: '24px' }}>
+                            <td style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
+                            <td style={{ padding: '4px 6px', fontWeight: 600, color: '#0f172a', border: '1px solid #e2e8f0' }}>{getRemittanceBeneficiaryName(inv)}</td>
+                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0', fontFamily: 'monospace' }}>{inv.invoice_id}</td>
+                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{new Date(inv.invoice_date).toLocaleDateString()}</td>
+                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0', fontFamily: 'monospace' }}>{bank?.pan || 'N/A'}</td>
+                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.village_name || p?.village_id || 'N/A'}</td>
+                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.taluka_name || p?.taluka_id || 'N/A'}</td>
+                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.district_name || p?.district_id || 'N/A'}</td>
+                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{p?.type_of_work || 'N/A'}</td>
+                            <td style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0' }}>₹{inv.subtotal.toLocaleString('en-IN')}.00</td>
+                            <td style={{ padding: '4px 6px', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0' }}>
+                              ₹{inv.gst_amount.toLocaleString('en-IN')}.00
+                            </td>
+                            <td style={{ padding: '4px 6px', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0' }}>
+                              ₹{inv.tds_amount.toLocaleString('en-IN')}.00
+                            </td>
+                            <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 700, border: '1px solid #e2e8f0' }}>
+                              ₹{inv.total_amount.toLocaleString('en-IN')}.00
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      
+                      {/* Grand Totals */}
+                      <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
+                        <td colSpan="9" style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                          Grand Total:
                         </td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0' }}>
-                          ₹{inv.tds_amount.toLocaleString('en-IN')}.00
+                        <td style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                          ₹{sheet.invoices?.reduce((sum, i) => sum + i.subtotal, 0).toLocaleString('en-IN')}.00
                         </td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 700, border: '1px solid #e2e8f0' }}>
-                          ₹{inv.total_amount.toLocaleString('en-IN')}.00
+                        <td style={{ padding: '4px 6px', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                          ₹{sheet.invoices?.reduce((sum, i) => sum + (i.gst_amount || 0), 0).toLocaleString('en-IN')}.00
+                        </td>
+                        <td style={{ padding: '4px 6px', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                          ₹{sheet.invoices?.reduce((sum, i) => sum + (i.tds_amount || 0), 0).toLocaleString('en-IN')}.00
+                        </td>
+                        <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '10px', color: '#4F46E5', border: '1px solid #e2e8f0' }}>
+                          ₹{sheet.invoices?.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('en-IN')}.00
                         </td>
                       </tr>
-                    );
-                  })}
-                  
-                  {/* Grand Totals */}
-                  <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
-                    <td colSpan="9" style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '10px' }}>
-                      Grand Total:
-                    </td>
-                    <td style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '10px' }}>
-                      ₹{selectedSheet.invoices?.reduce((sum, i) => sum + i.subtotal, 0).toLocaleString('en-IN')}.00
-                    </td>
-                    <td style={{ padding: '4px 6px', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0', fontSize: '10px' }}>
-                      ₹{selectedSheet.invoices?.reduce((sum, i) => sum + (i.gst_amount || 0), 0).toLocaleString('en-IN')}.00
-                    </td>
-                    <td style={{ padding: '4px 6px', textAlign: 'right', color: '#ef4444', border: '1px solid #e2e8f0', fontSize: '10px' }}>
-                      ₹{selectedSheet.invoices?.reduce((sum, i) => sum + (i.tds_amount || 0), 0).toLocaleString('en-IN')}.00
-                    </td>
-                    <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '10px', color: '#4F46E5', border: '1px solid #e2e8f0' }}>
-                      ₹{selectedSheet.invoices?.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('en-IN')}.00
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                    </tbody>
+                  </table>
+                </div>
+              ))}
             </div>
 
           </div>

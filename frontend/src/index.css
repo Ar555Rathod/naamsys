@@ -271,7 +271,7 @@ label {
     display: none !important;
   }
   
-  html, body, #root, .app-container, .main-content {
+  html, body, #root, .app-container {
     background: white !important;
     color: #1e293b !important;
     padding: 0 !important;
@@ -285,6 +285,23 @@ label {
     display: block !important;
     box-shadow: none !important;
     border: none !important;
+  }
+
+  .main-content {
+    background: white !important;
+    color: #1e293b !important;
+    padding: 1.5cm !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    display: block !important;
+    box-shadow: none !important;
+    border: none !important;
+    box-sizing: border-box !important;
   }
 
   .print-only {
@@ -328,6 +345,10 @@ label {
     display: block !important;
   }
 
+  @page {
+    margin: 0;
+  }
+
   #dossier-report,
   #printable-invoice-modal-content,
   #printable-po-modal-content,
@@ -340,10 +361,11 @@ label {
     width: 100% !important;
     height: auto !important;
     overflow: visible !important;
-    padding: 0 !important;
+    padding: 1.5cm !important;
     margin: 0 !important;
     background: white !important;
     color: #1e293b !important;
+    box-sizing: border-box !important;
   }
 
   .page-break-after {
@@ -353,7 +375,7 @@ label {
 
   @page landscape-sheet {
     size: landscape;
-    margin: 1.5cm;
+    margin: 0;
   }
 
   #printable-working-sheet-modal-content,
