@@ -352,7 +352,20 @@ label {
   #dossier-report,
   #printable-invoice-modal-content,
   #printable-po-modal-content,
-  #printable-wo-modal-content,
+  #printable-wo-modal-content {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 1.5cm !important;
+    margin: 0 !important;
+    background: white !important;
+    color: #1e293b !important;
+    box-sizing: border-box !important;
+  }
+
   #printable-working-sheet-modal-content,
   #printable-bank-statement-modal-content {
     display: block !important;
@@ -361,7 +374,7 @@ label {
     width: 100% !important;
     height: auto !important;
     overflow: visible !important;
-    padding: 1.5cm !important;
+    padding: 0.5cm !important;
     margin: 0 !important;
     background: white !important;
     color: #1e293b !important;

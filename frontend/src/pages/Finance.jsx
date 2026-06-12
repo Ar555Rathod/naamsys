@@ -855,13 +855,13 @@ export default function Finance() {
             </div>
 
             {/* Printable Working Sheet Area */}
-            <div id="printable-working-sheet-modal-content" style={{ padding: '2rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
+            <div id="printable-working-sheet-modal-content" style={{ padding: '0.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
               
               {selectedSheetsToPrint.map((sheet, index) => (
                 <div key={sheet.id} style={{ marginBottom: index === selectedSheetsToPrint.length - 1 ? 0 : '3rem', paddingBottom: index === selectedSheetsToPrint.length - 1 ? 0 : '3rem', borderBottom: index === selectedSheetsToPrint.length - 1 ? 'none' : '2px dashed #cbd5e1' }}>
                   {/* Simplified Header */}
-                  <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h1 style={{ fontSize: '1.25rem', fontWeight: 'normal', color: '#0f172a', margin: 0 }}>
+                  <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h1 style={{ fontSize: '12px', fontWeight: 'normal', color: '#0f172a', margin: 0 }}>
                       Naam Foundation - Working Sheet
                     </h1>
                     <div style={{ textAlign: 'right', fontSize: '0.9rem', color: '#0f172a', fontWeight: 'normal' }}>
@@ -882,7 +882,6 @@ export default function Finance() {
                         <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Village</th>
                         <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Taluka</th>
                         <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>District</th>
-                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Type of Work</th>
                         <th style={{ padding: '2px 4px', textAlign: 'right', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Subtotal</th>
                         <th style={{ padding: '2px 4px', textAlign: 'right', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Gst</th>
                         <th style={{ padding: '2px 4px', textAlign: 'right', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>TDS</th>
@@ -903,7 +902,6 @@ export default function Finance() {
                             <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{p?.village_name || p?.village_id || 'N/A'}</td>
                             <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{p?.taluka_name || p?.taluka_id || 'N/A'}</td>
                             <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{p?.district_name || p?.district_id || 'N/A'}</td>
-                            <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{p?.type_of_work || 'N/A'}</td>
                             <td style={{ padding: '2px 4px', textAlign: 'right', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>₹{inv.subtotal.toLocaleString('en-IN')}.00</td>
                             <td style={{ padding: '2px 4px', textAlign: 'right', color: '#10b981', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
                               ₹{inv.gst_amount.toLocaleString('en-IN')}.00
@@ -920,7 +918,7 @@ export default function Finance() {
                       
                       {/* Grand Totals */}
                       <tr style={{ background: '#f8fafc', fontWeight: 'normal' }}>
-                        <td colSpan="9" style={{ padding: '2px 4px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '9px', whiteSpace: 'nowrap' }}>
+                        <td colSpan="8" style={{ padding: '2px 4px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '9px', whiteSpace: 'nowrap' }}>
                           Grand Total:
                         </td>
                         <td style={{ padding: '2px 4px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '9px', whiteSpace: 'nowrap' }}>
