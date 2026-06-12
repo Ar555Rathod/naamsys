@@ -766,46 +766,45 @@ export default function Finance() {
             </div>
 
             {/* Printable Bank Remittance Area */}
-            <div id="printable-bank-statement-modal-content" style={{ padding: '2rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
+            <div id="printable-bank-statement-modal-content" style={{ padding: '0.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
               
               {selectedStatementsToPrint.map((stmt, index) => (
                 <div key={stmt.id} style={{ marginBottom: index === selectedStatementsToPrint.length - 1 ? 0 : '3rem', paddingBottom: index === selectedStatementsToPrint.length - 1 ? 0 : '3rem', borderBottom: index === selectedStatementsToPrint.length - 1 ? 'none' : '2px dashed #cbd5e1' }}>
                   {/* Simplified Header */}
-                  <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>
-                      NAAM FOUNDATION - BANK STATEMENT
+                  <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h1 style={{ fontSize: '12px', fontWeight: 'normal', color: '#0f172a', margin: 0 }}>
+                      Naam Foundation - Bank Statement
                     </h1>
-                    <div style={{ textAlign: 'right', fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>
-                      Date of creation: {new Date(stmt.created_at).toLocaleDateString()}<br />
-                      Ref: {stmt.statement_number}
+                    <div style={{ textAlign: 'right', fontSize: '10px', color: '#0f172a', fontWeight: 'normal' }}>
+                      Date: {new Date(stmt.created_at).toLocaleDateString()} &nbsp;|&nbsp; Ref: {stmt.statement_number}
                     </div>
                   </div>
 
                   {/* Beneficiaries Table */}
-                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '10px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '9px' }}>
                     <thead>
                       <tr style={{ background: '#f1f5f9', borderTop: '1px solid #0f172a', borderBottom: '1px solid #0f172a' }}>
-                        <th style={{ padding: '4px 6px', textAlign: 'center', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Sr. No.</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Beneficiary Name</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Bank Name</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Branch</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Account No.</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'left', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>IFSC Code</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'right', color: '#0f172a', fontWeight: 700, border: '1px solid #cbd5e1' }}>Payment</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'center', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Sr. No.</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Beneficiary Name</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Bank Name</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Branch</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Account No.</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>IFSC Code</th>
+                        <th style={{ padding: '2px 4px', textAlign: 'right', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Payment</th>
                       </tr>
                     </thead>
                     <tbody>
                       {stmt.working_sheet?.invoices?.map((inv, idx) => {
                         const bank = getRemittanceBankDetails(inv);
                         return (
-                          <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0', height: '24px' }}>
-                            <td style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
-                            <td style={{ padding: '4px 6px', fontWeight: 600, color: '#0f172a', border: '1px solid #e2e8f0' }}>{getRemittanceBeneficiaryName(inv)}</td>
-                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{bank?.bankName || 'N/A'}</td>
-                            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>{bank?.branch || 'N/A'}</td>
-                            <td style={{ padding: '4px 6px', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.accountNo || 'N/A'}</td>
-                            <td style={{ padding: '4px 6px', fontFamily: 'monospace', border: '1px solid #e2e8f0' }}>{bank?.ifsc || 'N/A'}</td>
-                            <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 700, color: '#0f172a', border: '1px solid #e2e8f0' }}>
+                          <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '2px 4px', textAlign: 'center', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{idx + 1}</td>
+                            <td style={{ padding: '2px 4px', fontWeight: 'normal', color: '#0f172a', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{getRemittanceBeneficiaryName(inv)}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{bank?.bankName || 'N/A'}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{bank?.branch || 'N/A'}</td>
+                            <td style={{ padding: '2px 4px', fontFamily: 'monospace', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{bank?.accountNo || 'N/A'}</td>
+                            <td style={{ padding: '2px 4px', fontFamily: 'monospace', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{bank?.ifsc || 'N/A'}</td>
+                            <td style={{ padding: '2px 4px', textAlign: 'right', fontWeight: 'normal', color: '#0f172a', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
                               ₹{inv.total_amount.toLocaleString('en-IN')}.00
                             </td>
                           </tr>
@@ -813,11 +812,11 @@ export default function Finance() {
                       })}
                       
                       {/* Totals */}
-                      <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
-                        <td colSpan="6" style={{ padding: '4px 6px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '10px' }}>
+                      <tr style={{ background: '#f8fafc', fontWeight: 'normal' }}>
+                        <td colSpan="6" style={{ padding: '2px 4px', textAlign: 'right', border: '1px solid #e2e8f0', fontSize: '9px', whiteSpace: 'nowrap' }}>
                           Grand Total:
                         </td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '10px', color: '#0f172a', border: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '2px 4px', textAlign: 'right', fontSize: '9px', color: '#0f172a', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
                           ₹{stmt.working_sheet?.invoices?.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('en-IN')}.00
                         </td>
                       </tr>
