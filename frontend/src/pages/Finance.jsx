@@ -864,9 +864,8 @@ export default function Finance() {
                     <h1 style={{ fontSize: '12px', fontWeight: 'normal', color: '#0f172a', margin: 0 }}>
                       Naam Foundation - Working Sheet
                     </h1>
-                    <div style={{ textAlign: 'right', fontSize: '0.9rem', color: '#0f172a', fontWeight: 'normal' }}>
-                      Date of creation: {new Date(sheet.created_at).toLocaleDateString()}<br />
-                      Ref: {sheet.sheet_number}
+                    <div style={{ textAlign: 'right', fontSize: '10px', color: '#0f172a', fontWeight: 'normal' }}>
+                      Date: {new Date(sheet.created_at).toLocaleDateString()} &nbsp;|&nbsp; Ref: {sheet.sheet_number}
                     </div>
                   </div>
 
