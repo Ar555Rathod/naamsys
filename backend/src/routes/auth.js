@@ -21,12 +21,12 @@ router.post('/login', async (req, res) => {
     }
     
     const token = jwt.sign(
-      { id: user.id, role: user.role, name: user.name },
+      { id: user.id, role: user.role, name: user.name, vendor_id: user.vendor_id },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
     
-    res.json({ token, user: { id: user.id, name: user.name, role: user.role } });
+    res.json({ token, user: { id: user.id, name: user.name, role: user.role, vendor_id: user.vendor_id } });
   } catch (error) {
     res.status(500).json({ error: 'Login failed', details: error.message });
   }

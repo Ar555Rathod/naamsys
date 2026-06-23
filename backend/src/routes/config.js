@@ -228,7 +228,13 @@ router.get('/users', requireAdmin, async (req, res) => {
         email: true,
         role: true,
         is_active: true,
-        created_at: true
+        created_at: true,
+        vendor_id: true,
+        vendor: {
+          select: {
+            company_name: true
+          }
+        }
       },
       orderBy: { id: 'desc' }
     });
@@ -240,7 +246,7 @@ router.get('/users', requireAdmin, async (req, res) => {
 
 router.post('/users', requireAdmin, async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, vendor_id } = req.body;
     if (!name || !email || !password || !role) {
       return res.status(400).json({ error: 'Name, Email, Password, and Role are required.' });
     }
@@ -259,7 +265,8 @@ router.post('/users', requireAdmin, async (req, res) => {
           email,
           password_hash,
           role,
-          is_active: true
+          is_active: true,
+          vendor_id: role === 'Vendor' && vendor_id ? parseInt(vendor_id) : null
         }
       });
       await tx.auditLog.create({
@@ -279,6 +286,7 @@ router.post('/users', requireAdmin, async (req, res) => {
       name: newUser.name,
       email: newUser.email,
       role: newUser.role,
+      vendor_id: newUser.vendor_id,
       is_active: newUser.is_active
     });
   } catch (error) {

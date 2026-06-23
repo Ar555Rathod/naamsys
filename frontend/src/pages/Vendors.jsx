@@ -41,6 +41,7 @@ export default function Vendors() {
   const [account_no, setAccountNo] = useState('');
   const [ifsc, setIfsc] = useState('');
   const [pincode, setPincode] = useState('');
+  const [vendorEmail, setVendorEmail] = useState('');
 
   // Contractor form
   const [contractor_name, setContractorName] = useState('');
@@ -99,15 +100,17 @@ export default function Vendors() {
       const payload = {
         company_name, pan, aadhaar, gst, owner_name, owner_contact,
         address_line1, address_line2, address_line3, pincode,
-        machine_details, operator_details, bank_name, account_no, ifsc, branch
+        machine_details, operator_details, bank_name, account_no, ifsc, branch,
+        email: vendorEmail
       };
 
       if (isEditing) {
         await api.put(`/vendors/${editId}`, payload);
         alert('Vendor details updated successfully!');
       } else {
-        await api.post('/vendors', payload);
-        alert('Vendor registered successfully!');
+        const res = await api.post('/vendors', payload);
+        const { login_credentials } = res.data;
+        alert(`Vendor registered successfully!\n\nPortal Login Credentials Generated:\nEmail: ${login_credentials.email}\nDefault Password (PAN): ${login_credentials.password}\n\nPlease share these details with the vendor so they can access the portal and log daily activity.`);
       }
       
       resetForm();
@@ -116,7 +119,7 @@ export default function Vendors() {
         setSelectedVendor(null);
       }
     } catch (err) {
-      alert('Failed to save vendor');
+      alert(err.response?.data?.error || 'Failed to save vendor');
     }
   };
 
@@ -167,6 +170,7 @@ export default function Vendors() {
     setCompanyName(''); setPan(''); setAadhaar(''); setGst(''); setOwnerName(''); setOwnerContact('');
     setAddressLine1(''); setAddressLine2(''); setAddressLine3(''); setPincode('');
     setMachineDetails(''); setOperatorDetails(''); setBankName(''); setBranch(''); setAccountNo(''); setIfsc('');
+    setVendorEmail('');
     
     // Reset contractor form
     setContractorName(''); setContractorPan(''); setContractorAadhaar(''); setContractorContact('');
@@ -195,6 +199,7 @@ export default function Vendors() {
     setBranch(v.branch || '');
     setAccountNo(v.account_no || '');
     setIfsc(v.ifsc || '');
+    setVendorEmail(v.email || '');
     setShowForm(true);
   };
 
@@ -278,6 +283,18 @@ export default function Vendors() {
             <div className="form-group">
               <label>Owner Contact</label>
               <input type="text" value={owner_contact} onChange={e=>setOwnerContact(e.target.value)} className="input-field" required />
+            </div>
+            <div className="form-group">
+              <label>Portal Login Email</label>
+              <input 
+                type="email" 
+                value={vendorEmail} 
+                onChange={e=>setVendorEmail(e.target.value)} 
+                className="input-field" 
+                required={!isEditing} 
+                disabled={isEditing} 
+                placeholder="name@example.com" 
+              />
             </div>
             
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
@@ -573,7 +590,8 @@ export default function Vendors() {
               <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', padding: '1rem', borderRadius: '8px' }}>
                 <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Owner / Representative</span>
                 <strong style={{ display: 'block', fontSize: '1.1rem', marginTop: '0.25rem' }}>{selectedVendor.owner_name}</strong>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Contact: {selectedVendor.owner_contact}</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>Contact: {selectedVendor.owner_contact}</span>
+                {selectedVendor.email && <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 500, display: 'block', marginTop: '0.15rem' }}>Login Email: {selectedVendor.email}</span>}
               </div>
               <div style={{ background: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.2)', padding: '1rem', borderRadius: '8px' }}>
                 <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--primary)', letterSpacing: '0.05em', fontWeight: 600 }}>Associated Projects</span>

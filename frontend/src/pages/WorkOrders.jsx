@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PlusCircle, Search, FileCheck2, History, Edit3, CheckCircle, UploadCloud, Printer, XCircle, Building, User, Calendar, FileText } from 'lucide-react';
+import { PlusCircle, Search, FileCheck2, History, Edit3, CheckCircle, UploadCloud, Printer, XCircle, Building, User, Calendar, FileText, Trash2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import api, { getUploadUrl } from '../api';
 
@@ -22,6 +22,208 @@ export default function WorkOrders() {
   const fileInputRef = useRef(null);
 
   const [selectedPrintWo, setSelectedPrintWo] = useState(null);
+
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Daily Log state variables
+  const [selectedLogsWo, setSelectedLogsWo] = useState(null);
+  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [logsList, setLogsList] = useState([]);
+  const [machineName, setMachineName] = useState('');
+  
+  // Daily Log Form states
+  const [logDate, setLogDate] = useState('');
+  const [startReading, setStartReading] = useState('');
+  const [stopReading, setStopReading] = useState('');
+  const [dailyHours, setDailyHours] = useState('');
+  const [dieselQty, setDieselQty] = useState('');
+  const [dieselIssuedBy, setDieselIssuedBy] = useState('');
+  const [siteImageName, setSiteImageName] = useState('');
+  const [isUploadingSiteImage, setIsUploadingSiteImage] = useState(false);
+  const siteImageInputRef = useRef(null);
+
+  // Signed photocopy upload states
+  const [logsPhotocopyName, setLogsPhotocopyName] = useState('');
+  const [isUploadingLogsPhotocopy, setIsUploadingLogsPhotocopy] = useState(false);
+  const logsPhotocopyInputRef = useRef(null);
+
+  // Log Print state
+  const [selectedPrintLogsWo, setSelectedPrintLogsWo] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('naam_token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentUser(payload);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  // Compute daily hours automatically based on readings
+  useEffect(() => {
+    if (startReading && stopReading) {
+      const diff = parseFloat(stopReading) - parseFloat(startReading);
+      if (!isNaN(diff) && diff >= 0) {
+        setDailyHours(diff.toFixed(2));
+      }
+    }
+  }, [startReading, stopReading]);
+
+  const fetchLogs = async (woId) => {
+    try {
+      const res = await api.get(`/work-orders/${woId}/daily-logs`);
+      setLogsList(res.data);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to fetch daily logs.');
+    }
+  };
+
+  const handleOpenLogs = (wo) => {
+    setSelectedLogsWo(wo);
+    setMachineName(wo.machine_name || '');
+    setLogsPhotocopyName(wo.signed_logs_url || '');
+    setLogDate('');
+    setStartReading('');
+    setStopReading('');
+    setDailyHours('');
+    setDieselQty('');
+    setDieselIssuedBy('');
+    setSiteImageName('');
+    fetchLogs(wo.id);
+    setShowLogsModal(true);
+  };
+
+  const handleUpdateMachineName = async (e) => {
+    e.preventDefault();
+    if (!machineName.trim()) {
+      alert('Machine Name cannot be empty.');
+      return;
+    }
+    try {
+      await api.put(`/work-orders/${selectedLogsWo.id}/machine-name`, { machine_name: machineName });
+      alert('Machine Name updated successfully.');
+      setSelectedLogsWo(prev => ({ ...prev, machine_name: machineName }));
+      setWos(prev => prev.map(w => w.id === selectedLogsWo.id ? { ...w, machine_name: machineName } : w));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update Machine Name.');
+    }
+  };
+
+  const handleAddLog = async (e) => {
+    e.preventDefault();
+    if (!logDate || !startReading || !stopReading || !dailyHours) {
+      alert('Date, Start Reading, Stop Reading, and Daily Hours are mandatory.');
+      return;
+    }
+    try {
+      const payload = {
+        date: logDate,
+        start_reading: parseFloat(startReading),
+        stop_reading: parseFloat(stopReading),
+        daily_hours: parseFloat(dailyHours),
+        diesel_qty: dieselQty ? parseFloat(dieselQty) : null,
+        diesel_issued_by: dieselIssuedBy || null,
+        site_image_url: siteImageName || null
+      };
+      await api.post(`/work-orders/${selectedLogsWo.id}/daily-logs`, payload);
+      alert('Daily log added successfully.');
+      setLogDate('');
+      setStartReading('');
+      setStopReading('');
+      setDailyHours('');
+      setDieselQty('');
+      setDieselIssuedBy('');
+      setSiteImageName('');
+      fetchLogs(selectedLogsWo.id);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to add daily log.');
+    }
+  };
+
+  const handleDeleteLog = async (logId) => {
+    if (!window.confirm('Are you sure you want to delete this log entry?')) return;
+    try {
+      await api.delete(`/work-orders/daily-logs/${logId}`);
+      alert('Daily log entry deleted successfully.');
+      fetchLogs(selectedLogsWo.id);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete daily log entry.');
+    }
+  };
+
+  const handleSiteImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    setIsUploadingSiteImage(true);
+
+    try {
+      const res = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setSiteImageName(res.data.filename);
+      alert('Site image uploaded successfully!');
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to upload site image');
+    } finally {
+      setIsUploadingSiteImage(false);
+    }
+  };
+
+  const handleLogsPhotocopyChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    setIsUploadingLogsPhotocopy(true);
+
+    try {
+      const res = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const filename = res.data.filename;
+      setLogsPhotocopyName(filename);
+      
+      await api.put(`/work-orders/${selectedLogsWo.id}/upload-signed-logs`, { signed_logs_url: filename });
+      alert('Signed daily logs photocopy uploaded successfully!');
+      
+      setSelectedLogsWo(prev => ({ ...prev, signed_logs_url: filename }));
+      setWos(prev => prev.map(w => w.id === selectedLogsWo.id ? { ...w, signed_logs_url: filename } : w));
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to upload signed daily logs photocopy');
+    } finally {
+      setIsUploadingLogsPhotocopy(false);
+    }
+  };
+
+  const handleLogsApproval = async (approved) => {
+    try {
+      await api.put(`/work-orders/${selectedLogsWo.id}/logs-approval`, { logs_approved: approved });
+      alert(`Daily logs ${approved ? 'approved' : 'rejected'} successfully.`);
+      
+      setSelectedLogsWo(prev => ({ ...prev, logs_approved: approved }));
+      setWos(prev => prev.map(w => w.id === selectedLogsWo.id ? { ...w, logs_approved: approved } : w));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update logs approval status.');
+    }
+  };
+
+  const handlePrintLogs = (wo) => {
+    setSelectedPrintLogsWo(wo);
+    setTimeout(() => {
+      window.print();
+    }, 200);
+  };
+
 
   // Form states
   const [isAmending, setIsAmending] = useState(false);
@@ -247,17 +449,19 @@ export default function WorkOrders() {
 
       <div className="page-header no-print">
         <h1 className="page-title">Work Orders</h1>
-        <button className="btn btn-primary" onClick={() => {
-          setIsAmending(false);
-          setIsEditing(false);
-          setEditId(null);
-          setEditWoNumber('');
-          setAmendWoNumber('');
-          setProjectId(''); setVendorId(''); setContractorId(''); setWorkDescription(''); setCompletionDate(''); setBudgetAmount(''); setStatus('Draft'); setRemarks('');
-          setShowForm(!showForm);
-        }}>
-          <PlusCircle size={18} /> {showForm ? 'Cancel' : 'Create Work Order'}
-        </button>
+        {currentUser?.role !== 'Vendor' && (
+          <button className="btn btn-primary" onClick={() => {
+            setIsAmending(false);
+            setIsEditing(false);
+            setEditId(null);
+            setEditWoNumber('');
+            setAmendWoNumber('');
+            setProjectId(''); setVendorId(''); setContractorId(''); setWorkDescription(''); setCompletionDate(''); setBudgetAmount(''); setStatus('Draft'); setRemarks('');
+            setShowForm(!showForm);
+          }}>
+            <PlusCircle size={18} /> {showForm ? 'Cancel' : 'Create Work Order'}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -389,7 +593,11 @@ export default function WorkOrders() {
                       <Printer size={15} />
                     </button>
 
-                    {w.status !== 'Completed' && (
+                    <button onClick={() => handleOpenLogs(w)} className="btn btn-icon" style={{background: 'rgba(16, 185, 129, 0.08)', color: 'var(--secondary)', padding: '0.4rem'}} title="Daily Logs">
+                      <FileText size={15} />
+                    </button>
+
+                    {currentUser?.role !== 'Vendor' && w.status !== 'Completed' && (
                       w.status === 'Draft' ? (
                         <button onClick={() => handleEditClick(w)} className="btn btn-icon" style={{background: 'rgba(59, 130, 246, 0.08)', color: 'var(--primary)', padding: '0.4rem'}} title="Edit Draft Order">
                           <Edit3 size={15} />
@@ -401,13 +609,13 @@ export default function WorkOrders() {
                       )
                     )}
 
-                    {(w.status === 'Draft' || w.status === 'SentToVendor') && (
+                    {currentUser?.role !== 'Vendor' && (w.status === 'Draft' || w.status === 'SentToVendor') && (
                       <button onClick={() => handleApprove(w.id)} className="btn btn-icon" style={{background: 'rgba(16, 185, 129, 0.08)', color: 'var(--success)', padding: '0.4rem'}} title="Admin Approve">
                         <CheckCircle size={15} />
                       </button>
                     )}
 
-                    {(w.status === 'Approved' || w.status === 'Completed') && (
+                    {currentUser?.role !== 'Vendor' && (w.status === 'Approved' || w.status === 'Completed') && (
                       <button onClick={() => handleUploadClick(w)} className="btn" style={{padding: '0.35rem 0.6rem', fontSize: '0.75rem', gap: '0.2rem', background: 'var(--primary)', color: 'white'}} title="Upload Signed Copy">
                         <UploadCloud size={13} /> Sign
                       </button>
@@ -669,6 +877,488 @@ export default function WorkOrders() {
           </div>
         </div>
       )}
+
+      {/* DAILY LOG SHEET MANAGER MODAL */}
+      {showLogsModal && selectedLogsWo && (
+        <div className="no-print" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card)', padding: '2.5rem', position: 'relative', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            
+            {/* Modal Close Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+              <div>
+                <h2 style={{ fontWeight: 700, margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <FileText color="var(--secondary)" /> Daily Log Sheet Manager
+                </h2>
+                <small style={{ color: 'var(--text-muted)' }}>Work Order Reference: {selectedLogsWo.wo_number}</small>
+              </div>
+              <button onClick={() => setShowLogsModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <XCircle size={24} />
+              </button>
+            </div>
+
+            {/* Context Info Box */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', background: 'var(--bg-light)', padding: '1rem', borderRadius: '12px', fontSize: '0.85rem' }}>
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block' }}>Project:</span>
+                <strong>{selectedLogsWo.project.name} ({selectedLogsWo.project.project_id})</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block' }}>Type of Work:</span>
+                <strong>{selectedLogsWo.project.type_of_work}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block' }}>Location:</span>
+                <strong>
+                  {selectedLogsWo.project.village_name || 'N/A'}, {selectedLogsWo.project.taluka_name || 'N/A'}, {selectedLogsWo.project.district_name || 'N/A'}
+                </strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block' }}>Vendor:</span>
+                <strong>{selectedLogsWo.vendor.company_name}</strong>
+              </div>
+            </div>
+
+            {/* Machine Name section */}
+            <div className="glass-panel" style={{ padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Machine Name Registration</h4>
+              <form onSubmit={handleUpdateMachineName} style={{ display: 'flex', gap: '1rem', alignItems: 'center', width: '100%' }}>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  placeholder="Enter Machine Name once (e.g., JCB-3DX)" 
+                  value={machineName} 
+                  onChange={e => setMachineName(e.target.value)} 
+                  disabled={selectedLogsWo.logs_approved || currentUser?.role !== 'Vendor'}
+                  style={{ flex: 1, margin: 0 }}
+                  required
+                />
+                {currentUser?.role === 'Vendor' && !selectedLogsWo.logs_approved && (
+                  <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 1.5rem', whiteSpace: 'nowrap' }}>
+                    Save Machine Name
+                  </button>
+                )}
+              </form>
+              {selectedLogsWo.machine_name && (
+                <small style={{ color: 'var(--secondary)', fontWeight: 600 }}>Active machine on-site: {selectedLogsWo.machine_name}</small>
+              )}
+            </div>
+
+            {/* Log Entry Form (Vendor Side, only when not approved) */}
+            {currentUser?.role === 'Vendor' && !selectedLogsWo.logs_approved && (
+              <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                <h3 style={{ marginBottom: '1rem', fontWeight: 600, fontSize: '1rem' }}>Add Daily Entry</h3>
+                <form onSubmit={handleAddLog} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                  
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Date *</label>
+                    <input type="date" className="input-field" value={logDate} onChange={e => setLogDate(e.target.value)} required />
+                  </div>
+                  
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Start Reading (Hrs) *</label>
+                    <input type="number" step="any" className="input-field" placeholder="e.g. 1024.5" value={startReading} onChange={e => setStartReading(e.target.value)} required />
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Stop Reading (Hrs) *</label>
+                    <input type="number" step="any" className="input-field" placeholder="e.g. 1032.0" value={stopReading} onChange={e => setStopReading(e.target.value)} required />
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Daily Hours *</label>
+                    <input type="number" step="any" className="input-field" placeholder="Auto calculated" value={dailyHours} onChange={e => setDailyHours(e.target.value)} required />
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Diesel (QTY/LTR) - <span style={{ color: 'var(--text-muted)' }}>Opt</span></label>
+                    <input type="number" step="any" className="input-field" placeholder="Liters refueled" value={dieselQty} onChange={e => setDieselQty(e.target.value)} />
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Diesel Issued By - <span style={{ color: 'var(--text-muted)' }}>Opt</span></label>
+                    <input type="text" className="input-field" placeholder="Name of issuer" value={dieselIssuedBy} onChange={e => setDieselIssuedBy(e.target.value)} />
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 0, gridColumn: '1 / -1' }}>
+                    <label>On-Site Site Image - <span style={{ color: 'var(--text-muted)' }}>Optional</span></label>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <input 
+                        type="file" 
+                        ref={siteImageInputRef} 
+                        accept="image/*" 
+                        style={{ display: 'none' }} 
+                        onChange={handleSiteImageChange} 
+                      />
+                      <button 
+                        type="button" 
+                        className="btn" 
+                        style={{ background: 'rgba(0,0,0,0.05)', fontSize: '0.85rem' }} 
+                        onClick={() => siteImageInputRef.current?.click()}
+                        disabled={isUploadingSiteImage}
+                      >
+                        {isUploadingSiteImage ? 'Uploading Site Image...' : siteImageName ? 'Change Site Image' : 'Choose Site Image'}
+                      </button>
+                      {siteImageName && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ color: 'var(--secondary)', fontSize: '0.85rem', fontWeight: 600 }}>✓ site_image attached</span>
+                          <a href={getUploadUrl(siteImageName)} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'underline' }}>View Preview</a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                    <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 2rem' }}>
+                      Add Daily Log Entry
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Daily Logs Table */}
+            <div className="glass-panel" style={{ overflow: 'hidden' }}>
+              <h3 style={{ padding: '1rem 1.5rem', margin: 0, fontWeight: 600, fontSize: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Daily Activity Log Sheet</span>
+                <button className="btn" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', background: 'var(--primary)', color: 'white' }} onClick={() => handlePrintLogs(selectedLogsWo)}>
+                  <Printer size={13} /> Print Log Sheet
+                </button>
+              </h3>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Start Reading (Hrs)</th>
+                    <th>Stop Reading (Hrs)</th>
+                    <th>Daily Hours</th>
+                    <th>Diesel (QTY/LTR)</th>
+                    <th>Diesel Issued By</th>
+                    <th style={{ textAlign: 'center' }}>Site Image</th>
+                    {currentUser?.role === 'Vendor' && !selectedLogsWo.logs_approved && <th style={{ textAlign: 'center' }}>Action</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {logsList.map(log => (
+                    <tr key={log.id}>
+                      <td>{new Date(log.date).toLocaleDateString()}</td>
+                      <td>{log.start_reading}</td>
+                      <td>{log.stop_reading}</td>
+                      <td style={{ fontWeight: 600 }}>{log.daily_hours} Hrs</td>
+                      <td>{log.diesel_qty !== null ? `${log.diesel_qty} Ltr` : '—'}</td>
+                      <td>{log.diesel_issued_by || '—'}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        {log.site_image_url ? (
+                          <a href={getUploadUrl(log.site_image_url)} target="_blank" rel="noreferrer" className="badge badge-success" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                            View Image
+                          </a>
+                        ) : '—'}
+                      </td>
+                      {currentUser?.role === 'Vendor' && !selectedLogsWo.logs_approved && (
+                        <td style={{ textAlign: 'center' }}>
+                          <button onClick={() => handleDeleteLog(log.id)} className="btn btn-icon" style={{ background: 'rgba(239, 68, 68, 0.08)', color: 'var(--danger)', padding: '0.3rem' }} title="Delete Log Entry">
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                  {logsList.length === 0 ? (
+                    <tr>
+                      <td colSpan={currentUser?.role === 'Vendor' && !selectedLogsWo.logs_approved ? 8 : 7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                        No daily logs entered yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr style={{ background: 'rgba(0,0,0,0.02)', fontWeight: 700 }}>
+                      <td colSpan={3} style={{ textAlign: 'right' }}>Total Calculated Hours:</td>
+                      <td style={{ color: 'var(--primary)' }}>
+                        {logsList.reduce((acc, curr) => acc + curr.daily_hours, 0).toFixed(2)} Hrs
+                      </td>
+                      <td colSpan={currentUser?.role === 'Vendor' && !selectedLogsWo.logs_approved ? 4 : 3}></td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Logs Status, Upload and Approval section */}
+            <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <h3 style={{ margin: 0, fontWeight: 600, fontSize: '1rem' }}>Logs Scanned Photocopy Verification</h3>
+              
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.85rem' }}>Current Status:</span>
+                  <span className={`badge badge-${selectedLogsWo.logs_approved ? 'success' : selectedLogsWo.signed_logs_url ? 'warning' : 'secondary'}`}>
+                    {selectedLogsWo.logs_approved ? 'APPROVED & READY FOR PO' : selectedLogsWo.signed_logs_url ? 'AWAITING MANAGER APPROVAL' : 'SIGNED PHOTOCOPY PENDING'}
+                  </span>
+                </div>
+
+                {/* Vendor uploads photocopy */}
+                {currentUser?.role === 'Vendor' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <input 
+                      type="file" 
+                      ref={logsPhotocopyInputRef} 
+                      accept="application/pdf,image/*" 
+                      style={{ display: 'none' }} 
+                      onChange={handleLogsPhotocopyChange} 
+                      disabled={selectedLogsWo.logs_approved}
+                    />
+                    <button 
+                      type="button" 
+                      className="btn btn-primary"
+                      onClick={() => logsPhotocopyInputRef.current?.click()}
+                      disabled={selectedLogsWo.logs_approved || isUploadingLogsPhotocopy}
+                    >
+                      {isUploadingLogsPhotocopy ? 'Uploading Scanned Logs...' : selectedLogsWo.signed_logs_url ? 'Update Scanned Photocopy' : 'Upload Signed Logs Photocopy'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Manager / Admin Approves photocopy */}
+                {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager') && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    {selectedLogsWo.signed_logs_url ? (
+                      <a href={getUploadUrl(selectedLogsWo.signed_logs_url)} target="_blank" rel="noreferrer" className="btn" style={{ background: 'rgba(0,0,0,0.05)', fontSize: '0.85rem' }}>
+                        View Uploaded Scanned Copy
+                      </a>
+                    ) : (
+                      <span style={{ fontSize: '0.85rem', color: 'var(--danger)' }}>No photocopy uploaded by vendor yet.</span>
+                    )}
+
+                    <button 
+                      type="button" 
+                      className={`btn btn-${selectedLogsWo.logs_approved ? 'danger' : 'success'}`}
+                      onClick={() => handleLogsApproval(!selectedLogsWo.logs_approved)}
+                      disabled={!selectedLogsWo.signed_logs_url}
+                    >
+                      {selectedLogsWo.logs_approved ? 'Unapprove Signed Copy' : 'Approve Final Signed Copy'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {selectedLogsWo.signed_logs_url && (
+                <div style={{ background: 'rgba(79, 70, 229, 0.03)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
+                    📂 {selectedLogsWo.signed_logs_url}
+                  </span>
+                  <a href={getUploadUrl(selectedLogsWo.signed_logs_url)} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: 'var(--primary)' }}>Download</a>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+              <button onClick={() => setShowLogsModal(false)} className="btn" style={{ background: 'rgba(0,0,0,0.08)', padding: '0.5rem 1.5rem' }}>Close Manager</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedPrintLogsWo && (() => {
+        const filledLogs = logsList || [];
+        const totalRowsCount = 30;
+        const rows = [];
+        for (let i = 0; i < totalRowsCount; i++) {
+          if (i < filledLogs.length) {
+            rows.push(filledLogs[i]);
+          } else {
+            rows.push({ id: `empty-${i}`, date: null, start_reading: '', stop_reading: '', daily_hours: '', diesel_qty: null, diesel_issued_by: '' });
+          }
+        }
+        const page1Rows = rows.slice(0, 15);
+        const page2Rows = rows.slice(15, 30);
+        return (
+          <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+            <div className="glass-panel" style={{ width: '100%', maxWidth: '95vw', maxHeight: '95vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'white' }}>
+              
+              <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #cbd5e1', background: '#f8fafc' }}>
+                <span style={{ fontWeight: 600, color: '#0f172a' }}>Daily Logs Record Print Preview (Landscape Layout - 30 Logs across 2 Pages)</span>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <button onClick={() => window.print()} className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
+                    <Printer size={16} /> Print / Save PDF
+                  </button>
+                  <button onClick={() => setSelectedPrintLogsWo(null)} className="btn btn-danger" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', gap: '0.25rem' }}>
+                    <XCircle size={16} /> Close
+                  </button>
+                </div>
+              </div>
+
+              {/* Printable Frame Area */}
+              <div id="printable-daily-logs-modal-content" style={{ padding: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#000', background: 'white', width: '100%' }}>
+                
+                {/* PAGE 1 CONTAINER */}
+                <div className="page-break-after" style={{ minHeight: '100%' }}>
+                  {/* Header */}
+                  <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                    <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#000', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>NAAM FOUNDATION</h1>
+                    <span style={{ fontSize: '0.85rem', color: '#555', fontWeight: 600 }}>DAILY LOG SHEET - PAGE 1</span>
+                  </div>
+
+                  {/* Specific Context Specs (Template-aligned layout) */}
+                  <div style={{ margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.8rem', fontSize: '0.95rem', borderBottom: '2px solid #000', paddingBottom: '1.25rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3rem' }}>
+                      <span>
+                        <strong>Village Name - </strong> 
+                        <span style={{ borderBottom: '1.5px solid #000', paddingBottom: '2px', display: 'inline-block', minWidth: '220px', fontWeight: 600 }}>
+                          {selectedPrintLogsWo.project.village_name || 'N/A'}
+                        </span>
+                      </span>
+                      <span>
+                        <strong>Tal - </strong> 
+                        <span style={{ borderBottom: '1.5px solid #000', paddingBottom: '2px', display: 'inline-block', minWidth: '220px', fontWeight: 600 }}>
+                          {selectedPrintLogsWo.project.taluka_name || 'N/A'}
+                        </span>
+                      </span>
+                      <span>
+                        <strong>Dist - </strong> 
+                        <span style={{ borderBottom: '1.5px solid #000', paddingBottom: '2px', display: 'inline-block', minWidth: '220px', fontWeight: 600 }}>
+                          {selectedPrintLogsWo.project.district_name || 'N/A'}
+                        </span>
+                      </span>
+                    </div>
+                    <div>
+                      <span>
+                        <strong>Project Details - </strong> 
+                        <span style={{ borderBottom: '1.5px solid #000', paddingBottom: '2px', display: 'inline-block', minWidth: '700px', fontWeight: 600 }}>
+                          {selectedPrintLogsWo.project.project_id} - {selectedPrintLogsWo.project.name}
+                        </span>
+                      </span>
+                    </div>
+                    <div>
+                      <span>
+                        <strong>Machine Name - </strong> 
+                        <span style={{ borderBottom: '1.5px solid #000', paddingBottom: '2px', display: 'inline-block', minWidth: '350px', fontWeight: 600 }}>
+                          {selectedPrintLogsWo.machine_name || 'N/A'}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Logs Table Page 1 */}
+                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid #000', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #000' }}>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '5%' }}>Sr. No</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Date</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '12%' }}>Start Reading</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '12%' }}>Stop Reading</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Daily Hrs.</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Diesel QTY/LTR</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '13%' }}>Diesel Issued By</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '11%' }}>Diesel Issued Sign</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '17%' }}>Site Incharge Name & Sign</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {page1Rows.map((row, idx) => {
+                        const isReal = row.id !== undefined && !row.id.toString().startsWith('empty-');
+                        return (
+                          <tr key={row.id || `p1-${idx}`} style={{ borderBottom: '1px solid #000', height: '28px' }}>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{idx + 1}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? new Date(row.date).toLocaleDateString() : ''}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.start_reading : ''}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.stop_reading : ''}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center', fontWeight: isReal ? 'bold' : 'normal' }}>{isReal ? row.daily_hours : ''}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal && row.diesel_qty !== null ? row.diesel_qty : ''}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.diesel_issued_by || '' : ''}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000' }}></td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000' }}></td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* PAGE 2 CONTAINER */}
+                <div style={{ marginTop: '2rem' }}>
+                  {/* Header */}
+                  <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                    <h1 className="print-only" style={{ fontSize: '2rem', fontWeight: 800, color: '#000', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.5rem 0' }}>NAAM FOUNDATION</h1>
+                    <span style={{ fontSize: '0.85rem', color: '#555', fontWeight: 600 }}>DAILY LOG SHEET - PAGE 2</span>
+                  </div>
+
+                  {/* Logs Table Page 2 */}
+                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid #000', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #000' }}>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '5%' }}>Sr. No</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Date</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '12%' }}>Start Reading</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '12%' }}>Stop Reading</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Daily Hrs.</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Diesel QTY/LTR</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '13%' }}>Diesel Issued By</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '11%' }}>Diesel Issued Sign</th>
+                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '17%' }}>Site Incharge Name & Sign</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {page2Rows.map((row, idx) => {
+                        const realIndex = 15 + idx;
+                        const isReal = row.id !== undefined && !row.id.toString().startsWith('empty-');
+                        return (
+                          <tr key={row.id || `p2-${idx}`} style={{ borderBottom: '1px solid #000', height: '28px' }}>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{realIndex + 1}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? new Date(row.date).toLocaleDateString() : ''}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.start_reading : ''}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.stop_reading : ''}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center', fontWeight: isReal ? 'bold' : 'normal' }}>{isReal ? row.daily_hours : ''}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal && row.diesel_qty !== null ? row.diesel_qty : ''}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.diesel_issued_by || '' : ''}</td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000' }}></td>
+                            <td style={{ padding: '0.4rem', border: '1px solid #000' }}></td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  {/* Bottom calculations & physical signatures layout */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2rem' }}>
+                    
+                    {/* Cumulative Totals Box (Bottom Left) */}
+                    <div>
+                      <table style={{ width: '300px', borderCollapse: 'collapse', border: '2px solid #000', fontSize: '0.9rem' }}>
+                        <tbody>
+                          <tr style={{ borderBottom: '1px solid #000' }}>
+                            <td style={{ border: '1px solid #000', padding: '0.5rem', fontWeight: 'bold', width: '70%' }}>Total Readings In Hours</td>
+                            <td style={{ border: '1px solid #000', padding: '0.5rem', textAlign: 'center', fontWeight: 'bold' }}>
+                              {logsList.reduce((acc, curr) => acc + (curr.daily_hours || 0), 0).toFixed(2)}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '0.5rem', fontWeight: 'bold' }}>Total Diesel In Ltrs</td>
+                            <td style={{ border: '1px solid #000', padding: '0.5rem', textAlign: 'center', fontWeight: 'bold' }}>
+                              {logsList.reduce((acc, curr) => acc + (curr.diesel_qty || 0), 0).toFixed(2)}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Hand-signed Signatures (Bottom Right) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '380px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                        <span style={{ fontSize: '0.95rem', fontWeight: 'bold' }}>Cont. Incharge Sign:</span>
+                        <span style={{ width: '180px', borderBottom: '1.5px solid #000', display: 'inline-block' }}></span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                        <span style={{ fontSize: '0.95rem', fontWeight: 'bold' }}>Site Incharge / Sarpanch Sign:</span>
+                        <span style={{ width: '180px', borderBottom: '1.5px solid #000', display: 'inline-block' }}></span>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

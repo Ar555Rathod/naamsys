@@ -47,41 +47,50 @@ function Sidebar({ onLogout }) {
         <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
           <LayoutDashboard size={20} /> Dashboard
         </Link>
-        <Link to="/projects" className={`nav-link ${location.pathname === '/projects' ? 'active' : '' || location.pathname.startsWith('/projects/')}`}>
-          <FolderKanban size={20} /> Projects
-        </Link>
-        <Link to="/csr" className={`nav-link ${location.pathname === '/csr' ? 'active' : ''}`}>
-          <Building size={20} /> CSR Partners
-        </Link>
-        <Link to="/govt" className={`nav-link ${location.pathname === '/govt' ? 'active' : ''}`}>
-          <Landmark size={20} /> Govt Schemes
-        </Link>
-        <Link to="/donors" className={`nav-link ${location.pathname === '/donors' ? 'active' : ''}`}>
-          <Users size={20} /> Individual Donors
-        </Link>
-        <Link to="/vendors" className={`nav-link ${location.pathname === '/vendors' ? 'active' : ''}`}>
-          <Users size={20} /> Vendors
-        </Link>
-        <Link to="/work-orders" className={`nav-link ${location.pathname === '/work-orders' ? 'active' : ''}`}>
-          <FileCheck2 size={20} /> Work Orders
-        </Link>
-        <Link to="/purchase-orders" className={`nav-link ${location.pathname === '/purchase-orders' ? 'active' : ''}`}>
-          <Receipt size={20} /> Purchase Orders
-        </Link>
-        <Link to="/invoices" className={`nav-link ${location.pathname === '/invoices' ? 'active' : ''}`}>
-          <FileText size={20} /> Invoices
-        </Link>
-        {(userRole === 'Admin' || userRole === 'Manager') && (
-          <Link to="/finance" className={`nav-link ${location.pathname === '/finance' ? 'active' : ''}`}>
-            <Landmark size={20} /> Finance
-          </Link>
-        )}
-        <Link to="/reports" className={`nav-link ${location.pathname === '/reports' ? 'active' : ''}`}>
-          <FileSpreadsheet size={20} /> Reports
-        </Link>
-        {(userRole === 'Admin' || userRole === 'Manager') && (
-          <Link to="/backup" className={`nav-link ${location.pathname === '/backup' ? 'active' : ''}`}>
-            <Database size={20} /> Backup & Data
+        
+        {userRole !== 'Vendor' ? (
+          <>
+            <Link to="/projects" className={`nav-link ${location.pathname === '/projects' ? 'active' : '' || location.pathname.startsWith('/projects/')}`}>
+              <FolderKanban size={20} /> Projects
+            </Link>
+            <Link to="/csr" className={`nav-link ${location.pathname === '/csr' ? 'active' : ''}`}>
+              <Building size={20} /> CSR Partners
+            </Link>
+            <Link to="/govt" className={`nav-link ${location.pathname === '/govt' ? 'active' : ''}`}>
+              <Landmark size={20} /> Govt Schemes
+            </Link>
+            <Link to="/donors" className={`nav-link ${location.pathname === '/donors' ? 'active' : ''}`}>
+              <Users size={20} /> Individual Donors
+            </Link>
+            <Link to="/vendors" className={`nav-link ${location.pathname === '/vendors' ? 'active' : ''}`}>
+              <Users size={20} /> Vendors
+            </Link>
+            <Link to="/work-orders" className={`nav-link ${location.pathname === '/work-orders' ? 'active' : ''}`}>
+              <FileCheck2 size={20} /> Work Orders
+            </Link>
+            <Link to="/purchase-orders" className={`nav-link ${location.pathname === '/purchase-orders' ? 'active' : ''}`}>
+              <Receipt size={20} /> Purchase Orders
+            </Link>
+            <Link to="/invoices" className={`nav-link ${location.pathname === '/invoices' ? 'active' : ''}`}>
+              <FileText size={20} /> Invoices
+            </Link>
+            {(userRole === 'Admin' || userRole === 'Manager') && (
+              <Link to="/finance" className={`nav-link ${location.pathname === '/finance' ? 'active' : ''}`}>
+                <Landmark size={20} /> Finance
+              </Link>
+            )}
+            <Link to="/reports" className={`nav-link ${location.pathname === '/reports' ? 'active' : ''}`}>
+              <FileSpreadsheet size={20} /> Reports
+            </Link>
+            {(userRole === 'Admin' || userRole === 'Manager') && (
+              <Link to="/backup" className={`nav-link ${location.pathname === '/backup' ? 'active' : ''}`}>
+                <Database size={20} /> Backup & Data
+              </Link>
+            )}
+          </>
+        ) : (
+          <Link to="/work-orders" className={`nav-link ${location.pathname === '/work-orders' ? 'active' : ''}`}>
+            <FileCheck2 size={20} /> Assigned Work Orders
           </Link>
         )}
       </div>
@@ -102,15 +111,25 @@ function Sidebar({ onLogout }) {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState('Operator');
 
   useEffect(() => {
     const token = localStorage.getItem('naam_token');
-    if (token) setIsAuthenticated(true);
-  }, []);
+    if (token) {
+      setIsAuthenticated(true);
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(payload.role || 'Operator');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [isAuthenticated]);
 
   const handleLogout = () => {
     localStorage.removeItem('naam_token');
     setIsAuthenticated(false);
+    setUserRole('Operator');
   };
 
   const isResetPage = window.location.pathname === '/reset-password';
@@ -130,19 +149,26 @@ function App() {
           <Sidebar onLogout={handleLogout} />
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/projects/:id" element={<ProjectDetails />} />
-            <Route path="/vendors" element={<Vendors />} />
             <Route path="/work-orders" element={<WorkOrders />} />
-            <Route path="/purchase-orders" element={<PurchaseOrders />} />
-            <Route path="/invoices" element={<Invoices />} />
-            <Route path="/finance" element={<Finance />} />
-            <Route path="/backup" element={<Backup />} />
-            <Route path="/csr" element={<CsrManagement />} />
-            <Route path="/donors" element={<Donors />} />
-            <Route path="/govt" element={<GovtSchemes />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/settings" element={<Settings />} />
+            
+            {userRole !== 'Vendor' && (
+              <>
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/projects/:id" element={<ProjectDetails />} />
+                <Route path="/vendors" element={<Vendors />} />
+                <Route path="/purchase-orders" element={<PurchaseOrders />} />
+                <Route path="/invoices" element={<Invoices />} />
+                <Route path="/finance" element={<Finance />} />
+                <Route path="/backup" element={<Backup />} />
+                <Route path="/csr" element={<CsrManagement />} />
+                <Route path="/donors" element={<Donors />} />
+                <Route path="/govt" element={<GovtSchemes />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/settings" element={<Settings />} />
+              </>
+            )}
+            
+            <Route path="*" element={<Dashboard />} />
           </Routes>
         </div>
       )}

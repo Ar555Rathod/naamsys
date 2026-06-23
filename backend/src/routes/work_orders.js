@@ -23,8 +23,17 @@ router.use(authenticate);
 // Get all active (latest) Work Orders
 router.get('/', async (req, res) => {
   try {
+    const whereClause = { is_active: true };
+    if (req.user.role === 'Vendor') {
+      if (!req.user.vendor_id) {
+        return res.json([]);
+      }
+      whereClause.vendor_id = req.user.vendor_id;
+      whereClause.status = { not: 'Draft' };
+    }
+
     const wos = await prisma.workOrder.findMany({
-      where: { is_active: true },
+      where: whereClause,
       include: {
         project: true,
         vendor: true,
@@ -111,12 +120,34 @@ router.get('/:id', async (req, res) => {
     });
     if (!wo) return res.status(404).json({ error: 'Work Order not found' });
 
+    if (req.user.role === 'Vendor') {
+      if (wo.vendor_id !== req.user.vendor_id || wo.status === 'Draft') {
+        return res.status(403).json({ error: 'Access denied: Not authorized to view this Work Order' });
+      }
+    }
+
     // Enrich with creator details
     const creator = await prisma.user.findUnique({
       where: { id: wo.created_by },
       select: { id: true, name: true, email: true, role: true }
     });
     wo.creator = creator;
+
+    // Resolve location names
+    if (wo.project) {
+      if (wo.project.district_id) {
+        const d = await prisma.locationDistrict.findUnique({ where: { id: wo.project.district_id } });
+        wo.project.district_name = d ? d.name : null;
+      }
+      if (wo.project.taluka_id) {
+        const t = await prisma.locationTaluka.findUnique({ where: { id: wo.project.taluka_id } });
+        wo.project.taluka_name = t ? t.name : null;
+      }
+      if (wo.project.village_id) {
+        const v = await prisma.locationVillage.findUnique({ where: { id: wo.project.village_id } });
+        wo.project.village_name = v ? v.name : null;
+      }
+    }
 
     res.json(wo);
   } catch (error) {
@@ -348,6 +379,248 @@ router.put('/:id', async (req, res) => {
     res.json(updatedWo);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update Work Order', details: error.message });
+  }
+});
+
+// GET daily logs for a specific work order
+router.get('/:id/daily-logs', async (req, res) => {
+  try {
+    const woId = parseInt(req.params.id);
+    const wo = await prisma.workOrder.findUnique({
+      where: { id: woId }
+    });
+    if (!wo) return res.status(404).json({ error: 'Work Order not found' });
+
+    if (req.user.role === 'Vendor' && wo.vendor_id !== req.user.vendor_id) {
+      return res.status(403).json({ error: 'Access denied: Not authorized to view logs for this Work Order' });
+    }
+
+    const logs = await prisma.dailyLog.findMany({
+      where: { work_order_id: woId },
+      orderBy: { date: 'asc' }
+    });
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch daily logs', details: error.message });
+  }
+});
+
+// POST add a daily log to a work order
+router.post('/:id/daily-logs', async (req, res) => {
+  try {
+    const woId = parseInt(req.params.id);
+    const wo = await prisma.workOrder.findUnique({
+      where: { id: woId }
+    });
+    if (!wo) return res.status(404).json({ error: 'Work Order not found' });
+
+    if (req.user.role === 'Vendor' && wo.vendor_id !== req.user.vendor_id) {
+      return res.status(403).json({ error: 'Access denied: Not authorized to add logs for this Work Order' });
+    }
+
+    // Check if logs are already approved
+    if (wo.logs_approved) {
+      return res.status(400).json({ error: 'Cannot add log: Work Order daily logs have already been approved.' });
+    }
+
+    const { date, start_reading, stop_reading, daily_hours, diesel_qty, diesel_issued_by, site_image_url } = req.body;
+    if (!date || start_reading === undefined || stop_reading === undefined || daily_hours === undefined) {
+      return res.status(400).json({ error: 'Date, Start Reading, Stop Reading, and Daily Hours are required fields.' });
+    }
+
+    const newLog = await prisma.$transaction(async (tx) => {
+      const log = await tx.dailyLog.create({
+        data: {
+          work_order_id: woId,
+          date: new Date(date),
+          start_reading: parseFloat(start_reading),
+          stop_reading: parseFloat(stop_reading),
+          daily_hours: parseFloat(daily_hours),
+          diesel_qty: diesel_qty ? parseFloat(diesel_qty) : null,
+          diesel_issued_by: diesel_issued_by || null,
+          site_image_url: site_image_url || null
+        }
+      });
+
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: 'Create Daily Log',
+          module: 'Work Orders',
+          record_id: String(log.id),
+          new_value: `Added daily log for WO '${wo.wo_number}' (Hours: ${parseFloat(daily_hours)}, Date: ${date})`
+        }
+      });
+
+      return log;
+    });
+
+    res.status(201).json(newLog);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create daily log', details: error.message });
+  }
+});
+
+// DELETE a daily log entry
+router.delete('/daily-logs/:logId', async (req, res) => {
+  try {
+    const logId = parseInt(req.params.logId);
+    const log = await prisma.dailyLog.findUnique({
+      where: { id: logId },
+      include: { work_order: true }
+    });
+    if (!log) return res.status(404).json({ error: 'Daily log entry not found' });
+
+    if (req.user.role === 'Vendor' && log.work_order.vendor_id !== req.user.vendor_id) {
+      return res.status(403).json({ error: 'Access denied: Not authorized to delete logs for this Work Order' });
+    }
+
+    if (log.work_order.logs_approved) {
+      return res.status(400).json({ error: 'Cannot delete log: Work Order daily logs have already been approved.' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.dailyLog.delete({ where: { id: logId } });
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: 'Delete Daily Log',
+          module: 'Work Orders',
+          record_id: String(logId),
+          new_value: `Deleted daily log entry for WO '${log.work_order.wo_number}'`
+        }
+      });
+    });
+
+    res.json({ message: 'Daily log entry deleted successfully.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete daily log entry', details: error.message });
+  }
+});
+
+// PUT update machine name
+router.put('/:id/machine-name', async (req, res) => {
+  try {
+    const woId = parseInt(req.params.id);
+    const { machine_name } = req.body;
+    const wo = await prisma.workOrder.findUnique({
+      where: { id: woId }
+    });
+    if (!wo) return res.status(404).json({ error: 'Work Order not found' });
+
+    if (req.user.role === 'Vendor' && wo.vendor_id !== req.user.vendor_id) {
+      return res.status(403).json({ error: 'Access denied: Not authorized to edit this Work Order' });
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedWO = await tx.workOrder.update({
+        where: { id: woId },
+        data: { machine_name }
+      });
+
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: 'Set Machine Name',
+          module: 'Work Orders',
+          record_id: String(woId),
+          new_value: `Updated machine name of WO '${wo.wo_number}' to '${machine_name}'`
+        }
+      });
+
+      return updatedWO;
+    });
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update machine name', details: error.message });
+  }
+});
+
+// PUT upload signed daily logs photocopy
+router.put('/:id/upload-signed-logs', async (req, res) => {
+  try {
+    const woId = parseInt(req.params.id);
+    const { signed_logs_url } = req.body;
+    const wo = await prisma.workOrder.findUnique({
+      where: { id: woId }
+    });
+    if (!wo) return res.status(404).json({ error: 'Work Order not found' });
+
+    if (req.user.role === 'Vendor' && wo.vendor_id !== req.user.vendor_id) {
+      return res.status(403).json({ error: 'Access denied: Not authorized to edit this Work Order' });
+    }
+
+    if (wo.logs_approved) {
+      return res.status(400).json({ error: 'Cannot upload: Signed logs photocopy has already been approved.' });
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedWO = await tx.workOrder.update({
+        where: { id: woId },
+        data: { signed_logs_url }
+      });
+
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: 'Upload Signed Logs Photocopy',
+          module: 'Work Orders',
+          record_id: String(woId),
+          new_value: `Uploaded signed logs photocopy '${signed_logs_url}' for WO '${wo.wo_number}'`
+        }
+      });
+
+      return updatedWO;
+    });
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to upload signed logs photocopy', details: error.message });
+  }
+});
+
+// PUT approve signed photocopy of logs
+router.put('/:id/logs-approval', async (req, res) => {
+  try {
+    if (req.user.role !== 'Admin' && req.user.role !== 'Manager') {
+      return res.status(403).json({ error: 'Access denied: Admin or Manager role required to approve logs.' });
+    }
+
+    const woId = parseInt(req.params.id);
+    const { logs_approved } = req.body;
+    const wo = await prisma.workOrder.findUnique({
+      where: { id: woId }
+    });
+    if (!wo) return res.status(404).json({ error: 'Work Order not found' });
+
+    if (logs_approved && !wo.signed_logs_url) {
+      return res.status(400).json({ error: 'Cannot approve: Vendor has not uploaded the signed logs photocopy yet.' });
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedWO = await tx.workOrder.update({
+        where: { id: woId },
+        data: { logs_approved: !!logs_approved }
+      });
+
+      const actionText = logs_approved ? 'Approve Signed Logs' : 'Reject/Unapprove Signed Logs';
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: actionText,
+          module: 'Work Orders',
+          record_id: String(woId),
+          new_value: `${logs_approved ? 'Approved' : 'Unapproved'} signed daily logs photocopy for WO '${wo.wo_number}'`
+        }
+      });
+
+      return updatedWO;
+    });
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update logs approval status', details: error.message });
   }
 });
 

@@ -352,7 +352,8 @@ label {
   #dossier-report,
   #printable-invoice-modal-content,
   #printable-po-modal-content,
-  #printable-wo-modal-content {
+  #printable-wo-modal-content,
+  #printable-daily-logs-modal-content {
     display: block !important;
     visibility: visible !important;
     position: static !important;
@@ -392,7 +393,70 @@ label {
   }
 
   #printable-working-sheet-modal-content,
-  #printable-bank-statement-modal-content {
+  #printable-bank-statement-modal-content,
+  #printable-daily-logs-modal-content {
     page: landscape-sheet !important;
   }
 }
+
+/* Responsive Mobile Layout Rules */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding: 1rem 1.5rem !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+  .sidebar .logo {
+    margin-bottom: 0.5rem !important;
+    justify-content: center;
+  }
+  .sidebar > div:nth-child(2) {
+    display: flex;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0 !important;
+    width: 100%;
+    justify-content: center;
+  }
+  .sidebar .nav-link {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.85rem;
+  }
+  .sidebar > div:last-child {
+    margin-top: 0.5rem !important;
+    display: flex;
+    flex-direction: row !important;
+    width: 100%;
+    justify-content: center;
+    gap: 1rem;
+  }
+  .main-content {
+    padding: 1.5rem 1rem !important;
+  }
+  .summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .data-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .glass-panel form {
+    grid-template-columns: 1fr !important;
+  }
+}
+

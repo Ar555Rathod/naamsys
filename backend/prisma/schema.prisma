@@ -15,6 +15,8 @@ model User {
   role          Role     @default(Operator)
   is_active     Boolean  @default(true)
   created_at    DateTime @default(now())
+  vendor_id     Int?     @unique
+  vendor        Vendor?  @relation(fields: [vendor_id], references: [id])
 
   audit_logs AuditLog[]
 }
@@ -23,6 +25,7 @@ enum Role {
   Admin
   Manager
   Operator
+  Vendor
 }
 
 model AuditLog {
@@ -235,8 +238,10 @@ model Vendor {
   account_no           String?
   ifsc                 String?
   cancelled_cheque_pdf String?
+  email                String?  @unique
   created_by           Int
   created_at           DateTime @default(now())
+  user                 User?
 
   projects VendorProject[]
   contractor_assignments ContractorAssignment[]
@@ -408,8 +413,13 @@ model WorkOrder {
   created_by        Int
   created_at        DateTime  @default(now())
   remarks           String?   @db.Text
+  machine_name      String?
+  logs_approved     Boolean   @default(false)
+  signed_logs_url   String?
 
   invoices          Invoice[]
+  daily_logs        DailyLog[]
+  purchase_orders   PurchaseOrder[]
 }
 
 model PurchaseOrder {
@@ -431,8 +441,24 @@ model PurchaseOrder {
   created_by        Int
   created_at        DateTime  @default(now())
   remarks           String?   @db.Text
+  work_order_id     Int?
+  work_order        WorkOrder? @relation(fields: [work_order_id], references: [id], onDelete: Restrict)
 
   invoices          Invoice[]
+}
+
+model DailyLog {
+  id               Int       @id @default(autoincrement())
+  work_order_id    Int
+  work_order       WorkOrder @relation(fields: [work_order_id], references: [id], onDelete: Cascade)
+  date             DateTime
+  start_reading    Float
+  stop_reading     Float
+  daily_hours      Float
+  diesel_qty       Float?
+  diesel_issued_by String?
+  site_image_url   String?
+  created_at       DateTime  @default(now())
 }
 
 model UploadedFile {

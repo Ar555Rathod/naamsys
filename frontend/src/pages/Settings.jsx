@@ -27,6 +27,8 @@ export default function Settings() {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserRole, setNewUserRole] = useState('Operator');
+  const [vendorsList, setVendorsList] = useState([]);
+  const [selectedVendorId, setSelectedVendorId] = useState('');
 
   // Audit Logs States
   const [auditLogs, setAuditLogs] = useState([]);
@@ -50,6 +52,7 @@ export default function Settings() {
   useEffect(() => {
     if (activeTab === 'users' && currentUser?.role === 'Admin') {
       fetchUsers();
+      fetchVendors();
     } else if (activeTab === 'audit' && (currentUser?.role === 'Admin' || currentUser?.role === 'Manager')) {
       fetchAuditLogs();
     }
@@ -71,6 +74,15 @@ export default function Settings() {
       setUsersList(res.data);
     } catch (err) {
       console.error('Failed to fetch users', err);
+    }
+  };
+
+  const fetchVendors = async () => {
+    try {
+      const res = await api.get('/vendors');
+      setVendorsList(res.data);
+    } catch (err) {
+      console.error('Failed to fetch vendors', err);
     }
   };
 
@@ -333,14 +345,26 @@ export default function Settings() {
                     <option value="Operator">Operator (Data Entry)</option>
                     <option value="Manager">Manager (Approver)</option>
                     <option value="Admin">Admin (Full System Controls)</option>
+                    <option value="Vendor">Vendor Portal User</option>
                   </select>
                 </div>
+                {newUserRole === 'Vendor' && (
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Associate Vendor Profile</label>
+                    <select value={selectedVendorId} onChange={e=>setSelectedVendorId(e.target.value)} className="input-field" required>
+                      <option value="">-- Select Vendor --</option>
+                      {vendorsList.map(v => (
+                        <option key={v.id} value={v.id}>{v.company_name} ({v.vendor_id})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem' }}>
                   Register User
                 </button>
               </form>
             </div>
-
+ 
             {/* Users List */}
             <div className="glass-panel" style={{ padding: '2rem' }}>
               <h3 style={{ marginBottom: '1.5rem', fontWeight: 600 }}>Active Portal Accounts</h3>
@@ -359,9 +383,14 @@ export default function Settings() {
                       <td>
                         <div style={{ fontWeight: 600 }}>{user.name}</div>
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{user.email}</div>
+                        {user.role === 'Vendor' && user.vendor && (
+                          <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 500, marginTop: '0.1rem' }}>
+                            Vendor: {user.vendor.company_name}
+                          </div>
+                        )}
                       </td>
                       <td>
-                        <span className={`badge ${user.role === 'Admin' ? 'badge-danger' : user.role === 'Manager' ? 'badge-warning' : 'badge-success'}`}>
+                        <span className={`badge ${user.role === 'Admin' ? 'badge-danger' : user.role === 'Manager' ? 'badge-warning' : user.role === 'Vendor' ? 'badge-info' : 'badge-success'}`}>
                           {user.role}
                         </span>
                       </td>

@@ -56,6 +56,8 @@ export default function PurchaseOrders() {
   const [project_id, setProjectId] = useState('');
   const [vendor_id, setVendorId] = useState('');
   const [contractor_id, setContractorId] = useState('');
+  const [work_order_id, setWorkOrderId] = useState('');
+  const [approvedWos, setApprovedWos] = useState([]);
   const [item_details, setItemDetails] = useState('');
   const [delivery_date, setDeliveryDate] = useState('');
   const [total_amount, setTotalAmount] = useState('');
@@ -91,6 +93,8 @@ export default function PurchaseOrders() {
       const pRes = await api.get('/projects'); setProjects(pRes.data);
       const vRes = await api.get('/vendors'); setVendors(vRes.data);
       const cRes = await api.get('/vendors/contractors'); setContractors(cRes.data);
+      const woRes = await api.get('/work-orders');
+      setApprovedWos(woRes.data.filter(w => w.status === 'Approved' && w.logs_approved));
     } catch (err) { console.error('Failed to fetch data', err); }
   };
 
@@ -101,6 +105,7 @@ export default function PurchaseOrders() {
         project_id,
         vendor_id,
         contractor_id: contractor_id || null,
+        work_order_id: work_order_id ? parseInt(work_order_id) : null,
         item_details,
         delivery_date,
         total_amount: parseFloat(total_amount),
@@ -142,10 +147,32 @@ export default function PurchaseOrders() {
       setIsEditing(false);
       setEditId(null);
       setEditPoNumber('');
-      setProjectId(''); setVendorId(''); setContractorId(''); setItemDetails(''); setDeliveryDate(''); setTotalAmount(''); setStatus('Draft'); setRemarks('');
+      setProjectId(''); setVendorId(''); setContractorId(''); setWorkOrderId(''); setItemDetails(''); setDeliveryDate(''); setTotalAmount(''); setStatus('Draft'); setRemarks('');
       fetchPos();
     } catch (err) {
       alert('Failed to submit Purchase Order');
+    }
+  };
+
+  const handleWorkOrderChange = (woId) => {
+    setWorkOrderId(woId);
+    if (!woId) {
+      setProjectId('');
+      setVendorId('');
+      setContractorId('');
+      return;
+    }
+    const selectedWo = approvedWos.find(w => w.id === parseInt(woId));
+    if (selectedWo) {
+      setProjectId(selectedWo.project_id.toString());
+      setVendorId(selectedWo.vendor_id.toString());
+      setContractorId(selectedWo.contractor_id ? selectedWo.contractor_id.toString() : '');
+      if (selectedWo.work_description) {
+        setItemDetails(`As per Work Order ${selectedWo.wo_number}:\n${selectedWo.work_description}`);
+      }
+      if (selectedWo.budget_amount) {
+        setTotalAmount(selectedWo.budget_amount.toString());
+      }
     }
   };
 
@@ -157,6 +184,7 @@ export default function PurchaseOrders() {
     setProjectId(po.project_id.toString());
     setVendorId(po.vendor_id.toString());
     setContractorId(po.contractor_id ? po.contractor_id.toString() : '');
+    setWorkOrderId(po.work_order_id ? po.work_order_id.toString() : '');
     setItemDetails(po.item_details);
     setDeliveryDate(new Date(po.delivery_date).toISOString().split('T')[0]);
     setTotalAmount(po.total_amount.toString());
@@ -174,6 +202,7 @@ export default function PurchaseOrders() {
     setProjectId(po.project_id.toString());
     setVendorId(po.vendor_id.toString());
     setContractorId(po.contractor_id ? po.contractor_id.toString() : '');
+    setWorkOrderId(po.work_order_id ? po.work_order_id.toString() : '');
     setItemDetails(po.item_details);
     setDeliveryDate(new Date(po.delivery_date).toISOString().split('T')[0]);
     setTotalAmount(po.total_amount.toString());
@@ -272,9 +301,21 @@ export default function PurchaseOrders() {
           </h2>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <label>Link Work Order (Only approved daily logs WOs shown)</label>
+              <select value={work_order_id} onChange={e=>handleWorkOrderChange(e.target.value)} className="input-field" disabled={isAmending}>
+                <option value="">-- Select Approved Work Order (Optional) --</option>
+                {approvedWos.map(w => (
+                  <option key={w.id} value={w.id}>
+                    {w.wo_number} - {w.vendor.company_name} ({w.project.name})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="form-group">
               <label>Project</label>
-              <select value={project_id} onChange={e=>setProjectId(e.target.value)} className="input-field" required disabled={isAmending}>
+              <select value={project_id} onChange={e=>setProjectId(e.target.value)} className="input-field" required disabled={isAmending || !!work_order_id}>
                 <option value="">-- Select Project --</option>
                 {projects.map(p => <option key={p.id} value={p.id}>{p.name} ({p.project_id})</option>)}
               </select>
@@ -282,7 +323,7 @@ export default function PurchaseOrders() {
 
             <div className="form-group">
               <label>Vendor (Mandatory)</label>
-              <select value={vendor_id} onChange={e=>setVendorId(e.target.value)} className="input-field" required disabled={isAmending}>
+              <select value={vendor_id} onChange={e=>setVendorId(e.target.value)} className="input-field" required disabled={isAmending || !!work_order_id}>
                 <option value="">-- Select Vendor --</option>
                 {vendors.map(v => <option key={v.id} value={v.id}>{v.company_name}</option>)}
               </select>
@@ -290,7 +331,7 @@ export default function PurchaseOrders() {
 
             <div className="form-group">
               <label>Contractor (Optional)</label>
-              <select value={contractor_id} onChange={e=>setContractorId(e.target.value)} className="input-field">
+              <select value={contractor_id} onChange={e=>setContractorId(e.target.value)} className="input-field" disabled={!!work_order_id}>
                 <option value="">-- Select Contractor (Optional) --</option>
                 {contractors.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
               </select>

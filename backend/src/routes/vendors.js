@@ -1,6 +1,7 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -39,39 +40,85 @@ router.post('/', async (req, res) => {
       owner_name, owner_contact, owner_address, 
       address_line1, address_line2, address_line3, pincode,
       machine_details, operator_details,
-      bank_name, account_no, ifsc, branch, project_ids
+      bank_name, account_no, ifsc, branch, project_ids,
+      email
     } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email address is required to register a vendor and create their portal login.' });
+    }
 
     if (pincode && !/^\d{6}$/.test(pincode)) {
       return res.status(400).json({ error: 'Pincode must be a 6-digit number.' });
     }
 
-    const count = await prisma.vendor.count() + 1;
-    const vendor_id = `VEN-${String(count).padStart(3, '0')}`;
-
-    const vendor = await prisma.vendor.create({
-      data: {
-        vendor_id,
-        company_name,
-        pan, aadhaar, gst,
-        owner_name, owner_contact,
-        owner_address: owner_address || [address_line1, address_line2, address_line3, pincode].filter(Boolean).join(', '),
-        address_line1, address_line2, address_line3, pincode,
-        machine_details, operator_details,
-        bank_name, account_no, ifsc, branch,
-        created_by: req.user.id
-      }
-    });
-
-    if (project_ids && project_ids.length > 0) {
-      const vendorProjects = project_ids.map(pid => ({
-        vendor_id: vendor.id,
-        project_id: parseInt(pid)
-      }));
-      await prisma.vendorProject.createMany({ data: vendorProjects });
+    // Verify email uniqueness in User database
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'A user with this email address already exists. Please choose a unique email.' });
     }
 
-    res.json(vendor);
+    const result = await prisma.$transaction(async (tx) => {
+      const count = await tx.vendor.count() + 1;
+      const vendor_id = `VEN-${String(count).padStart(3, '0')}`;
+
+      const vendor = await tx.vendor.create({
+        data: {
+          vendor_id,
+          company_name,
+          pan, aadhaar, gst,
+          owner_name, owner_contact,
+          owner_address: owner_address || [address_line1, address_line2, address_line3, pincode].filter(Boolean).join(', '),
+          address_line1, address_line2, address_line3, pincode,
+          machine_details, operator_details,
+          bank_name, account_no, ifsc, branch,
+          email,
+          created_by: req.user.id
+        }
+      });
+
+      const defaultPassword = (pan || 'vendor123').toUpperCase();
+      const password_hash = await bcrypt.hash(defaultPassword, 10);
+
+      await tx.user.create({
+        data: {
+          name: owner_name || company_name,
+          email,
+          password_hash,
+          role: 'Vendor',
+          vendor_id: vendor.id,
+          is_active: true
+        }
+      });
+
+      if (project_ids && project_ids.length > 0) {
+        const vendorProjects = project_ids.map(pid => ({
+          vendor_id: vendor.id,
+          project_id: parseInt(pid)
+        }));
+        await tx.vendorProject.createMany({ data: vendorProjects });
+      }
+
+      await tx.auditLog.create({
+        data: {
+          user_id: req.user.id,
+          action: 'Register Vendor & Create User',
+          module: 'Vendors',
+          record_id: String(vendor.id),
+          new_value: `Registered vendor ${company_name} (ID: ${vendor_id}) and created user login ${email}`
+        }
+      });
+
+      return { vendor, defaultPassword };
+    });
+
+    res.json({
+      vendor: result.vendor,
+      login_credentials: {
+        email,
+        password: result.defaultPassword
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: 'Failed to register vendor', details: error.message });
   }
