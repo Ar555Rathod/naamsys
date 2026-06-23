@@ -127,19 +127,25 @@ router.get('/:id', async (req, res) => {
 // Create a new Purchase Order (V1)
 router.post('/', async (req, res) => {
   try {
-    const { project_id, vendor_id, contractor_id, item_details, delivery_date, total_amount, status, work_order_id } = req.body;
+    const { item_details, delivery_date, total_amount, status, work_order_id } = req.body;
     
-    if (work_order_id) {
-      const wo = await prisma.workOrder.findUnique({
-        where: { id: parseInt(work_order_id) }
-      });
-      if (!wo) {
-        return res.status(404).json({ error: 'Selected Work Order not found.' });
-      }
-      if (!wo.logs_approved) {
-        return res.status(400).json({ error: 'Cannot generate Purchase Order: Work Order daily logs signed photocopy is not approved yet.' });
-      }
+    if (!work_order_id) {
+      return res.status(400).json({ error: 'Link to a completed Work Order is required to generate a Purchase Order.' });
     }
+
+    const wo = await prisma.workOrder.findUnique({
+      where: { id: parseInt(work_order_id) }
+    });
+    if (!wo) {
+      return res.status(404).json({ error: 'Selected Work Order not found.' });
+    }
+    if (!wo.logs_approved) {
+      return res.status(400).json({ error: 'Cannot generate Purchase Order: Work Order daily logs signed photocopy is not approved yet.' });
+    }
+
+    const project_id = wo.project_id;
+    const vendor_id = wo.vendor_id;
+    const contractor_id = wo.contractor_id;
 
     const newPo = await prisma.$transaction(async (tx) => {
       // Count unique po_numbers to generate sequential number
@@ -156,7 +162,7 @@ router.post('/', async (req, res) => {
           project_id: parseInt(project_id),
           vendor_id: parseInt(vendor_id),
           contractor_id: contractor_id ? parseInt(contractor_id) : null,
-          work_order_id: work_order_id ? parseInt(work_order_id) : null,
+          work_order_id: parseInt(work_order_id),
           item_details,
           delivery_date: new Date(delivery_date),
           total_amount: parseFloat(total_amount),
@@ -172,7 +178,7 @@ router.post('/', async (req, res) => {
           action: 'Create Purchase Order',
           module: 'Purchase Orders',
           record_id: String(po.id),
-          new_value: `Created Purchase Order '${po.po_number}' (Total: ₹${parseFloat(po.total_amount).toLocaleString('en-IN')})`
+          new_value: `Created Purchase Order '${po.po_number}' from Work Order '${wo.wo_number}' (Total: ₹${parseFloat(po.total_amount).toLocaleString('en-IN')})`
         }
       });
 

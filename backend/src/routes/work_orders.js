@@ -260,75 +260,7 @@ router.post('/amend', async (req, res) => {
   }
 });
 
-// Update Work Order Status (e.g. Approve)
-router.put('/:id/status', async (req, res) => {
-  try {
-    if (req.user.role === 'Operator') {
-      return res.status(403).json({ error: 'Access denied: Operators cannot approve or modify order statuses.' });
-    }
-    const { status, remarks } = req.body;
-    
-    const wo = await prisma.$transaction(async (tx) => {
-      const updated = await tx.workOrder.update({
-        where: { id: parseInt(req.params.id) },
-        data: {
-          status,
-          remarks: remarks || `Status updated to ${status}`
-        }
-      });
 
-      const actionName = status === 'Approved' ? 'Approve Work Order' : 'Update Work Order Status';
-      await tx.auditLog.create({
-        data: {
-          user_id: req.user.id,
-          action: actionName,
-          module: 'Work Orders',
-          record_id: String(updated.id),
-          new_value: `${status === 'Approved' ? 'Approved' : 'Updated status of'} Work Order '${updated.wo_number}' (Status: ${status})`
-        }
-      });
-
-      return updated;
-    });
-
-    res.json(wo);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update Work Order status', details: error.message });
-  }
-});
-
-// Upload Signed Copy & Mark as Completed
-router.put('/:id/upload-signed', async (req, res) => {
-  try {
-    const { duly_signed_url } = req.body; // simulated URL or filename
-
-    const wo = await prisma.$transaction(async (tx) => {
-      const updated = await tx.workOrder.update({
-        where: { id: parseInt(req.params.id) },
-        data: {
-          duly_signed_url,
-          status: 'Completed'
-        }
-      });
-
-      await tx.auditLog.create({
-        data: {
-          user_id: req.user.id,
-          action: 'Complete Work Order',
-          module: 'Work Orders',
-          record_id: String(updated.id),
-          new_value: `Signed and Completed Work Order '${updated.wo_number}'`
-        }
-      });
-
-      return updated;
-    });
-
-    res.json(wo);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to upload signed Work Order copy', details: error.message });
-  }
-});
 
 // Edit Work Order in Draft mode
 router.put('/:id', async (req, res) => {
@@ -601,7 +533,10 @@ router.put('/:id/logs-approval', async (req, res) => {
     const updated = await prisma.$transaction(async (tx) => {
       const updatedWO = await tx.workOrder.update({
         where: { id: woId },
-        data: { logs_approved: !!logs_approved }
+        data: { 
+          logs_approved: !!logs_approved,
+          status: logs_approved ? 'Completed' : 'SentToVendor'
+        }
       });
 
       const actionText = logs_approved ? 'Approve Signed Logs' : 'Reject/Unapprove Signed Logs';

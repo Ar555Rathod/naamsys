@@ -94,18 +94,22 @@ export default function PurchaseOrders() {
       const vRes = await api.get('/vendors'); setVendors(vRes.data);
       const cRes = await api.get('/vendors/contractors'); setContractors(cRes.data);
       const woRes = await api.get('/work-orders');
-      setApprovedWos(woRes.data.filter(w => w.status === 'Approved' && w.logs_approved));
+      setApprovedWos(woRes.data.filter(w => w.status === 'Completed'));
     } catch (err) { console.error('Failed to fetch data', err); }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isEditing && !isAmending && !work_order_id) {
+      alert('Please link a completed Work Order.');
+      return;
+    }
     try {
       const payload = {
         project_id,
         vendor_id,
         contractor_id: contractor_id || null,
-        work_order_id: work_order_id ? parseInt(work_order_id) : null,
+        work_order_id: parseInt(work_order_id),
         item_details,
         delivery_date,
         total_amount: parseFloat(total_amount),
@@ -302,9 +306,9 @@ export default function PurchaseOrders() {
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label>Link Work Order (Only approved daily logs WOs shown)</label>
-              <select value={work_order_id} onChange={e=>handleWorkOrderChange(e.target.value)} className="input-field" disabled={isAmending}>
-                <option value="">-- Select Approved Work Order (Optional) --</option>
+              <label>Link Completed Work Order (Required)</label>
+              <select value={work_order_id} onChange={e=>handleWorkOrderChange(e.target.value)} className="input-field" required disabled={isAmending}>
+                <option value="">-- Select Completed Work Order --</option>
                 {approvedWos.map(w => (
                   <option key={w.id} value={w.id}>
                     {w.wo_number} - {w.vendor.company_name} ({w.project.name})
