@@ -17,6 +17,7 @@ import Settings from './pages/Settings';
 import ResetPassword from './pages/ResetPassword';
 import Finance from './pages/Finance';
 import Backup from './pages/Backup';
+import DailyLogs from './pages/DailyLogs';
 
 function Sidebar({ onLogout }) {
   const location = useLocation();
@@ -44,9 +45,11 @@ function Sidebar({ onLogout }) {
       </div>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-        <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
-          <LayoutDashboard size={20} /> Dashboard
-        </Link>
+        {userRole !== 'Vendor' && (
+          <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
+            <LayoutDashboard size={20} /> Dashboard
+          </Link>
+        )}
         
         {userRole !== 'Vendor' ? (
           <>
@@ -89,9 +92,14 @@ function Sidebar({ onLogout }) {
             )}
           </>
         ) : (
-          <Link to="/work-orders" className={`nav-link ${location.pathname === '/work-orders' ? 'active' : ''}`}>
-            <FileCheck2 size={20} /> Assigned Work Orders
-          </Link>
+          <>
+            <Link to="/work-orders" className={`nav-link ${location.pathname === '/work-orders' ? 'active' : ''}`}>
+              <FileCheck2 size={20} /> Assigned Work Orders
+            </Link>
+            <Link to="/daily-logs" className={`nav-link ${location.pathname === '/daily-logs' ? 'active' : ''}`}>
+              <FileText size={20} /> Daily Logs
+            </Link>
+          </>
         )}
       </div>
 
@@ -148,8 +156,9 @@ function App() {
         <div className="app-container">
           <Sidebar onLogout={handleLogout} />
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={userRole === 'Vendor' ? <WorkOrders /> : <Dashboard />} />
             <Route path="/work-orders" element={<WorkOrders />} />
+            <Route path="/daily-logs" element={<DailyLogs />} />
             
             {userRole !== 'Vendor' && (
               <>

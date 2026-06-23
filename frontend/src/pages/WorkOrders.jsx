@@ -25,7 +25,7 @@ export default function WorkOrders() {
   const [machineName, setMachineName] = useState('');
   
   // Daily Log Form states
-  const [logDate, setLogDate] = useState('');
+  const [logDate, setLogDate] = useState(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]);
   const [startReading, setStartReading] = useState('');
   const [stopReading, setStopReading] = useState('');
   const [dailyHours, setDailyHours] = useState('');
@@ -79,7 +79,7 @@ export default function WorkOrders() {
     setSelectedLogsWo(wo);
     setMachineName(wo.machine_name || '');
     setLogsPhotocopyName(wo.signed_logs_url || '');
-    setLogDate('');
+    setLogDate(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]);
     setStartReading('');
     setStopReading('');
     setDailyHours('');
@@ -124,7 +124,7 @@ export default function WorkOrders() {
       };
       await api.post(`/work-orders/${selectedLogsWo.id}/daily-logs`, payload);
       alert('Daily log added successfully.');
-      setLogDate('');
+      setLogDate(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]);
       setStartReading('');
       setStopReading('');
       setDailyHours('');
@@ -819,7 +819,7 @@ export default function WorkOrders() {
                   
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label>Date *</label>
-                    <input type="date" className="input-field" value={logDate} onChange={e => setLogDate(e.target.value)} required />
+                    <input type="date" className="input-field" value={logDate} onChange={e => setLogDate(e.target.value)} required disabled />
                   </div>
                   
                   <div className="form-group" style={{ marginBottom: 0 }}>
