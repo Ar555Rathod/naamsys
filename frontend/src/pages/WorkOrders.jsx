@@ -752,7 +752,7 @@ export default function WorkOrders() {
           <div className="glass-panel" style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card)', padding: '2.5rem', position: 'relative', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             
             {/* Modal Close Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', flexShrink: 0 }}>
               <div>
                 <h2 style={{ fontWeight: 700, margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <FileText color="var(--secondary)" /> Daily Log Sheet Manager
@@ -765,7 +765,7 @@ export default function WorkOrders() {
             </div>
 
             {/* Context Info Box */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', background: 'var(--bg-light)', padding: '1rem', borderRadius: '12px', fontSize: '0.85rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', background: 'var(--bg-light)', padding: '1rem', borderRadius: '12px', fontSize: '0.85rem', flexShrink: 0 }}>
               <div>
                 <span style={{ color: 'var(--text-muted)', display: 'block' }}>Project:</span>
                 <strong>{selectedLogsWo.project.name} ({selectedLogsWo.project.project_id})</strong>
@@ -787,7 +787,7 @@ export default function WorkOrders() {
             </div>
 
             {/* Machine Name section */}
-            <div className="glass-panel" style={{ padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div className="glass-panel" style={{ padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', flexShrink: 0 }}>
               <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Machine Name Registration</h4>
               <form onSubmit={handleUpdateMachineName} style={{ display: 'flex', gap: '1rem', alignItems: 'center', width: '100%' }}>
                 <input 
@@ -813,7 +813,7 @@ export default function WorkOrders() {
 
             {/* Log Entry Form (Vendor Side, only when not approved) */}
             {currentUser?.role === 'Vendor' && !selectedLogsWo.logs_approved && (
-              <div className="glass-panel" style={{ padding: '1.5rem' }}>
+              <div className="glass-panel" style={{ padding: '1.5rem', flexShrink: 0 }}>
                 <h3 style={{ marginBottom: '1rem', fontWeight: 600, fontSize: '1rem' }}>Add Daily Entry</h3>
                 <form onSubmit={handleAddLog} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
                   
@@ -885,7 +885,7 @@ export default function WorkOrders() {
             )}
 
             {/* Daily Logs Table */}
-            <div className="glass-panel" style={{ overflow: 'hidden' }}>
+            <div className="glass-panel" style={{ overflow: 'hidden', flexShrink: 0 }}>
               <h3 style={{ padding: '1rem 1.5rem', margin: 0, fontWeight: 600, fontSize: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Daily Activity Log Sheet</span>
                 <button className="btn" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', background: 'var(--primary)', color: 'white' }} onClick={() => handlePrintLogs(selectedLogsWo)}>
@@ -950,7 +950,7 @@ export default function WorkOrders() {
             </div>
 
             {/* Logs Status, Upload and Approval section */}
-            <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', flexShrink: 0 }}>
               <h3 style={{ margin: 0, fontWeight: 600, fontSize: '1rem' }}>Logs Scanned Photocopy Verification</h3>
               
               <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
@@ -1016,7 +1016,7 @@ export default function WorkOrders() {
               )}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border)', paddingTop: '1rem', flexShrink: 0 }}>
               <button onClick={() => setShowLogsModal(false)} className="btn" style={{ background: 'rgba(0,0,0,0.08)', padding: '0.5rem 1.5rem' }}>Close Manager</button>
             </div>
           </div>
