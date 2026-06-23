@@ -185,7 +185,7 @@ router.post('/working-sheets', requireManagerOrAdmin, async (req, res) => {
       });
 
       return record;
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     res.status(201).json(sheet);
   } catch (error) {
@@ -221,7 +221,7 @@ router.put('/working-sheets/:id/publish', requireManagerOrAdmin, async (req, res
       });
 
       return record;
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     res.json(updated);
   } catch (error) {
@@ -343,7 +343,7 @@ router.put('/working-sheets/:id/approve', requireAdmin, async (req, res) => {
       });
 
       return updatedSheet;
-    });
+    }, { maxWait: 20000, timeout: 40000 });
 
     res.json(approvedSheet);
   } catch (error) {
