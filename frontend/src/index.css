@@ -352,8 +352,7 @@ label {
   #dossier-report,
   #printable-invoice-modal-content,
   #printable-po-modal-content,
-  #printable-wo-modal-content,
-  #printable-daily-logs-modal-content {
+  #printable-wo-modal-content {
     display: block !important;
     visibility: visible !important;
     position: static !important;
@@ -368,7 +367,8 @@ label {
   }
 
   #printable-working-sheet-modal-content,
-  #printable-bank-statement-modal-content {
+  #printable-bank-statement-modal-content,
+  #printable-daily-logs-modal-content {
     display: block !important;
     visibility: visible !important;
     position: static !important;

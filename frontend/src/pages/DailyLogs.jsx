@@ -535,34 +535,34 @@ export default function DailyLogs() {
               </div>
 
               {/* Printable Frame Area */}
-              <div id="printable-daily-logs-modal-content" style={{ padding: '2.5rem', fontFamily: 'Inter, sans-serif', color: '#000', background: 'white', width: '100%' }}>
+              <div id="printable-daily-logs-modal-content" style={{ padding: '0.5cm', fontFamily: 'Inter, sans-serif', color: '#000', background: 'white', width: '100%' }}>
                 
                 {/* PAGE 1 CONTAINER */}
                 <div className="page-break-after" style={{ minHeight: '100%' }}>
                   {/* Header */}
-                  <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                    <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#000', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>NAAM FOUNDATION</h1>
-                    <span style={{ fontSize: '0.85rem', color: '#555', fontWeight: 600 }}>DAILY LOG SHEET - PAGE 1</span>
+                  <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+                    <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#000', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>NAAM FOUNDATION</h1>
+                    <span style={{ fontSize: '0.75rem', color: '#555', fontWeight: 600 }}>DAILY LOG SHEET - PAGE 1</span>
                   </div>
 
                   {/* Specific Context Specs (Template-aligned layout) */}
-                  <div style={{ margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.8rem', fontSize: '0.95rem', borderBottom: '2px solid #000', paddingBottom: '1.25rem' }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3rem' }}>
+                  <div style={{ margin: '0 0 0.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '11px', borderBottom: '1.5px solid #000', paddingBottom: '0.4rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
                       <span>
                         <strong>Village Name - </strong> 
-                        <span style={{ borderBottom: '1.5px solid #000', paddingBottom: '2px', display: 'inline-block', minWidth: '220px', fontWeight: 600 }}>
+                        <span style={{ borderBottom: '1px solid #000', paddingBottom: '1px', display: 'inline-block', minWidth: '150px', fontWeight: 600 }}>
                           {selectedPrintLogsWo.project.village_name || 'N/A'}
                         </span>
                       </span>
                       <span>
                         <strong>Tal - </strong> 
-                        <span style={{ borderBottom: '1.5px solid #000', paddingBottom: '2px', display: 'inline-block', minWidth: '220px', fontWeight: 600 }}>
+                        <span style={{ borderBottom: '1px solid #000', paddingBottom: '1px', display: 'inline-block', minWidth: '150px', fontWeight: 600 }}>
                           {selectedPrintLogsWo.project.taluka_name || 'N/A'}
                         </span>
                       </span>
                       <span>
                         <strong>Dist - </strong> 
-                        <span style={{ borderBottom: '1.5px solid #000', paddingBottom: '2px', display: 'inline-block', minWidth: '220px', fontWeight: 600 }}>
+                        <span style={{ borderBottom: '1px solid #000', paddingBottom: '1px', display: 'inline-block', minWidth: '150px', fontWeight: 600 }}>
                           {selectedPrintLogsWo.project.district_name || 'N/A'}
                         </span>
                       </span>
@@ -570,7 +570,7 @@ export default function DailyLogs() {
                     <div>
                       <span>
                         <strong>Project Details - </strong> 
-                        <span style={{ borderBottom: '1.5px solid #000', paddingBottom: '2px', display: 'inline-block', minWidth: '700px', fontWeight: 600 }}>
+                        <span style={{ borderBottom: '1px solid #000', paddingBottom: '1px', display: 'inline-block', minWidth: '450px', fontWeight: 600 }}>
                           {selectedPrintLogsWo.project.project_id} - {selectedPrintLogsWo.project.name}
                         </span>
                       </span>
@@ -578,7 +578,7 @@ export default function DailyLogs() {
                     <div>
                       <span>
                         <strong>Machine Name - </strong> 
-                        <span style={{ borderBottom: '1.5px solid #000', paddingBottom: '2px', display: 'inline-block', minWidth: '350px', fontWeight: 600 }}>
+                        <span style={{ borderBottom: '1px solid #000', paddingBottom: '1px', display: 'inline-block', minWidth: '250px', fontWeight: 600 }}>
                           {selectedPrintLogsWo.machine_name || 'N/A'}
                         </span>
                       </span>
@@ -586,34 +586,34 @@ export default function DailyLogs() {
                   </div>
 
                   {/* Logs Table Page 1 */}
-                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid #000', fontSize: '0.85rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000', fontSize: '9px' }}>
                     <thead>
-                      <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #000' }}>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '5%' }}>Sr. No</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Date</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '12%' }}>Start Reading</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '12%' }}>Stop Reading</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Daily Hrs.</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Diesel QTY/LTR</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '13%' }}>Diesel Issued By</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '11%' }}>Diesel Issued Sign</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '17%' }}>Site Incharge Name & Sign</th>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '1.5px solid #000' }}>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '5%' }}>Sr. No</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Date</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '12%' }}>Start Reading</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '12%' }}>Stop Reading</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Daily Hrs.</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Diesel QTY/LTR</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '13%' }}>Diesel Issued By</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '11%' }}>Diesel Issued Sign</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '17%' }}>Site Incharge Name & Sign</th>
                       </tr>
                     </thead>
                     <tbody>
                       {page1Rows.map((row, idx) => {
                         const isReal = row.id !== undefined && !row.id.toString().startsWith('empty-');
                         return (
-                          <tr key={row.id || `p1-${idx}`} style={{ borderBottom: '1px solid #000', height: '28px' }}>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{idx + 1}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? new Date(row.date).toLocaleDateString() : ''}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.start_reading : ''}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.stop_reading : ''}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center', fontWeight: isReal ? 'bold' : 'normal' }}>{isReal ? row.daily_hours : ''}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal && row.diesel_qty !== null ? row.diesel_qty : ''}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.diesel_issued_by || '' : ''}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000' }}></td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000' }}></td>
+                          <tr key={row.id || `p1-${idx}`} style={{ borderBottom: '1px solid #000' }}>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center' }}>{idx + 1}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center' }}>{isReal ? new Date(row.date).toLocaleDateString() : ''}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.start_reading : ''}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.stop_reading : ''}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: isReal ? 'bold' : 'normal' }}>{isReal ? row.daily_hours : ''}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center' }}>{isReal && row.diesel_qty !== null ? row.diesel_qty : ''}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.diesel_issued_by || '' : ''}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000' }}></td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000' }}></td>
                           </tr>
                         );
                       })}
@@ -622,26 +622,26 @@ export default function DailyLogs() {
                 </div>
 
                 {/* PAGE 2 CONTAINER */}
-                <div style={{ marginTop: '2rem' }}>
+                <div style={{ marginTop: '0' }}>
                   {/* Header */}
-                  <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                    <h1 className="print-only" style={{ fontSize: '2rem', fontWeight: 800, color: '#000', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.5rem 0' }}>NAAM FOUNDATION</h1>
-                    <span style={{ fontSize: '0.85rem', color: '#555', fontWeight: 600 }}>DAILY LOG SHEET - PAGE 2</span>
+                  <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+                    <h1 className="print-only" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#000', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.2rem 0' }}>NAAM FOUNDATION</h1>
+                    <span style={{ fontSize: '0.75rem', color: '#555', fontWeight: 600 }}>DAILY LOG SHEET - PAGE 2</span>
                   </div>
 
                   {/* Logs Table Page 2 */}
-                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid #000', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000', marginBottom: '0.5rem', fontSize: '9px' }}>
                     <thead>
-                      <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #000' }}>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '5%' }}>Sr. No</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Date</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '12%' }}>Start Reading</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '12%' }}>Stop Reading</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Daily Hrs.</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Diesel QTY/LTR</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '13%' }}>Diesel Issued By</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '11%' }}>Diesel Issued Sign</th>
-                        <th style={{ padding: '0.5rem', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '17%' }}>Site Incharge Name & Sign</th>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '1.5px solid #000' }}>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '5%' }}>Sr. No</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Date</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '12%' }}>Start Reading</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '12%' }}>Stop Reading</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Daily Hrs.</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '10%' }}>Diesel QTY/LTR</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '13%' }}>Diesel Issued By</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '11%' }}>Diesel Issued Sign</th>
+                        <th style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: 'bold', width: '17%' }}>Site Incharge Name & Sign</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -649,16 +649,16 @@ export default function DailyLogs() {
                         const realIndex = 15 + idx;
                         const isReal = row.id !== undefined && !row.id.toString().startsWith('empty-');
                         return (
-                          <tr key={row.id || `p2-${idx}`} style={{ borderBottom: '1px solid #000', height: '28px' }}>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{realIndex + 1}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? new Date(row.date).toLocaleDateString() : ''}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.start_reading : ''}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.stop_reading : ''}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center', fontWeight: isReal ? 'bold' : 'normal' }}>{isReal ? row.daily_hours : ''}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal && row.diesel_qty !== null ? row.diesel_qty : ''}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.diesel_issued_by || '' : ''}</td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000' }}></td>
-                            <td style={{ padding: '0.4rem', border: '1px solid #000' }}></td>
+                          <tr key={row.id || `p2-${idx}`} style={{ borderBottom: '1px solid #000' }}>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center' }}>{realIndex + 1}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center' }}>{isReal ? new Date(row.date).toLocaleDateString() : ''}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.start_reading : ''}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.stop_reading : ''}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center', fontWeight: isReal ? 'bold' : 'normal' }}>{isReal ? row.daily_hours : ''}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center' }}>{isReal && row.diesel_qty !== null ? row.diesel_qty : ''}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000', textAlign: 'center' }}>{isReal ? row.diesel_issued_by || '' : ''}</td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000' }}></td>
+                            <td style={{ padding: '2px 4px', border: '1px solid #000' }}></td>
                           </tr>
                         );
                       })}
@@ -666,21 +666,21 @@ export default function DailyLogs() {
                   </table>
 
                   {/* Bottom calculations & physical signatures layout */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '0.5rem' }}>
                     
                     {/* Cumulative Totals Box (Bottom Left) */}
                     <div>
-                      <table style={{ width: '300px', borderCollapse: 'collapse', border: '2px solid #000', fontSize: '0.9rem' }}>
+                      <table style={{ width: '220px', borderCollapse: 'collapse', border: '1.5px solid #000', fontSize: '9px' }}>
                         <tbody>
                           <tr style={{ borderBottom: '1px solid #000' }}>
-                            <td style={{ border: '1px solid #000', padding: '0.5rem', fontWeight: 'bold', width: '70%' }}>Total Readings In Hours</td>
-                            <td style={{ border: '1px solid #000', padding: '0.5rem', textAlign: 'center', fontWeight: 'bold' }}>
+                            <td style={{ border: '1px solid #000', padding: '3px 5px', fontWeight: 'bold', width: '70%' }}>Total Readings (Hours)</td>
+                            <td style={{ border: '1px solid #000', padding: '3px 5px', textAlign: 'center', fontWeight: 'bold' }}>
                               {logsList.reduce((acc, curr) => acc + (curr.daily_hours || 0), 0).toFixed(2)}
                             </td>
                           </tr>
                           <tr>
-                            <td style={{ border: '1px solid #000', padding: '0.5rem', fontWeight: 'bold' }}>Total Diesel In Ltrs</td>
-                            <td style={{ border: '1px solid #000', padding: '0.5rem', textAlign: 'center', fontWeight: 'bold' }}>
+                            <td style={{ border: '1px solid #000', padding: '3px 5px', fontWeight: 'bold' }}>Total Diesel (Ltrs)</td>
+                            <td style={{ border: '1px solid #000', padding: '3px 5px', textAlign: 'center', fontWeight: 'bold' }}>
                               {logsList.reduce((acc, curr) => acc + (curr.diesel_qty || 0), 0).toFixed(2)}
                             </td>
                           </tr>
@@ -689,14 +689,14 @@ export default function DailyLogs() {
                     </div>
 
                     {/* Hand-signed Signatures (Bottom Right) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '380px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '320px', fontSize: '9px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 'bold' }}>Cont. Incharge Sign:</span>
-                        <span style={{ width: '180px', borderBottom: '1.5px solid #000', display: 'inline-block' }}></span>
+                        <span style={{ fontWeight: 'bold' }}>Cont. Incharge Sign:</span>
+                        <span style={{ width: '150px', borderBottom: '1px solid #000', display: 'inline-block' }}></span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 'bold' }}>Site Incharge / Sarpanch Sign:</span>
-                        <span style={{ width: '180px', borderBottom: '1.5px solid #000', display: 'inline-block' }}></span>
+                        <span style={{ fontWeight: 'bold' }}>Site Incharge / Sarpanch Sign:</span>
+                        <span style={{ width: '150px', borderBottom: '1px solid #000', display: 'inline-block' }}></span>
                       </div>
                     </div>
 
