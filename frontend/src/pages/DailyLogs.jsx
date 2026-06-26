@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Printer, Trash2, UploadCloud, XCircle, FileText, Settings, Calendar, User } from 'lucide-react';
+import { Printer, Trash2, UploadCloud, XCircle, FileText, Settings, Calendar, User, Camera, Image } from 'lucide-react';
 import api, { getUploadUrl } from '../api';
 
 export default function DailyLogs() {
@@ -25,6 +25,7 @@ export default function DailyLogs() {
   const [selectedPrintLogsWo, setSelectedPrintLogsWo] = useState(null);
 
   const siteImageInputRef = useRef(null);
+  const siteImageCameraInputRef = useRef(null);
   const logsPhotocopyInputRef = useRef(null);
 
   useEffect(() => {
@@ -328,7 +329,7 @@ export default function DailyLogs() {
 
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                   <label>On-Site Activity Image - <span style={{ color: 'var(--text-muted)' }}>Optional</span></label>
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     <input 
                       type="file" 
                       ref={siteImageInputRef} 
@@ -336,15 +337,37 @@ export default function DailyLogs() {
                       style={{ display: 'none' }} 
                       onChange={handleSiteImageChange} 
                     />
-                    <button 
-                      type="button" 
-                      className="btn" 
-                      style={{ background: 'rgba(0,0,0,0.05)', fontSize: '0.85rem' }} 
-                      onClick={() => siteImageInputRef.current?.click()}
-                      disabled={isUploadingSiteImage}
-                    >
-                      {isUploadingSiteImage ? 'Uploading Site Image...' : siteImageName ? 'Change Image' : 'Choose Image'}
-                    </button>
+                    <input 
+                      type="file" 
+                      ref={siteImageCameraInputRef} 
+                      accept="image/*" 
+                      capture="environment" 
+                      style={{ display: 'none' }} 
+                      onChange={handleSiteImageChange} 
+                    />
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                      <button 
+                        type="button" 
+                        className="btn" 
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(0,0,0,0.05)', fontSize: '0.85rem', padding: '0.6rem 1rem' }} 
+                        onClick={() => siteImageInputRef.current?.click()}
+                        disabled={isUploadingSiteImage}
+                      >
+                        <Image size={16} /> Choose from Gallery
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn" 
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(0,0,0,0.05)', fontSize: '0.85rem', padding: '0.6rem 1rem' }} 
+                        onClick={() => siteImageCameraInputRef.current?.click()}
+                        disabled={isUploadingSiteImage}
+                      >
+                        <Camera size={16} /> Take Photo
+                      </button>
+                    </div>
+                    {isUploadingSiteImage && (
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Uploading...</span>
+                    )}
                     {siteImageName && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{ color: 'var(--secondary)', fontSize: '0.85rem', fontWeight: 600 }}>✓ site_image attached</span>
