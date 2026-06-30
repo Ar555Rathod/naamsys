@@ -285,6 +285,18 @@ router.post('/draw', async (req, res) => {
         data: { budget_remaining: { decrement: drawAmt } }
       });
 
+      // 2.5. Increment organization's central admin cost pool
+      const orgBudget = await tx.organizationBudget.findFirst();
+      if (orgBudget) {
+        await tx.organizationBudget.update({
+          where: { id: orgBudget.id },
+          data: {
+            admin_cost_pool_total: { increment: drawAmt },
+            admin_cost_pool_remaining: { increment: drawAmt }
+          }
+        });
+      }
+
       // 3. Create settled Invoice for Petrol Pump
       const invoice = await tx.invoice.create({
         data: {
