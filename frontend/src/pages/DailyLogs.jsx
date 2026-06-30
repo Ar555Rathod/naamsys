@@ -216,6 +216,271 @@ export default function DailyLogs() {
     }, 200);
   };
 
+  if (currentUser?.role === 'Vendor') {
+    return (
+      <div className="main-content" style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <FileText size={22} color="var(--primary)" /> Daily Log Operator Portal
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+            Enter machine hours & upload daily signed sheets.
+          </p>
+        </div>
+
+        {/* Choose Work Order */}
+        <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1.25rem', borderRadius: '12px' }}>
+          <label style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Choose Active Work Order:</label>
+          <select 
+            value={selectedWo ? selectedWo.id : ''} 
+            onChange={e => handleWoChange(e.target.value)} 
+            className="input-field"
+            style={{ width: '100%', fontSize: '0.95rem', padding: '0.65rem' }}
+          >
+            <option value="">-- Select Work Order --</option>
+            {wos.map(w => (
+              <option key={w.id} value={w.id}>
+                {w.wo_number} — {w.project.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {selectedWo ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            
+            {/* Work Order Info Specs Card */}
+            <div className="glass-panel" style={{ padding: '1.25rem', borderRadius: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.85rem' }}>
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Work Order</span>
+                  <strong>{selectedWo.wo_number}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Project</span>
+                  <strong style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedWo.project.name}</strong>
+                </div>
+                <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
+                  <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Site Location</span>
+                  <strong>{selectedWo.project.village_name || 'N/A'}, {selectedWo.project.taluka_name || 'N/A'}, {selectedWo.project.district_name || 'N/A'}</strong>
+                </div>
+              </div>
+
+              {/* Set Machine Name Subsection */}
+              <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+                <form onSubmit={handleUpdateMachineName} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input 
+                    type="text" 
+                    className="input-field" 
+                    placeholder="Machine Name (e.g. POCLAIN-210)"
+                    value={machineName}
+                    onChange={e => setMachineName(e.target.value)}
+                    disabled={selectedWo.logs_approved}
+                    style={{ flex: 1, margin: 0, fontSize: '0.9rem', padding: '0.5rem' }}
+                    required
+                  />
+                  {!selectedWo.logs_approved && (
+                    <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                      Save
+                    </button>
+                  )}
+                </form>
+              </div>
+            </div>
+
+            {/* Add Daily Activity Log Form */}
+            {!selectedWo.logs_approved ? (
+              <div className="glass-panel" style={{ padding: '1.25rem', borderRadius: '12px' }}>
+                <h2 style={{ marginBottom: '1rem', fontWeight: 600, fontSize: '1rem' }}>Add Daily Activity Log</h2>
+                <form onSubmit={handleAddLog} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-group">
+                      <label style={{ fontSize: '0.8rem' }}>Date *</label>
+                      <input type="date" className="input-field" value={logDate} onChange={e => setLogDate(e.target.value)} required disabled />
+                    </div>
+                    <div className="form-group">
+                      <label style={{ fontSize: '0.8rem' }}>Daily Hours (Auto)</label>
+                      <input type="number" step="any" className="input-field" placeholder="Hours" value={dailyHours} readOnly style={{ fontWeight: 'bold', color: 'var(--primary)' }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-group">
+                      <label style={{ fontSize: '0.8rem' }}>Start Reading (Hrs) *</label>
+                      <input type="number" step="any" className="input-field" placeholder="e.g. 1205.5" value={startReading} onChange={e => setStartReading(e.target.value)} required />
+                    </div>
+                    <div className="form-group">
+                      <label style={{ fontSize: '0.8rem' }}>Stop Reading (Hrs) *</label>
+                      <input type="number" step="any" className="input-field" placeholder="e.g. 1213.0" value={stopReading} onChange={e => setStopReading(e.target.value)} required />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-group">
+                      <label style={{ fontSize: '0.8rem' }}>Diesel Qty (Liters)</label>
+                      <input type="number" step="any" className="input-field" placeholder="Liters" value={dieselQty} onChange={e => setDieselQty(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                      <label style={{ fontSize: '0.8rem' }}>Diesel Issued By</label>
+                      <input type="text" className="input-field" placeholder="Issuer Name" value={dieselIssuedBy} onChange={e => setDieselIssuedBy(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label style={{ fontSize: '0.8rem' }}>On-Site Photo</label>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                      <input 
+                        type="file" 
+                        ref={siteImageInputRef} 
+                        accept="image/*" 
+                        style={{ display: 'none' }} 
+                        onChange={handleSiteImageChange} 
+                      />
+                      <input 
+                        type="file" 
+                        ref={siteImageCameraInputRef} 
+                        accept="image/*" 
+                        capture="environment" 
+                        style={{ display: 'none' }} 
+                        onChange={handleSiteImageChange} 
+                      />
+                      <button 
+                        type="button" 
+                        className="btn" 
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', background: 'rgba(0,0,0,0.05)', fontSize: '0.8rem', padding: '0.65rem' }} 
+                        onClick={() => siteImageInputRef.current?.click()}
+                        disabled={isUploadingSiteImage}
+                      >
+                        <Image size={15} /> Gallery
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn" 
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', background: 'rgba(0,0,0,0.05)', fontSize: '0.8rem', padding: '0.65rem' }} 
+                        onClick={() => siteImageCameraInputRef.current?.click()}
+                        disabled={isUploadingSiteImage}
+                      >
+                        <Camera size={15} /> Camera
+                      </button>
+                    </div>
+                    {isUploadingSiteImage && (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.5rem' }}>Uploading photo...</span>
+                    )}
+                    {siteImageName && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        <span style={{ color: 'var(--secondary)', fontSize: '0.8rem', fontWeight: 600 }}>✓ site_image attached</span>
+                        <a href={getUploadUrl(siteImageName)} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'underline' }}>View Photo</a>
+                      </div>
+                    )}
+                  </div>
+
+                  <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem', width: '100%', fontSize: '0.95rem', fontWeight: 600, marginTop: '0.5rem' }}>
+                    Save Log Entry
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div style={{ background: 'rgba(16, 185, 129, 0.04)', padding: '1rem', borderRadius: '12px', borderLeft: '4px solid var(--success)', fontWeight: 600, color: 'var(--secondary)', fontSize: '0.85rem' }}>
+                ✓ Daily logs for this Work Order are approved and locked.
+              </div>
+            )}
+
+            {/* Scanned Copy Upload Section */}
+            <div className="glass-panel" style={{ padding: '1.25rem', borderRadius: '12px' }}>
+              <h3 style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.75rem' }}>Signed Sheet Scanned Copy</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Status:</span>
+                  <span className={`badge badge-${selectedWo.logs_approved ? 'success' : selectedWo.signed_logs_url ? 'warning' : 'secondary'}`} style={{ fontSize: '0.75rem', padding: '0.15rem 0.35rem' }}>
+                    {selectedWo.logs_approved ? 'APPROVED & COMPLETED' : selectedWo.signed_logs_url ? 'AWAITING APPROVAL' : 'PENDING UPLOAD'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input 
+                    type="file" 
+                    ref={logsPhotocopyInputRef} 
+                    accept="application/pdf,image/*" 
+                    style={{ display: 'none' }} 
+                    onChange={handleLogsPhotocopyChange} 
+                    disabled={selectedWo.logs_approved}
+                  />
+                  <button 
+                    type="button" 
+                    className="btn btn-primary"
+                    style={{ width: '100%', padding: '0.65rem', fontSize: '0.85rem' }}
+                    onClick={() => logsPhotocopyInputRef.current?.click()}
+                    disabled={selectedWo.logs_approved || isUploadingLogsPhotocopy}
+                  >
+                    {isUploadingLogsPhotocopy ? 'Uploading Scanned Copy...' : selectedWo.signed_logs_url ? 'Update Scanned Copy' : 'Upload Signed Sheet Photo/PDF'}
+                  </button>
+                </div>
+
+                {selectedWo.signed_logs_url && (
+                  <div style={{ background: 'rgba(79, 70, 229, 0.03)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>
+                      📂 {selectedWo.signed_logs_url}
+                    </span>
+                    <a href={getUploadUrl(selectedWo.signed_logs_url)} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: 'var(--primary)' }}>View</a>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Daily Logs Activity Log List (Card Based) */}
+            <div className="glass-panel" style={{ padding: '1.25rem', borderRadius: '12px' }}>
+              <h3 style={{ margin: 0, fontWeight: 600, fontSize: '0.95rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Daily Log History ({logsList.length})</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
+                  Total: {logsList.reduce((acc, curr) => acc + curr.daily_hours, 0).toFixed(1)} Hrs
+                </span>
+              </h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {logsList.map(log => (
+                  <div key={log.id} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'rgba(255,255,255,0.01)', position: 'relative' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{new Date(log.date).toLocaleDateString()}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.9rem' }}>{log.daily_hours} Hrs</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                      <div>Start Reading: {log.start_reading}</div>
+                      <div>Stop Reading: {log.stop_reading}</div>
+                      {log.diesel_qty !== null && <div style={{ gridColumn: '1 / -1' }}>Diesel: {log.diesel_qty} Ltrs (Issued by: {log.diesel_issued_by || 'N/A'})</div>}
+                    </div>
+                    {log.site_image_url && (
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <a href={getUploadUrl(log.site_image_url)} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'underline' }}>View Site Image</a>
+                      </div>
+                    )}
+                    {!selectedWo.logs_approved && (
+                      <button 
+                        onClick={() => handleDeleteLog(log.id)} 
+                        className="btn btn-icon" 
+                        style={{ position: 'absolute', right: '0.5rem', bottom: '0.5rem', background: 'rgba(239, 68, 68, 0.05)', color: 'var(--danger)', padding: '0.35rem', borderRadius: '4px' }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {logsList.length === 0 && (
+                  <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', margin: '1rem 0' }}>No daily logs added yet.</p>
+                )}
+              </div>
+            </div>
+
+          </div>
+        ) : (
+          <div className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)', borderRadius: '12px' }}>
+            <FileText size={40} style={{ margin: '0 auto 0.75rem', strokeWidth: 1.5 }} />
+            <p style={{ fontSize: '0.9rem' }}>Please choose a Work Order above to add daily entries.</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="main-content">
       <div className="page-header no-print">

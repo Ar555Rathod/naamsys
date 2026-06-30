@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PlusCircle, Search, FileCheck2, History, Edit3, CheckCircle, UploadCloud, Printer, XCircle, Building, User, Calendar, FileText, Trash2, Camera, Image } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import api, { getUploadUrl } from '../api';
 
 export default function WorkOrders() {
@@ -378,10 +378,96 @@ export default function WorkOrders() {
     w.vendor.company_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (currentUser?.role === 'Vendor') {
+    return (
+      <div className="main-content" style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <FileCheck2 size={24} color="var(--primary)" /> Vendor Portal
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+            Accept work orders, view logs, and track payments.
+          </p>
+        </div>
+
+        {/* Search Bar */}
+        <div className="search-bar no-print" style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-card)', padding: '0.5rem 1rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+          <Search size={18} color="var(--text-muted)" />
+          <input 
+            type="text" 
+            placeholder="Search work orders by number or project..." 
+            value={searchTerm}
+            onChange={e=>setSearchTerm(e.target.value)}
+            style={{ border: 'none', background: 'transparent', outline: 'none', color: 'var(--text-main)', width: '100%', fontFamily: 'Inter', fontSize: '0.9rem' }} 
+          />
+        </div>
+
+        {/* Mobile Cards */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {filteredWos.map(w => (
+            <div key={w.id} className="glass-panel" style={{ padding: '1.25rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Work Order Number</span>
+                  <strong style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>{w.wo_number}</strong>
+                </div>
+                <span className={`badge badge-${w.status === 'Completed' ? 'success' : w.status === 'SentToVendor' ? 'info' : 'secondary'}`} style={{ fontSize: '0.75rem', padding: '0.15rem 0.4rem' }}>
+                  {w.status === 'SentToVendor' ? 'Awaiting Signature' : w.status}
+                </span>
+              </div>
+
+              <div style={{ fontSize: '0.85rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <div>
+                  <span style={{ color: 'var(--text-muted)' }}>Project: </span>
+                  <strong>{w.project.name}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-muted)' }}>Value: </span>
+                  <strong style={{ color: 'var(--success)' }}>{w.budget_amount > 0 ? `₹${w.budget_amount.toLocaleString()}` : '—'}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-muted)' }}>Timeline: </span>
+                  <strong>{new Date(w.completion_date).toLocaleDateString()}</strong>
+                </div>
+              </div>
+
+              {/* Quick Action Buttons */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
+                <Link 
+                  to="/daily-logs"
+                  className="btn" 
+                  style={{ flex: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', background: 'rgba(16, 185, 129, 0.08)', color: 'var(--secondary)', padding: '0.55rem', fontSize: '0.8rem', fontWeight: 600, border: 'none', borderRadius: '8px', textDecoration: 'none' }}
+                >
+                  <FileText size={14} /> Enter Logs
+                </Link>
+                <button 
+                  onClick={() => handlePrint(w)}
+                  className="btn" 
+                  style={{ flex: 0.8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)', padding: '0.55rem', fontSize: '0.8rem', fontWeight: 600, border: 'none', borderRadius: '8px' }}
+                >
+                  <Printer size={14} /> Download
+                </button>
+                <button 
+                  onClick={() => handleOpenLogs(w)}
+                  className="btn" 
+                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', background: 'rgba(0,0,0,0.05)', padding: '0.55rem', fontSize: '0.8rem', fontWeight: 600, border: 'none', borderRadius: '8px' }}
+                >
+                  Accept & Upload
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {filteredWos.length === 0 && (
+            <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>No Work Orders found.</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="main-content">
-
-
       <div className="page-header no-print">
         <h1 className="page-title">Work Orders</h1>
         {currentUser?.role !== 'Vendor' && (
