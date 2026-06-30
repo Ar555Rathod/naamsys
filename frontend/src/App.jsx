@@ -54,11 +54,11 @@ function Sidebar({ onLogout }) {
             <Link to="/projects" className={`nav-link ${location.pathname === '/projects' ? 'active' : '' || location.pathname.startsWith('/projects/')}`}>
               <FolderKanban size={20} /> Projects
             </Link>
-            <Link to="/diesel" className={`nav-link ${location.pathname === '/diesel' ? 'active' : ''}`}>
-              <Fuel size={20} /> Diesel Mgmt
-            </Link>
             <Link to="/vendors" className={`nav-link ${location.pathname === '/vendors' ? 'active' : ''}`}>
               <Users size={20} /> Vendors
+            </Link>
+            <Link to="/diesel" className={`nav-link ${location.pathname === '/diesel' ? 'active' : ''}`}>
+              <Fuel size={20} /> Diesel Mgmt
             </Link>
             <Link to="/work-orders" className={`nav-link ${location.pathname === '/work-orders' ? 'active' : ''}`}>
               <FileCheck2 size={20} /> Work Orders

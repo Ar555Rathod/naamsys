@@ -181,11 +181,6 @@ export default function Diesel() {
         <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>ORGANIZATION BUDGET</span>
-            <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }} onClick={() => {
-              setEditTotalBudget(orgBudget.total_budget.toString());
-              setEditRemainingBudget(orgBudget.budget_remaining.toString());
-              setShowBudgetModal(true);
-            }}>Edit Budget</span>
           </div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>₹{orgBudget.budget_remaining.toLocaleString()}</h2>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Out of Total: ₹{orgBudget.total_budget.toLocaleString()}</span>
@@ -521,40 +516,7 @@ export default function Diesel() {
         </div>
       )}
 
-      {/* Edit Org Budget Modal */}
-      {showBudgetModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-panel" style={{ padding: '2rem', width: '400px', background: 'var(--bg-main)' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>Update Organization Budget</h3>
-            <form onSubmit={handleUpdateBudget} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div className="form-group">
-                <label>Total Budget (₹)</label>
-                <input 
-                  type="number" 
-                  value={editTotalBudget} 
-                  onChange={e=>setEditTotalBudget(e.target.value)} 
-                  className="input-field" 
-                  required 
-                />
-              </div>
-              <div className="form-group">
-                <label>Remaining Budget (₹)</label>
-                <input 
-                  type="number" 
-                  value={editRemainingBudget} 
-                  onChange={e=>setEditRemainingBudget(e.target.value)} 
-                  className="input-field" 
-                  required 
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Save Changes</button>
-                <button type="button" onClick={() => setShowBudgetModal(false)} className="btn" style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)' }}>Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
