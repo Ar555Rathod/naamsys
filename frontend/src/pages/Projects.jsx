@@ -189,15 +189,15 @@ export default function Projects() {
                 </div>
 
                 <div className="form-group">
-                  <label>District (Optional)</label>
-                  <input type="text" value={district_id} onChange={e=>setDistrictId(e.target.value)} className="input-field" placeholder="e.g. Pune" />
+                  <label>District</label>
+                  <input type="text" value={district_id} onChange={e=>setDistrictId(e.target.value)} className="input-field" placeholder="e.g. Pune" required />
                 </div>
 
                 <div className="form-group">
-                  <label>Taluka & Village (Optional)</label>
+                  <label>Taluka & Village</label>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input type="text" value={taluka_id} onChange={e=>setTalukaId(e.target.value)} className="input-field" placeholder="Taluka" style={{ flex: 1 }} />
-                    <input type="text" value={village_id} onChange={e=>setVillageId(e.target.value)} className="input-field" placeholder="Village" style={{ flex: 1 }} />
+                    <input type="text" value={taluka_id} onChange={e=>setTalukaId(e.target.value)} className="input-field" placeholder="Taluka" style={{ flex: 1 }} required />
+                    <input type="text" value={village_id} onChange={e=>setVillageId(e.target.value)} className="input-field" placeholder="Village" style={{ flex: 1 }} required />
                   </div>
                 </div>
               </div>

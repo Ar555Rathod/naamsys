@@ -59,6 +59,11 @@ router.post('/', async (req, res) => {
       admin_cost_percent = 0
     } = req.body;
 
+    // Validation for compulsory location fields
+    if (!district_id || !taluka_id || !village_id) {
+      return res.status(400).json({ error: 'District, Taluka, and Village are required compulsory fields.' });
+    }
+
     // Fetch or create locations to construct the ID and save correct associations
     let final_district_id = null;
     let final_taluka_id = null;
