@@ -58,9 +58,11 @@ function Sidebar({ onLogout }) {
             <Link to="/vendors" className={`nav-link ${location.pathname === '/vendors' ? 'active' : ''}`}>
               <Users size={20} /> Vendors
             </Link>
-            <Link to="/employees" className={`nav-link ${location.pathname === '/employees' ? 'active' : ''}`}>
-              <Users size={20} /> Employees
-            </Link>
+            {userRole === 'Admin' && (
+              <Link to="/employees" className={`nav-link ${location.pathname === '/employees' ? 'active' : ''}`}>
+                <Users size={20} /> Employees
+              </Link>
+            )}
             <Link to="/diesel" className={`nav-link ${location.pathname === '/diesel' ? 'active' : ''}`}>
               <Fuel size={20} /> Diesel Mgmt
             </Link>
@@ -162,7 +164,7 @@ function App() {
                 <Route path="/projects/:id" element={<ProjectDetails />} />
                 <Route path="/diesel" element={<Diesel />} />
                 <Route path="/vendors" element={<Vendors />} />
-                <Route path="/employees" element={<Employees />} />
+                {userRole === 'Admin' && <Route path="/employees" element={<Employees />} />}
                 <Route path="/purchase-orders" element={<PurchaseOrders />} />
                 <Route path="/invoices" element={<Invoices />} />
                 <Route path="/finance" element={<Finance />} />
