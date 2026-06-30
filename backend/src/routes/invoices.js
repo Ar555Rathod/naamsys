@@ -27,12 +27,12 @@ router.post('/', async (req, res) => {
     } = req.body;
 
     let project = null;
-    if (project_id) {
+    if (project_id && invoice_type !== 'TypeC' && invoice_type !== 'TypeD') {
       project = await prisma.project.findUnique({
         where: { id: parseInt(project_id) }
       });
       if (!project) return res.status(404).json({ error: 'Project not found' });
-    } else if (invoice_type !== 'TypeC') {
+    } else if (invoice_type !== 'TypeC' && invoice_type !== 'TypeD' && !project_id) {
       return res.status(400).json({ error: 'Project is required for this invoice type.' });
     }
 
@@ -47,6 +47,16 @@ router.post('/', async (req, res) => {
     const gst_amount = baseAmount * (gRate / 100);
     const tds_amount = baseAmount * (tRate / 100);
     const total_amount = baseAmount - tds_amount + gst_amount;
+
+    // Check central Admin Cost Pool balance for Type C and Type D
+    if (invoice_type === 'TypeC' || invoice_type === 'TypeD') {
+      const orgBudget = await prisma.organizationBudget.findFirst();
+      if (!orgBudget || orgBudget.admin_cost_pool_remaining < total_amount) {
+        return res.status(400).json({
+          error: `Insufficient central Admin Cost Pool budget. Available: ₹${orgBudget ? orgBudget.admin_cost_pool_remaining.toLocaleString() : 0}`
+        });
+      }
+    }
 
     // Enforce PO linkage if vendor_id is present
     if (vendor_id && !purchase_order_id) {
@@ -102,8 +112,7 @@ router.post('/', async (req, res) => {
 
       return res.json(invoice);
     } else if (invoice_type === 'TypeC') {
-      // General Invoice (TypeC) - Stationery, Food bills etc.
-      // Optional project_id, particulars.
+      // General Invoice (TypeC) - Stationery, Food bills etc. Billed from central admin pool
       let finalVendorId = vendor_id ? parseInt(vendor_id) : null;
       let finalPoId = purchase_order_id ? parseInt(purchase_order_id) : null;
 
@@ -115,11 +124,19 @@ router.post('/', async (req, res) => {
       }
 
       const invoice = await prisma.$transaction(async (tx) => {
+        // 1. Deduct from Admin Cost Pool
+        await tx.organizationBudget.updateMany({
+          data: {
+            admin_cost_pool_remaining: { decrement: total_amount }
+          }
+        });
+
+        // 2. Create Invoice
         const inv = await tx.invoice.create({
           data: {
             invoice_id: `GEN-${Date.now()}`,
             invoice_type,
-            project_id: project_id ? parseInt(project_id) : null,
+            project_id: null, // Decoupled from project
             vendor_id: finalVendorId,
             contractor_id: contractor_id ? parseInt(contractor_id) : null,
             purchase_order_id: finalPoId,
@@ -130,9 +147,9 @@ router.post('/', async (req, res) => {
             tds_rate: tRate,
             tds_amount,
             total_amount,
-            payment_status: 'Pending',
-            amount_paid: 0,
-            payment_date: null,
+            payment_status: 'Paid', // Pre-settled from pool
+            amount_paid: total_amount,
+            payment_date: new Date(),
             particulars: req.body.particulars || null,
             created_by: req.user.id
           }
@@ -145,7 +162,64 @@ router.post('/', async (req, res) => {
             action: 'Generate Invoice',
             module: 'Invoices',
             record_id: String(inv.id),
-            new_value: `Generated Pending General Invoice '${inv.invoice_id}'${project ? ` for project '${project.name}'` : ''} (Net Total: ₹${total_amount.toLocaleString('en-IN')}, GST: ${gRate}%, TDS: ${tRate}%, Particulars: ${req.body.particulars || 'None'})`
+            new_value: `Generated General Invoice '${inv.invoice_id}' billed from central Admin Cost Pool (Net Total: ₹${total_amount.toLocaleString('en-IN')}, GST: ${gRate}%, TDS: ${tRate}%, Particulars: ${req.body.particulars || 'None'})`
+          }
+        });
+
+        return inv;
+      });
+
+      return res.json(invoice);
+    } else if (invoice_type === 'TypeD') {
+      // Salary Invoice (TypeD) - Billed from central admin pool
+      const { employee_id, particulars } = req.body;
+      if (!employee_id) {
+        return res.status(400).json({ error: 'Employee is required for Type D salary invoices.' });
+      }
+
+      const employee = await prisma.employee.findUnique({
+        where: { id: parseInt(employee_id) }
+      });
+      if (!employee) return res.status(404).json({ error: 'Employee not found.' });
+
+      const invoice = await prisma.$transaction(async (tx) => {
+        // 1. Deduct from Admin Cost Pool
+        await tx.organizationBudget.updateMany({
+          data: {
+            admin_cost_pool_remaining: { decrement: total_amount }
+          }
+        });
+
+        // 2. Create Invoice
+        const inv = await tx.invoice.create({
+          data: {
+            invoice_id: `SAL-${Date.now()}`,
+            invoice_type,
+            project_id: null,
+            employee_id: parseInt(employee_id),
+            invoice_date: new Date(),
+            subtotal: baseAmount,
+            gst_rate: 0,
+            gst_amount: 0,
+            tds_rate: tRate,
+            tds_amount,
+            total_amount,
+            payment_status: 'Paid', // Pre-settled/paid
+            amount_paid: total_amount,
+            payment_date: new Date(),
+            particulars: particulars || `Salary payout for ${employee.full_name} (${employee.designation})`,
+            created_by: req.user.id
+          }
+        });
+
+        // Write AuditLog
+        await tx.auditLog.create({
+          data: {
+            user_id: req.user.id,
+            action: 'Generate Invoice',
+            module: 'Invoices',
+            record_id: String(inv.id),
+            new_value: `Generated Salary Invoice '${inv.invoice_id}' for employee '${employee.full_name}' billed from central Admin Cost Pool (Net Total: ₹${total_amount.toLocaleString('en-IN')})`
           }
         });
 
@@ -298,6 +372,7 @@ router.get('/', async (req, res) => {
         project: true,
         vendor: true,
         contractor: true,
+        employee: true,
         petrol_pump: {
           include: {
             fuel_company: true

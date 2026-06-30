@@ -184,6 +184,27 @@ router.post('/', async (req, res) => {
           }
         });
 
+        // Update/create OrganizationBudget admin cost pool
+        let orgBudget = await tx.organizationBudget.findFirst();
+        if (!orgBudget) {
+          await tx.organizationBudget.create({
+            data: {
+              total_budget: 0,
+              budget_remaining: 0,
+              admin_cost_pool_total: admin_cost_amount,
+              admin_cost_pool_remaining: admin_cost_amount
+            }
+          });
+        } else {
+          await tx.organizationBudget.update({
+            where: { id: orgBudget.id },
+            data: {
+              admin_cost_pool_total: { increment: admin_cost_amount },
+              admin_cost_pool_remaining: { increment: admin_cost_amount }
+            }
+          });
+        }
+
         // Write AuditLog
         await tx.auditLog.create({
           data: {
@@ -191,7 +212,7 @@ router.post('/', async (req, res) => {
             action: 'Create Project',
             module: 'Projects',
             record_id: String(p.id),
-            new_value: `Created project '${name}' (${project_id}) with budget ₹${reqBudget.toLocaleString('en-IN')}, Admin Cost: ${pPercent}% (₹${admin_cost_amount.toLocaleString('en-IN')}), Total Cost: ₹${total_cost.toLocaleString('en-IN')}`
+            new_value: `Created project '${name}' (${project_id}) with budget ₹${reqBudget.toLocaleString('en-IN')}, Admin Cost: ${pPercent}% (₹${admin_cost_amount.toLocaleString('en-IN')}) added to central pool, Total Cost: ₹${total_cost.toLocaleString('en-IN')}`
           }
         });
 

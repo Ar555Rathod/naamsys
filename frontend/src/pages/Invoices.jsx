@@ -25,6 +25,12 @@ export default function Invoices() {
   const [userRole, setUserRole] = useState('Operator');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // New employee salary & admin cost pool states
+  const [employees, setEmployees] = useState([]);
+  const [employee_id, setEmployeeId] = useState('');
+  const [month, setMonth] = useState('');
+  const [adminCostPool, setAdminCostPool] = useState({ admin_cost_pool_total: 0, admin_cost_pool_remaining: 0 });
+
   useEffect(() => {
     fetchData();
     const token = localStorage.getItem('naam_token');
@@ -54,6 +60,8 @@ export default function Invoices() {
       const vRes = await api.get('/vendors'); setVendors(vRes.data);
       const cRes = await api.get('/vendors/contractors'); setContractors(cRes.data);
       const poRes = await api.get('/purchase-orders'); setPurchaseOrders(poRes.data.filter(p => p.status === 'Completed'));
+      const empRes = await api.get('/employees'); setEmployees(empRes.data);
+      const dRes = await api.get('/diesel'); if (dRes.data.orgBudget) setAdminCostPool(dRes.data.orgBudget);
     } catch (err) {
       console.error(err);
     }
@@ -64,31 +72,30 @@ export default function Invoices() {
     try {
       await api.post('/invoices', {
         invoice_type,
-        project_id: (invoice_type === 'TypeC' && !project_id) ? null : (project_id ? parseInt(project_id) : null),
+        project_id: (invoice_type === 'TypeC' || invoice_type === 'TypeD') ? null : (project_id ? parseInt(project_id) : null),
         purchase_order_id: (invoice_type === 'TypeA' || invoice_type === 'TypeC') ? (purchase_order_id || null) : null,
         vendor_id: (invoice_type === 'TypeB' || invoice_type === 'TypeC') ? (vendor_id ? parseInt(vendor_id) : null) : null,
         contractor_id: contractor_id ? parseInt(contractor_id) : null,
+        employee_id: invoice_type === 'TypeD' ? parseInt(employee_id) : null,
         subtotal: total_amount,
-        gst_rate: parseFloat(gst_rate) || 0,
+        gst_rate: invoice_type === 'TypeD' ? 0 : parseFloat(gst_rate) || 0,
         tds_rate: parseFloat(tds_rate) || 0,
-        particulars: invoice_type === 'TypeC' ? (particulars || '') : null
+        particulars: invoice_type === 'TypeC' ? (particulars || '') : invoice_type === 'TypeD' ? `Salary for ${month}` : null
       });
       setShowForm(false);
       setTotalAmount('');
       setPurchaseOrderId('');
       setVendorId('');
       setContractorId('');
+      setEmployeeId('');
+      setMonth('');
       setGstRate('0');
       setTdsRate('0');
       setParticulars('');
       fetchData();
       alert('Invoice processed successfully!');
     } catch (err) {
-      if (err.response && err.response.status === 400) {
-        alert(err.response.data.error);
-      } else {
-        alert('Failed to process invoice');
-      }
+      alert(err.response?.data?.error || 'Failed to create invoice');
     }
   };
 
@@ -125,13 +132,15 @@ export default function Invoices() {
     const vendor = vendors.find(v => v.id === inv.vendor_id);
     const contractor = contractors.find(c => c.id === inv.contractor_id);
     const purchase_order = purchaseOrders.find(p => p.id === inv.purchase_order_id) || inv.purchase_order;
+    const employee = employees.find(e => e.id === inv.employee_id) || inv.employee;
     
     return {
       ...inv,
       project,
       vendor,
       contractor,
-      purchase_order
+      purchase_order,
+      employee
     };
   };
 
@@ -169,13 +178,20 @@ export default function Invoices() {
           <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             <div className="form-group">
               <label>Invoice Type</label>
-              <select value={invoice_type} onChange={e=>setInvoiceType(e.target.value)} className="input-field">
+              <select value={invoice_type} onChange={e=>{
+                setInvoiceType(e.target.value);
+                setProjectId('');
+                setTotalAmount('');
+                setEmployeeId('');
+                setMonth('');
+              }} className="input-field">
                 <option value="TypeA">Type A (Payable to Contractor/Vendor via PO)</option>
                 <option value="TypeB">Type B (Receivable from CSR/Govt)</option>
-                <option value="TypeC">Type C (General Invoice - Stationery, Food, etc.)</option>
+                <option value="TypeC">Type C (General Expense - Stationery, Food, etc.)</option>
+                <option value="TypeD">Type D (Employee Salary)</option>
               </select>
             </div>
-             {invoice_type !== 'TypeC' && (
+             {(invoice_type !== 'TypeC' && invoice_type !== 'TypeD') && (
                <div className="form-group">
                  <label>Project</label>
                  <select value={project_id} onChange={e=>setProjectId(e.target.value)} className="input-field" required>
@@ -278,6 +294,38 @@ export default function Invoices() {
                 </div>
               </>
             )}
+
+            {invoice_type === 'TypeD' && (
+              <>
+                <div className="form-group">
+                  <label>Select Employee *</label>
+                  <select value={employee_id} onChange={e=>{
+                    setEmployeeId(e.target.value);
+                    const emp = employees.find(emp => emp.id === parseInt(e.target.value));
+                    if (emp) {
+                      setTotalAmount(emp.salary_amount.toString());
+                    }
+                  }} className="input-field" required>
+                    <option value="">-- Select Employee --</option>
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.employee_id} - {emp.full_name} ({emp.designation})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Salary Month / Period *</label>
+                  <input type="text" value={month} onChange={e=>setMonth(e.target.value)} className="input-field" placeholder="e.g. June 2026" required />
+                </div>
+              </>
+            )}
+
+            {(invoice_type === 'TypeC' || invoice_type === 'TypeD') && (
+              <div className="form-group" style={{ gridColumn: '1 / -1', background: 'rgba(79, 70, 229, 0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
+                <p style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: 500 }}>
+                  Funding Pool: Centralized Admin Cost Pool remaining balance is <strong>₹{adminCostPool.admin_cost_pool_remaining.toLocaleString()}</strong>.
+                </p>
+              </div>
+            )}
             
             <div className="form-group">
               <label>Subtotal / Base Amount (₹)</label>
@@ -369,13 +417,13 @@ export default function Invoices() {
                      </div>
                      {inv.creator && <small style={{color:'var(--text-muted)', fontSize: '0.7rem', display: 'block', marginTop: '0.15rem'}}>By: {inv.creator.name}</small>}
                    </td>
-                  <td>{inv.project?.project_id}</td>
+                  <td>{inv.project?.project_id || 'N/A (Admin Pool)'}</td>
                   <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {inv.petrol_pump?.name || inv.purchase_order?.vendor?.company_name || inv.vendor?.company_name || inv.contractor?.full_name || 'N/A'}
+                    {inv.employee ? `${inv.employee.full_name} (${inv.employee.designation})` : (inv.petrol_pump?.name || inv.purchase_order?.vendor?.company_name || inv.vendor?.company_name || inv.contractor?.full_name || 'N/A')}
                   </td>
                   <td>
-                    <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? 'badge badge-danger' : 'badge badge-info') : 'badge badge-success'} style={{ background: inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)') : undefined, color: inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? '#ef4444' : '#3b82f6') : undefined }}>
-                      {inv.invoice_type === 'TypeA' ? 'Payable (PO)' : inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? 'Diesel' : 'General Expense') : 'Receivable'}
+                    <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? 'badge badge-danger' : 'badge badge-info') : inv.invoice_type === 'TypeD' ? 'badge badge-success' : 'badge badge-success'} style={{ background: inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)') : inv.invoice_type === 'TypeD' ? 'rgba(16, 185, 129, 0.15)' : undefined, color: inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? '#ef4444' : '#3b82f6') : inv.invoice_type === 'TypeD' ? '#10b981' : undefined }}>
+                      {inv.invoice_type === 'TypeA' ? 'Payable (PO)' : inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? 'Diesel' : 'General Expense') : inv.invoice_type === 'TypeD' ? 'Salary' : 'Receivable'}
                     </span>
                   </td>
                   <td>₹{inv.total_amount.toLocaleString('en-IN')}</td>
@@ -465,8 +513,18 @@ export default function Invoices() {
               {/* Invoice Specifics Info */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem' }}>
                 <div>
-                  <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Billed From (Contractor / Vendor / Petrol Pump):</h4>
-                  {(modalDetails.invoice_type === 'TypeA' || modalDetails.invoice_type === 'TypeC') ? (
+                  <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Billed From (Contractor / Vendor / Petrol Pump / Employee):</h4>
+                  {modalDetails.invoice_type === 'TypeD' ? (
+                    <div style={{ fontSize: '0.875rem' }}>
+                      <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{modalDetails.employee?.full_name} (Employee)</strong>
+                      <p style={{ color: '#475569', marginTop: '0.25rem' }}>
+                        Designation: {modalDetails.employee?.designation}<br />
+                        Phone: {modalDetails.employee?.phone || 'N/A'}<br />
+                        Email: {modalDetails.employee?.email || 'N/A'}<br />
+                        Bank A/C: {modalDetails.employee?.account_number ? `${modalDetails.employee.bank_name} - ${modalDetails.employee.account_number}` : 'N/A'}
+                      </p>
+                    </div>
+                  ) : (modalDetails.invoice_type === 'TypeA' || modalDetails.invoice_type === 'TypeC') ? (
                     <div style={{ fontSize: '0.875rem' }}>
                       <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{modalDetails.petrol_pump?.name || modalDetails.vendor?.company_name || modalDetails.purchase_order?.vendor?.company_name || modalDetails.contractor?.full_name || 'Individual Contractor'}</strong>
                       <p style={{ color: '#475569', marginTop: '0.25rem' }}>
@@ -490,7 +548,11 @@ export default function Invoices() {
                 <div>
                   <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Billed To / Project Context:</h4>
                   <div style={{ fontSize: '0.875rem' }}>
-                    <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>Project: {modalDetails.project ? modalDetails.project.project_id : 'N/A (General Business Expense)'}</strong>
+                    <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>
+                      {modalDetails.invoice_type === 'TypeC' || modalDetails.invoice_type === 'TypeD' 
+                        ? 'Project: N/A (Centralized Admin Cost Pool)' 
+                        : `Project: ${modalDetails.project ? modalDetails.project.project_id : 'N/A (General Business Expense)'}`}
+                    </strong>
                     {modalDetails.project ? (
                       <p style={{ color: '#475569', marginTop: '0.25rem' }}>
                         Name: {modalDetails.project.name}<br />

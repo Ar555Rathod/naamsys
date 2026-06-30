@@ -385,6 +385,10 @@ model Invoice {
   petrol_pump_id     Int?
   petrol_pump        PetrolPump?   @relation(fields: [petrol_pump_id], references: [id])
 
+  // Employee relationship for TypeD invoices
+  employee_id        Int?
+  employee           Employee?     @relation(fields: [employee_id], references: [id])
+
   line_items InvoiceLineItem[]
 }
 
@@ -392,6 +396,7 @@ enum InvoiceType {
   TypeA
   TypeB
   TypeC
+  TypeD
 }
 
 enum PaymentStatus {
@@ -561,10 +566,28 @@ model DieselDeposit {
 }
 
 model OrganizationBudget {
-  id               Int      @id @default(autoincrement())
-  total_budget     Float    @default(0)
-  budget_remaining Float    @default(0)
-  updated_at       DateTime @updatedAt
+  id                        Int      @id @default(autoincrement())
+  total_budget              Float    @default(0)
+  budget_remaining          Float    @default(0)
+  admin_cost_pool_total     Float    @default(0)
+  admin_cost_pool_remaining Float    @default(0)
+  updated_at                DateTime @updatedAt
+}
+
+model Employee {
+  id             Int       @id @default(autoincrement())
+  employee_id    String    @unique
+  full_name      String
+  email          String?
+  phone          String?
+  designation    String
+  salary_amount  Float
+  bank_name      String?
+  account_number String?
+  ifsc           String?
+  created_at     DateTime  @default(now())
+
+  invoices       Invoice[]
 }
 
 
