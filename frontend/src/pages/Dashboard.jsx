@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [workOrders, setWorkOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [adminCostPool, setAdminCostPool] = useState({ admin_cost_pool_total: 0, admin_cost_pool_remaining: 0 });
 
   useEffect(() => {
     fetchData();
@@ -22,6 +23,7 @@ export default function Dashboard() {
       const iRes = await api.get('/invoices'); setInvoices(iRes.data);
       const poRes = await api.get('/purchase-orders'); setPurchaseOrders(poRes.data);
       const woRes = await api.get('/work-orders'); setWorkOrders(woRes.data);
+      const dRes = await api.get('/diesel'); if (dRes.data.orgBudget) setAdminCostPool(dRes.data.orgBudget);
     } catch (err) {
       console.error('Failed to fetch dashboard data', err);
     }
@@ -57,10 +59,13 @@ export default function Dashboard() {
           </span>
         </div>
         <div className="glass-panel summary-card" style={{ borderLeft: '4px solid #3b82f6' }}>
-          <span className="label">Active Vendors</span>
-          <span className="value" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Users size={22} color="#3b82f6" /> {vendors.length}
+          <span className="label">Central Admin Cost Pool</span>
+          <span className="value" style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+            ₹{adminCostPool.admin_cost_pool_remaining.toLocaleString()}
           </span>
+          <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem', display: 'block', marginTop: '0.25rem' }}>
+            Earned: ₹{adminCostPool.admin_cost_pool_total.toLocaleString()} total pool
+          </small>
         </div>
         <div className="glass-panel summary-card" style={{ background: 'rgba(16, 185, 129, 0.05)', borderLeft: '4px solid var(--success)' }}>
           <span className="label" style={{ color: 'var(--success)' }}>Total Remaining Budget</span>
