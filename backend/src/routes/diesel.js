@@ -235,18 +235,14 @@ router.post('/deposit', async (req, res) => {
   }
 });
 
-// Draw diesel (Vendor OTP verification)
+// Draw diesel (Deduct fuel amount and create invoice)
 router.post('/draw', async (req, res) => {
   try {
-    const { petrol_pump_id, project_id, vendor_id, amount, otp_code } = req.body;
+    const { petrol_pump_id, project_id, vendor_id, amount } = req.body;
     const drawAmt = parseFloat(amount);
 
     if (isNaN(drawAmt) || drawAmt <= 0) {
       return res.status(400).json({ error: 'Amount must be greater than zero.' });
-    }
-
-    if (!otp_code) {
-      return res.status(400).json({ error: 'OTP code is required to complete transaction.' });
     }
 
     // Load Petrol Pump & Company
@@ -307,7 +303,7 @@ router.post('/draw', async (req, res) => {
           payment_status: 'Paid', // Pre-settled from deposits
           amount_paid: drawAmt,
           payment_date: new Date(),
-          particulars: `Diesel drawn by vendor from Petrol Pump: ${pump.name} under ${pump.fuel_company.name} tieup (OTP Verified: ${otp_code})`,
+          particulars: `Diesel drawn by vendor from Petrol Pump: ${pump.name} under ${pump.fuel_company.name} tieup`,
           created_by: req.user.id
         }
       });

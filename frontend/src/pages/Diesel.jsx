@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Fuel, Landmark, ArrowUpRight, ArrowDownLeft, AlertCircle, PlusCircle, CreditCard, Key, ShieldCheck, CheckCircle2, HelpCircle } from 'lucide-react';
+import { Fuel, Landmark, ArrowUpRight, ArrowDownLeft, AlertCircle, PlusCircle, CreditCard, CheckCircle2, HelpCircle } from 'lucide-react';
 import api from '../api';
 
 export default function Diesel() {
@@ -32,11 +32,6 @@ export default function Diesel() {
   const [drawProjectId, setDrawProjectId] = useState('');
   const [drawVendorId, setDrawVendorId] = useState('');
   const [drawAmount, setDrawAmount] = useState('');
-  const [drawOtp, setDrawOtp] = useState('');
-  
-  // OTP Simulation States
-  const [simulatedOtp, setSimulatedOtp] = useState('');
-  const [otpGenerated, setOtpGenerated] = useState(false);
 
   // Edit Org Budget Modal State
   const [showBudgetModal, setShowBudgetModal] = useState(false);
@@ -129,8 +124,8 @@ export default function Diesel() {
 
   const handleDraw = async (e) => {
     e.preventDefault();
-    if (!drawPumpId || !drawProjectId || !drawAmount || !drawOtp) {
-      alert('All fields including OTP are required');
+    if (!drawPumpId || !drawProjectId || !drawAmount) {
+      alert('All fields are required');
       return;
     }
     try {
@@ -138,16 +133,12 @@ export default function Diesel() {
         petrol_pump_id: parseInt(drawPumpId),
         project_id: parseInt(drawProjectId),
         vendor_id: drawVendorId ? parseInt(drawVendorId) : null,
-        amount: parseFloat(drawAmount),
-        otp_code: drawOtp
+        amount: parseFloat(drawAmount)
       });
       setDrawPumpId('');
       setDrawProjectId('');
       setDrawVendorId('');
       setDrawAmount('');
-      setDrawOtp('');
-      setSimulatedOtp('');
-      setOtpGenerated(false);
       fetchData();
       alert('Diesel drawn successfully! Invoices generated and balances updated.');
     } catch (err) {
@@ -426,36 +417,8 @@ export default function Diesel() {
                 />
               </div>
 
-              {/* Simulated OTP Section */}
-              <div style={{ padding: '1rem', borderRadius: '8px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <label style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Key size={14} /> OTP Verification Code
-                  </label>
-                  <button type="button" onClick={generateSimulatedOtp} className="btn" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', background: 'var(--primary-light)', color: 'var(--primary)' }}>
-                    Simulate OTP Send
-                  </button>
-                </div>
-                
-                {otpGenerated && (
-                  <div style={{ marginBottom: '0.75rem', padding: '0.5rem', background: 'rgba(16, 185, 129, 0.05)', color: 'var(--success)', fontSize: '0.8rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <ShieldCheck size={14} /> Simulated OTP sent to vendor: <strong>{simulatedOtp}</strong>
-                  </div>
-                )}
-
-                <input 
-                  type="text" 
-                  value={drawOtp} 
-                  onChange={e=>setDrawOtp(e.target.value)} 
-                  className="input-field" 
-                  placeholder="Enter the 6-digit OTP code" 
-                  maxLength={6}
-                  required 
-                />
-              </div>
-
               <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem 1.5rem', fontWeight: 600 }}>
-                Verify & Draw Diesel <ArrowDownLeft size={16} />
+                Record Diesel Draw <ArrowDownLeft size={16} />
               </button>
             </form>
           </div>
