@@ -367,6 +367,12 @@ router.get('/:id', async (req, res) => {
                 vendor: true,
                 contractor: true
               }
+            },
+            vendor: true,
+            petrol_pump: {
+              include: {
+                fuel_company: true
+              }
             }
           },
           orderBy: { id: 'desc' }

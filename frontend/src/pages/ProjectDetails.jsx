@@ -564,14 +564,16 @@ export default function ProjectDetails() {
                           <strong>{inv.purchase_order.vendor.company_name}</strong>
                         ) : 'Payable'
                       ) : inv.invoice_type === 'TypeC' ? (
-                        inv.vendor ? (
+                        inv.petrol_pump ? (
+                          <strong>{inv.petrol_pump.name}</strong>
+                        ) : inv.vendor ? (
                           <strong>{inv.vendor.company_name}</strong>
                         ) : 'General Expense'
                       ) : 'NAAM Foundation'}
                     </td>
                     <td>
-                      <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : inv.invoice_type === 'TypeC' ? 'badge badge-info' : 'badge badge-success'} style={{fontSize: '0.75rem', padding: '0.15rem 0.4rem', background: inv.invoice_type === 'TypeC' ? 'rgba(59, 130, 246, 0.15)' : undefined, color: inv.invoice_type === 'TypeC' ? '#3b82f6' : undefined}}>
-                        {inv.invoice_type === 'TypeA' ? 'Payable' : inv.invoice_type === 'TypeC' ? 'General' : 'Receivable'}
+                      <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? 'badge badge-danger' : 'badge badge-info') : 'badge badge-success'} style={{fontSize: '0.75rem', padding: '0.15rem 0.4rem', background: inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)') : undefined, color: inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? '#ef4444' : '#3b82f6') : undefined}}>
+                        {inv.invoice_type === 'TypeA' ? 'Payable' : inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? 'Diesel' : 'General') : 'Receivable'}
                       </span>
                     </td>
                     <td style={{fontSize: '0.8rem', fontWeight: 600}}>₹{inv.total_amount.toLocaleString()}</td>

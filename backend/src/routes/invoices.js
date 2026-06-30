@@ -298,6 +298,11 @@ router.get('/', async (req, res) => {
         project: true,
         vendor: true,
         contractor: true,
+        petrol_pump: {
+          include: {
+            fuel_company: true
+          }
+        },
         purchase_order: {
           include: {
             vendor: true,

@@ -371,11 +371,11 @@ export default function Invoices() {
                    </td>
                   <td>{inv.project?.project_id}</td>
                   <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {inv.purchase_order?.vendor?.company_name || inv.vendor?.company_name || inv.contractor?.full_name || 'N/A'}
+                    {inv.petrol_pump?.name || inv.purchase_order?.vendor?.company_name || inv.vendor?.company_name || inv.contractor?.full_name || 'N/A'}
                   </td>
                   <td>
-                    <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : inv.invoice_type === 'TypeC' ? 'badge badge-info' : 'badge badge-success'} style={{ background: inv.invoice_type === 'TypeC' ? 'rgba(59, 130, 246, 0.15)' : undefined, color: inv.invoice_type === 'TypeC' ? '#3b82f6' : undefined }}>
-                      {inv.invoice_type === 'TypeA' ? 'Payable (PO)' : inv.invoice_type === 'TypeC' ? 'General Expense' : 'Receivable'}
+                    <span className={inv.invoice_type === 'TypeA' ? 'badge badge-warning' : inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? 'badge badge-danger' : 'badge badge-info') : 'badge badge-success'} style={{ background: inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)') : undefined, color: inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? '#ef4444' : '#3b82f6') : undefined }}>
+                      {inv.invoice_type === 'TypeA' ? 'Payable (PO)' : inv.invoice_type === 'TypeC' ? (inv.petrol_pump ? 'Diesel' : 'General Expense') : 'Receivable'}
                     </span>
                   </td>
                   <td>₹{inv.total_amount.toLocaleString('en-IN')}</td>
@@ -465,15 +465,15 @@ export default function Invoices() {
               {/* Invoice Specifics Info */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem' }}>
                 <div>
-                  <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Billed From (Contractor / Vendor):</h4>
+                  <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Billed From (Contractor / Vendor / Petrol Pump):</h4>
                   {(modalDetails.invoice_type === 'TypeA' || modalDetails.invoice_type === 'TypeC') ? (
                     <div style={{ fontSize: '0.875rem' }}>
-                      <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{modalDetails.vendor?.company_name || modalDetails.purchase_order?.vendor?.company_name || modalDetails.contractor?.full_name || 'Individual Contractor'}</strong>
+                      <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{modalDetails.petrol_pump?.name || modalDetails.vendor?.company_name || modalDetails.purchase_order?.vendor?.company_name || modalDetails.contractor?.full_name || 'Individual Contractor'}</strong>
                       <p style={{ color: '#475569', marginTop: '0.25rem' }}>
-                        Owner: {modalDetails.vendor?.owner_name || modalDetails.purchase_order?.vendor?.owner_name || 'N/A'}<br />
-                        PAN Number: {modalDetails.vendor?.pan || modalDetails.purchase_order?.vendor?.pan || 'N/A'}<br />
-                        GSTIN: {modalDetails.vendor?.gst || modalDetails.purchase_order?.vendor?.gst || 'N/A'}<br />
-                        Contact: {modalDetails.vendor?.contact || modalDetails.purchase_order?.vendor?.contact || 'N/A'}
+                        Owner/Parent: {modalDetails.petrol_pump?.fuel_company?.name || modalDetails.vendor?.owner_name || modalDetails.purchase_order?.vendor?.owner_name || 'N/A'}<br />
+                        PAN Number: {modalDetails.petrol_pump?.pan || modalDetails.vendor?.pan || modalDetails.purchase_order?.vendor?.pan || 'N/A'}<br />
+                        GSTIN: {modalDetails.petrol_pump?.gst || modalDetails.vendor?.gst || modalDetails.purchase_order?.vendor?.gst || 'N/A'}<br />
+                        Contact: {modalDetails.petrol_pump?.contact || modalDetails.vendor?.contact || modalDetails.purchase_order?.vendor?.contact || 'N/A'}
                       </p>
                     </div>
                   ) : (
