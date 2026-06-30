@@ -235,10 +235,51 @@ export default function ProjectDetails() {
           {/* Funding Source Card */}
           <div className="glass-panel" style={{ padding: '2rem' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Landmark size={18} color="var(--primary)" /> Funding Source Allocation
+              <Landmark size={18} color="var(--primary)" /> Funding Partner & Costs
             </h2>
             
-            {project.funding_sources && project.funding_sources.length > 0 ? (
+            {project.funding_name ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '0.9rem' }}>
+                <div>
+                  <span style={{ fontSize: '0.7rem', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '4px', textTransform: 'uppercase' }}>
+                    {project.funding_type} Partner
+                  </span>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.5rem', marginBottom: '0.5rem' }}>{project.funding_name}</h3>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1rem', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+                  {project.funding_type === 'INDIVIDUAL' && (
+                    <div>PAN: <strong style={{color: 'var(--text-main)'}}>{project.funding_pan || '—'}</strong></div>
+                  )}
+                  {project.funding_type === 'GOVT' && (
+                    <div>Govt Dept/Scheme: <strong style={{color: 'var(--text-main)'}}>{project.funding_govt_dept || '—'}</strong></div>
+                  )}
+                  <div>Contact Person: <strong style={{color: 'var(--text-main)'}}>{project.funding_contact_person || '—'}</strong></div>
+                  <div>Email: <strong style={{color: 'var(--text-main)'}}>{project.funding_email || '—'}</strong></div>
+                  <div>Phone: <strong style={{color: 'var(--text-main)'}}>{project.funding_phone || '—'}</strong></div>
+                  {project.funding_mou_pdf && (
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      MoU Agreement: <a href={`/uploads/${project.funding_mou_pdf}`} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }}>View / Download MoU PDF</a>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(79, 70, 229, 0.02)', padding: '1rem', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Project Budget:</span>
+                    <strong style={{ color: 'var(--text-main)' }}>₹{project.budget.toLocaleString()}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Admin Cost ({project.admin_cost_percent}%):</span>
+                    <strong style={{ color: 'var(--primary)' }}>₹{project.admin_cost_amount.toLocaleString()}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                    <span style={{ fontWeight: 600 }}>Total Project Cost:</span>
+                    <strong style={{ color: '#10b981', fontSize: '1rem' }}>₹{project.total_cost.toLocaleString()}</strong>
+                  </div>
+                </div>
+              </div>
+            ) : project.funding_sources && project.funding_sources.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {project.funding_sources.map((src, index) => {
                   const contributionPercent = project.budget > 0 ? (src.amount / project.budget) * 100 : 0;

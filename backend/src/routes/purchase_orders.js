@@ -147,6 +147,16 @@ router.post('/', async (req, res) => {
     const vendor_id = wo.vendor_id;
     const contractor_id = wo.contractor_id;
 
+    const existingActivePo = await prisma.purchaseOrder.findFirst({
+      where: {
+        project_id: parseInt(project_id),
+        is_active: true
+      }
+    });
+    if (existingActivePo) {
+      return res.status(400).json({ error: `A Purchase Order already exists for this project (${existingActivePo.po_number}). Only one Purchase Order is allowed per project.` });
+    }
+
     const newPo = await prisma.$transaction(async (tx) => {
       // Count unique po_numbers to generate sequential number
       const uniqueOrders = await tx.purchaseOrder.groupBy({

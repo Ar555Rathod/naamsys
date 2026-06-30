@@ -48,6 +48,11 @@ router.post('/', async (req, res) => {
     const tds_amount = baseAmount * (tRate / 100);
     const total_amount = baseAmount - tds_amount + gst_amount;
 
+    // Enforce PO linkage if vendor_id is present
+    if (vendor_id && !purchase_order_id) {
+      return res.status(400).json({ error: 'Invoice Blocked: Invoices billed to a vendor must be linked to a Purchase Order (PO).' });
+    }
+
     if (invoice_type === 'TypeA') {
       if (!purchase_order_id) {
         return res.status(400).json({ error: 'Invoice Blocked: A Purchase Order (PO) must be linked.' });
@@ -98,9 +103,15 @@ router.post('/', async (req, res) => {
       return res.json(invoice);
     } else if (invoice_type === 'TypeC') {
       // General Invoice (TypeC) - Stationery, Food bills etc.
-      // Requires: vendor_id, subtotal. Optional: project_id, particulars.
-      if (!vendor_id) {
-        return res.status(400).json({ error: 'Invoice Blocked: A Vendor must be selected.' });
+      // Optional project_id, particulars.
+      let finalVendorId = vendor_id ? parseInt(vendor_id) : null;
+      let finalPoId = purchase_order_id ? parseInt(purchase_order_id) : null;
+
+      if (finalPoId) {
+        const po = await prisma.purchaseOrder.findUnique({ where: { id: finalPoId } });
+        if (po) {
+          finalVendorId = po.vendor_id;
+        }
       }
 
       const invoice = await prisma.$transaction(async (tx) => {
@@ -109,8 +120,9 @@ router.post('/', async (req, res) => {
             invoice_id: `GEN-${Date.now()}`,
             invoice_type,
             project_id: project_id ? parseInt(project_id) : null,
-            vendor_id: parseInt(vendor_id),
+            vendor_id: finalVendorId,
             contractor_id: contractor_id ? parseInt(contractor_id) : null,
+            purchase_order_id: finalPoId,
             invoice_date: new Date(),
             subtotal: baseAmount,
             gst_rate: gRate,

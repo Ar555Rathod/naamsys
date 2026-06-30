@@ -160,6 +160,16 @@ router.post('/', async (req, res) => {
   try {
     const { project_id, vendor_id, contractor_id, work_description, completion_date, budget_amount, status } = req.body;
     
+    const existingActiveWo = await prisma.workOrder.findFirst({
+      where: {
+        project_id: parseInt(project_id),
+        is_active: true
+      }
+    });
+    if (existingActiveWo) {
+      return res.status(400).json({ error: `A Work Order already exists for this project (${existingActiveWo.wo_number}). Only one Work Order is allowed per project.` });
+    }
+
     const newWo = await prisma.$transaction(async (tx) => {
       // Count unique wo_numbers to generate sequential number
       const uniqueOrders = await tx.workOrder.groupBy({

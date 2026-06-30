@@ -175,6 +175,19 @@ model Project {
   created_by         Int
   created_at         DateTime @default(now())
 
+  // Unified registration details
+  funding_type            SourceType?
+  funding_name            String?
+  funding_pan             String?
+  funding_govt_dept       String?
+  funding_contact_person  String?
+  funding_email           String?
+  funding_phone           String?
+  funding_mou_pdf         String?
+  admin_cost_percent      Float       @default(0)
+  admin_cost_amount       Float       @default(0)
+  total_cost              Float       @default(0)
+
   vendor_projects VendorProject[]
   contractor_assignments ContractorAssignment[]
   wccs Wcc[]
@@ -368,6 +381,10 @@ model Invoice {
   working_sheet      WorkingSheet? @relation(fields: [working_sheet_id], references: [id])
   particulars        String?       @db.Text
 
+  // Diesel Petrol Pump link
+  petrol_pump_id     Int?
+  petrol_pump        PetrolPump?   @relation(fields: [petrol_pump_id], references: [id])
+
   line_items InvoiceLineItem[]
 }
 
@@ -505,6 +522,49 @@ model ProjectFunding {
   individual_donor    IndividualDonor? @relation(fields: [individual_donor_id], references: [id], onDelete: Restrict)
   amount              Float
   created_at          DateTime         @default(now())
+}
+
+model FuelCompany {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  total_deposited Float    @default(0)
+  balance         Float    @default(0)
+  created_at      DateTime @default(now())
+
+  petrol_pumps    PetrolPump[]
+  deposits        DieselDeposit[]
+}
+
+model PetrolPump {
+  id              Int      @id @default(autoincrement())
+  pump_id         String   @unique
+  name            String
+  gst             String?
+  pan             String?
+  contact         String?
+  address         String?
+  fuel_company_id Int
+  fuel_company    FuelCompany @relation(fields: [fuel_company_id], references: [id], onDelete: Restrict)
+  created_at      DateTime @default(now())
+
+  invoices        Invoice[]
+}
+
+model DieselDeposit {
+  id              Int      @id @default(autoincrement())
+  fuel_company_id Int
+  fuel_company    FuelCompany @relation(fields: [fuel_company_id], references: [id], onDelete: Restrict)
+  amount          Float
+  deposit_date    DateTime @default(now())
+  remarks         String?
+  created_by      Int
+}
+
+model OrganizationBudget {
+  id               Int      @id @default(autoincrement())
+  total_budget     Float    @default(0)
+  budget_remaining Float    @default(0)
+  updated_at       DateTime @updatedAt
 }
 
 

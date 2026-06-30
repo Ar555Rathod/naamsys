@@ -64,10 +64,10 @@ export default function Invoices() {
     try {
       await api.post('/invoices', {
         invoice_type,
-        project_id: invoice_type === 'TypeC' ? null : (project_id ? parseInt(project_id) : null),
-        purchase_order_id: invoice_type === 'TypeA' ? (purchase_order_id || null) : null,
-        vendor_id: (invoice_type === 'TypeB' || invoice_type === 'TypeC') ? (vendor_id || null) : null,
-        contractor_id: contractor_id || null,
+        project_id: (invoice_type === 'TypeC' && !project_id) ? null : (project_id ? parseInt(project_id) : null),
+        purchase_order_id: (invoice_type === 'TypeA' || invoice_type === 'TypeC') ? (purchase_order_id || null) : null,
+        vendor_id: (invoice_type === 'TypeB' || invoice_type === 'TypeC') ? (vendor_id ? parseInt(vendor_id) : null) : null,
+        contractor_id: contractor_id ? parseInt(contractor_id) : null,
         subtotal: total_amount,
         gst_rate: parseFloat(gst_rate) || 0,
         tds_rate: parseFloat(tds_rate) || 0,
@@ -246,12 +246,32 @@ export default function Invoices() {
             {invoice_type === 'TypeC' && (
               <>
                 <div className="form-group">
-                  <label>Vendor / Agency</label>
-                  <select value={vendor_id} onChange={e=>setVendorId(e.target.value)} className="input-field" required>
-                    <option value="">-- Select Vendor --</option>
+                  <label>Vendor / Agency (Optional - Required to link PO if selected)</label>
+                  <select value={vendor_id} onChange={e=>{
+                    setVendorId(e.target.value);
+                    setPurchaseOrderId('');
+                  }} className="input-field">
+                    <option value="">-- No Vendor --</option>
                     {vendors.map(v => <option key={v.id} value={v.id}>{v.company_name}</option>)}
                   </select>
                 </div>
+                {vendor_id && (
+                  <div className="form-group">
+                    <label>Linked Purchase Order (Required for Vendor Invoice)</label>
+                    <select value={purchase_order_id} onChange={e=>{
+                      setPurchaseOrderId(e.target.value);
+                      const selectedPo = purchaseOrders.find(p => p.id === parseInt(e.target.value));
+                      if (selectedPo) {
+                        setTotalAmount(selectedPo.total_amount.toString());
+                      }
+                    }} className="input-field" required>
+                      <option value="">-- Select Completed PO --</option>
+                      {purchaseOrders.filter(p => p.vendor_id.toString() === vendor_id.toString()).map(p => (
+                        <option key={p.id} value={p.id}>{p.po_number} (A{p.version}) - ₹{p.total_amount.toLocaleString()}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                   <label>Particulars ( Stationery details, Food details, etc. )</label>
                   <input type="text" value={particulars} onChange={e=>setParticulars(e.target.value)} className="input-field" placeholder="E.g. Stationary bill, Catering charges for site meet" required />

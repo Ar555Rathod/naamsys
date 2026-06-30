@@ -52,18 +52,12 @@ router.post('/', async (req, res) => {
       district_id, taluka_id, village_id, 
       source_type, csr_id, govt_work_order_id, individual_donor_id,
       funding_sources, // Array of { source_type, id, amount }
-      proposal_id, financial_year_id, start_date, end_date, proposal_pdf
+      proposal_id, financial_year_id, start_date, end_date, proposal_pdf,
+      // New Unified Registration fields
+      funding_type, funding_name, funding_pan, funding_govt_dept,
+      funding_contact_person, funding_email, funding_phone, funding_mou_pdf,
+      admin_cost_percent = 0
     } = req.body;
-
-    // Backward compatibility for single funding source requests
-    let final_funding_sources = funding_sources;
-    if (!final_funding_sources && source_type) {
-      final_funding_sources = [{
-        source_type,
-        id: source_type === 'CSR' ? csr_id : source_type === 'GOVT' ? govt_work_order_id : individual_donor_id,
-        amount: parseFloat(budget)
-      }];
-    }
 
     // Fetch or create locations to construct the ID and save correct associations
     let final_district_id = null;
@@ -143,6 +137,73 @@ router.post('/', async (req, res) => {
     const reqBudget = parseFloat(budget);
     if (isNaN(reqBudget) || reqBudget <= 0) {
       return res.status(400).json({ error: 'Project budget must be greater than zero.' });
+    }
+
+    // Unified Path
+    if (funding_type) {
+      const pPercent = parseFloat(admin_cost_percent) || 0;
+      const admin_cost_amount = reqBudget * (pPercent / 100);
+      const total_cost = reqBudget + admin_cost_amount;
+
+      const project = await prisma.$transaction(async (tx) => {
+        const p = await tx.project.create({
+          data: {
+            project_id,
+            name,
+            budget: reqBudget,
+            budget_remaining: reqBudget,
+            type_of_work,
+            sub_type,
+            source_type: funding_type,
+            proposal_id,
+            proposal_pdf: proposal_pdf || null,
+            financial_year_id: financial_year_id ? parseInt(financial_year_id) : null,
+            start_date: start_date ? new Date(start_date) : null,
+            end_date: end_date ? new Date(end_date) : null,
+            district_id: final_district_id,
+            taluka_id: final_taluka_id,
+            village_id: final_village_id,
+            created_by: req.user.id,
+            // Unified Fields
+            funding_type,
+            funding_name,
+            funding_pan: funding_pan || null,
+            funding_govt_dept: funding_govt_dept || null,
+            funding_contact_person: funding_contact_person || null,
+            funding_email: funding_email || null,
+            funding_phone: funding_phone || null,
+            funding_mou_pdf: funding_mou_pdf || null,
+            admin_cost_percent: pPercent,
+            admin_cost_amount,
+            total_cost
+          }
+        });
+
+        // Write AuditLog
+        await tx.auditLog.create({
+          data: {
+            user_id: req.user.id,
+            action: 'Create Project',
+            module: 'Projects',
+            record_id: String(p.id),
+            new_value: `Created project '${name}' (${project_id}) with budget ₹${reqBudget.toLocaleString('en-IN')}, Admin Cost: ${pPercent}% (₹${admin_cost_amount.toLocaleString('en-IN')}), Total Cost: ₹${total_cost.toLocaleString('en-IN')}`
+          }
+        });
+
+        return p;
+      });
+
+      return res.status(201).json(project);
+    }
+
+    // Legacy Path
+    let final_funding_sources = funding_sources;
+    if (!final_funding_sources && source_type) {
+      final_funding_sources = [{
+        source_type,
+        id: source_type === 'CSR' ? csr_id : source_type === 'GOVT' ? govt_work_order_id : individual_donor_id,
+        amount: parseFloat(budget)
+      }];
     }
 
     if (!final_funding_sources || final_funding_sources.length === 0) {

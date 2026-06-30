@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, FolderKanban, FileText, Settings as SettingsIcon, LogOut, Building, Landmark, FileSpreadsheet, FileCheck2, Receipt, Database } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, FileText, Settings as SettingsIcon, LogOut, Building, Landmark, FileSpreadsheet, FileCheck2, Receipt, Database, Fuel } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import Vendors from './pages/Vendors';
 import Invoices from './pages/Invoices';
-import CsrManagement from './pages/CsrManagement';
-import GovtSchemes from './pages/GovtSchemes';
 import Reports from './pages/Reports';
 import WorkOrders from './pages/WorkOrders';
 import PurchaseOrders from './pages/PurchaseOrders';
 import ProjectDetails from './pages/ProjectDetails';
-import Donors from './pages/Donors';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
 import ResetPassword from './pages/ResetPassword';
 import Finance from './pages/Finance';
 import Backup from './pages/Backup';
 import DailyLogs from './pages/DailyLogs';
+import Diesel from './pages/Diesel';
 
 function Sidebar({ onLogout }) {
   const location = useLocation();
@@ -56,14 +54,8 @@ function Sidebar({ onLogout }) {
             <Link to="/projects" className={`nav-link ${location.pathname === '/projects' ? 'active' : '' || location.pathname.startsWith('/projects/')}`}>
               <FolderKanban size={20} /> Projects
             </Link>
-            <Link to="/csr" className={`nav-link ${location.pathname === '/csr' ? 'active' : ''}`}>
-              <Building size={20} /> CSR Partners
-            </Link>
-            <Link to="/govt" className={`nav-link ${location.pathname === '/govt' ? 'active' : ''}`}>
-              <Landmark size={20} /> Govt Schemes
-            </Link>
-            <Link to="/donors" className={`nav-link ${location.pathname === '/donors' ? 'active' : ''}`}>
-              <Users size={20} /> Individual Donors
+            <Link to="/diesel" className={`nav-link ${location.pathname === '/diesel' ? 'active' : ''}`}>
+              <Fuel size={20} /> Diesel Mgmt
             </Link>
             <Link to="/vendors" className={`nav-link ${location.pathname === '/vendors' ? 'active' : ''}`}>
               <Users size={20} /> Vendors
@@ -164,14 +156,12 @@ function App() {
               <>
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:id" element={<ProjectDetails />} />
+                <Route path="/diesel" element={<Diesel />} />
                 <Route path="/vendors" element={<Vendors />} />
                 <Route path="/purchase-orders" element={<PurchaseOrders />} />
                 <Route path="/invoices" element={<Invoices />} />
                 <Route path="/finance" element={<Finance />} />
                 <Route path="/backup" element={<Backup />} />
-                <Route path="/csr" element={<CsrManagement />} />
-                <Route path="/donors" element={<Donors />} />
-                <Route path="/govt" element={<GovtSchemes />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/settings" element={<Settings />} />
               </>
