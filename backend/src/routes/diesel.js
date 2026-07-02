@@ -125,6 +125,43 @@ router.post('/companies', async (req, res) => {
   }
 });
 
+// Update an existing Fuel Company
+router.put('/companies/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { name, bank_name, branch, account_no, ifsc, pan, address } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name is required' });
+
+    const company = await prisma.fuelCompany.update({
+      where: { id },
+      data: { 
+        name, 
+        bank_name,
+        branch,
+        account_no,
+        ifsc,
+        pan,
+        address
+      }
+    });
+
+    // Write Audit Log
+    await prisma.auditLog.create({
+      data: {
+        user_id: req.user.id,
+        action: 'Update Fuel Company',
+        module: 'Diesel',
+        record_id: String(company.id),
+        new_value: `Updated Fuel Company tieup: ${name}`
+      }
+    });
+
+    res.json(company);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update fuel company', details: error.message });
+  }
+});
+
 // List all Petrol Pumps
 router.get('/pumps', async (req, res) => {
   try {

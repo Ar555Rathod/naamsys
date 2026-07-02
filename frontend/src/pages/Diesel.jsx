@@ -50,6 +50,17 @@ export default function Diesel() {
   const [editTotalBudget, setEditTotalBudget] = useState('');
   const [editRemainingBudget, setEditRemainingBudget] = useState('');
 
+  // Edit Company Modal State
+  const [showEditCompanyModal, setShowEditCompanyModal] = useState(false);
+  const [editCompanyId, setEditCompanyId] = useState('');
+  const [editCompanyName, setEditCompanyName] = useState('');
+  const [editCompanyBankName, setEditCompanyBankName] = useState('');
+  const [editCompanyBankBranch, setEditCompanyBankBranch] = useState('');
+  const [editCompanyAddress, setEditCompanyAddress] = useState('');
+  const [editCompanyIfsc, setEditCompanyIfsc] = useState('');
+  const [editCompanyAccountNo, setEditCompanyAccountNo] = useState('');
+  const [editCompanyPan, setEditCompanyPan] = useState('');
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -93,6 +104,27 @@ export default function Diesel() {
       alert('Fuel Company tieup registered successfully!');
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to register fuel company');
+    }
+  };
+
+  const handleUpdateCompany = async (e) => {
+    e.preventDefault();
+    if (!editCompanyName.trim()) return;
+    try {
+      await api.put(`/diesel/companies/${editCompanyId}`, {
+        name: editCompanyName,
+        bank_name: editCompanyBankName,
+        branch: editCompanyBankBranch,
+        address: editCompanyAddress,
+        ifsc: editCompanyIfsc,
+        account_no: editCompanyAccountNo,
+        pan: editCompanyPan
+      });
+      setShowEditCompanyModal(false);
+      fetchData();
+      alert('Fuel Company details updated successfully!');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update company details');
     }
   };
 
@@ -340,9 +372,36 @@ export default function Diesel() {
                         {c.bank_name ? `${c.bank_name} (${c.account_no})` : 'N/A'} {c.pan ? `| PAN: ${c.pan}` : ''}
                       </td>
                       <td>
-                        <button className="btn" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
-                          View Withdrawals
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button 
+                            className="btn" 
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCompanyId(c.id);
+                            }}
+                          >
+                            View Withdrawals
+                          </button>
+                          <button 
+                            className="btn" 
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditCompanyId(c.id);
+                              setEditCompanyName(c.name);
+                              setEditCompanyBankName(c.bank_name || '');
+                              setEditCompanyBankBranch(c.branch || '');
+                              setEditCompanyAddress(c.address || '');
+                              setEditCompanyIfsc(c.ifsc || '');
+                              setEditCompanyAccountNo(c.account_no || '');
+                              setEditCompanyPan(c.pan || '');
+                              setShowEditCompanyModal(true);
+                            }}
+                          >
+                            Edit
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -839,8 +898,95 @@ export default function Diesel() {
                 <div style={{ textAlign: 'center', width: '200px', borderTop: '1px solid #000', paddingTop: '8px' }}>
                   Authorized Signatory (Admin)
                 </div>
-              </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Company Details Modal */}
+      {showEditCompanyModal && (
+        <div className="modal-overlay no-print" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '2rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Landmark size={20} color="var(--primary)" /> Edit Fuel Company Details
+              </h3>
+              <button onClick={() => setShowEditCompanyModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                <XCircle size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateCompany} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label>Fuel Company Name *</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={editCompanyName} 
+                  onChange={e => setEditCompanyName(e.target.value)} 
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Bank Name</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={editCompanyBankName} 
+                  onChange={e => setEditCompanyBankName(e.target.value)} 
+                />
+              </div>
+              <div className="form-group">
+                <label>Bank Branch</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={editCompanyBankBranch} 
+                  onChange={e => setEditCompanyBankBranch(e.target.value)} 
+                />
+              </div>
+              <div className="form-group">
+                <label>IFSC Code</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={editCompanyIfsc} 
+                  onChange={e => setEditCompanyIfsc(e.target.value)} 
+                />
+              </div>
+              <div className="form-group">
+                <label>Account Number</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={editCompanyAccountNo} 
+                  onChange={e => setEditCompanyAccountNo(e.target.value)} 
+                />
+              </div>
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label>PAN Card Details</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={editCompanyPan} 
+                  onChange={e => setEditCompanyPan(e.target.value)} 
+                />
+              </div>
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label>Corporate Address</label>
+                <textarea 
+                  className="input-field" 
+                  rows="2" 
+                  value={editCompanyAddress} 
+                  onChange={e => setEditCompanyAddress(e.target.value)} 
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+              <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 2rem' }}>Save Changes</button>
+                <button type="button" className="btn" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)' }} onClick={() => setShowEditCompanyModal(false)}>Cancel</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
