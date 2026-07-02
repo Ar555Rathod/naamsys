@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Fuel, Landmark, ArrowUpRight, ArrowDownLeft, AlertCircle, PlusCircle, CreditCard, CheckCircle2, HelpCircle } from 'lucide-react';
+import { Fuel, Landmark, ArrowUpRight, ArrowDownLeft, AlertCircle, PlusCircle, CreditCard, CheckCircle2, HelpCircle, FileText, Download, Printer, XCircle } from 'lucide-react';
 import api from '../api';
 
 export default function Diesel() {
@@ -13,8 +13,18 @@ export default function Diesel() {
   const [orgBudget, setOrgBudget] = useState({ total_budget: 0, budget_remaining: 0 });
   const [invoices, setInvoices] = useState([]);
 
+  // Selected company drilldown for withdrawals
+  const [selectedCompanyId, setSelectedCompanyId] = useState(null);
+
   // Form States
   const [newCompanyName, setNewCompanyName] = useState('');
+  const [newCompanyBankName, setNewCompanyBankName] = useState('');
+  const [newCompanyBankBranch, setNewCompanyBankBranch] = useState('');
+  const [newCompanyAddress, setNewCompanyAddress] = useState('');
+  const [newCompanyIfsc, setNewCompanyIfsc] = useState('');
+  const [newCompanyAccountNo, setNewCompanyAccountNo] = useState('');
+  const [newCompanyPan, setNewCompanyPan] = useState('');
+
   const [newPumpName, setNewPumpName] = useState('');
   const [newPumpGst, setNewPumpGst] = useState('');
   const [newPumpPan, setNewPumpPan] = useState('');
@@ -26,6 +36,8 @@ export default function Diesel() {
   const [depositCompanyId, setDepositCompanyId] = useState('');
   const [depositAmount, setDepositAmount] = useState('');
   const [depositRemarks, setDepositRemarks] = useState('');
+  const [depositDate, setDepositDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDepositToPrint, setSelectedDepositToPrint] = useState(null);
 
   // Draw Form States
   const [drawPumpId, setDrawPumpId] = useState('');
@@ -61,8 +73,22 @@ export default function Diesel() {
     e.preventDefault();
     if (!newCompanyName.trim()) return;
     try {
-      await api.post('/diesel/companies', { name: newCompanyName });
+      await api.post('/diesel/companies', { 
+        name: newCompanyName,
+        bank_name: newCompanyBankName,
+        branch: newCompanyBankBranch,
+        address: newCompanyAddress,
+        ifsc: newCompanyIfsc,
+        account_no: newCompanyAccountNo,
+        pan: newCompanyPan
+      });
       setNewCompanyName('');
+      setNewCompanyBankName('');
+      setNewCompanyBankBranch('');
+      setNewCompanyAddress('');
+      setNewCompanyIfsc('');
+      setNewCompanyAccountNo('');
+      setNewCompanyPan('');
       fetchData();
       alert('Fuel Company tieup registered successfully!');
     } catch (err) {
@@ -101,25 +127,28 @@ export default function Diesel() {
       return;
     }
     try {
-      await api.post('/diesel/deposit', {
+      const res = await api.post('/diesel/deposit', {
         fuel_company_id: parseInt(depositCompanyId),
         amount: parseFloat(depositAmount),
-        remarks: depositRemarks
+        remarks: depositRemarks,
+        deposit_date: depositDate
       });
+      // Set the deposit details for printing bank sheet directly
+      const fuelCompanyObj = companies.find(c => c.id === parseInt(depositCompanyId));
+      setSelectedDepositToPrint({
+        ...res.data,
+        fuel_company: fuelCompanyObj
+      });
+
       setDepositCompanyId('');
       setDepositAmount('');
       setDepositRemarks('');
+      setDepositDate(new Date().toISOString().split('T')[0]);
       fetchData();
-      alert('Funds deposited successfully! Balance updated.');
+      alert('Funds deposited and Bank Sheet generated successfully!');
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to deposit funds');
     }
-  };
-
-  const generateSimulatedOtp = () => {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setSimulatedOtp(code);
-    setOtpGenerated(true);
   };
 
   const handleDraw = async (e) => {
@@ -146,20 +175,65 @@ export default function Diesel() {
     }
   };
 
-  const handleUpdateBudget = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post('/diesel/budget', {
-        total_budget: parseFloat(editTotalBudget),
-        budget_remaining: parseFloat(editRemainingBudget)
-      });
-      setShowBudgetModal(false);
-      fetchData();
-      alert('Organization budget updated successfully!');
-    } catch (err) {
-      alert('Failed to update budget');
+  const handleExportWithdrawalsExcel = (company) => {
+    const companyWithdrawals = invoices.filter(inv => {
+      const pumpObj = pumps.find(p => p.id === inv.petrol_pump_id);
+      return pumpObj && pumpObj.fuel_company_id === company.id;
+    });
+
+    if (companyWithdrawals.length === 0) {
+      alert('No withdrawals to export.');
+      return;
     }
+
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">`;
+    html += `<head><meta charset="utf-8" /><style>table { border-collapse: collapse; } th { background-color: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1; } td { border: 1px solid #cbd5e1; }</style></head>`;
+    html += `<body>`;
+    html += `<h2>DIESEL WITHDRAWALS REPORT: ${company.name}</h2>`;
+    html += `<p>Generated Date: ${new Date().toLocaleDateString()}</p>`;
+    html += `<table>`;
+    html += `<thead><tr><th>Sr No.</th><th>Transaction ID</th><th>Petrol Pump</th><th>Project</th><th>Vendor</th><th>Date</th><th>Amount (₹)</th></tr></thead>`;
+    html += `<tbody>`;
+
+    companyWithdrawals.forEach((inv, index) => {
+      const pumpName = pumps.find(p => p.id === inv.petrol_pump_id)?.name || 'N/A';
+      const vendorName = vendors.find(v => v.id === inv.vendor_id)?.company_name || 'N/A';
+      html += `<tr>`;
+      html += `<td>${index + 1}</td>`;
+      html += `<td>${inv.invoice_id}</td>`;
+      html += `<td>${pumpName}</td>`;
+      html += `<td>${inv.project?.project_id || 'N/A'}</td>`;
+      html += `<td>${vendorName}</td>`;
+      html += `<td>${new Date(inv.invoice_date).toLocaleDateString()}</td>`;
+      html += `<td>${inv.total_amount}</td>`;
+      html += `</tr>`;
+    });
+
+    const totalDrawAmt = companyWithdrawals.reduce((sum, inv) => sum + inv.total_amount, 0);
+    html += `<tr style="font-weight: bold;"><td colspan="6" style="text-align: right;">Total Withdrawals:</td><td>₹${totalDrawAmt}</td></tr>`;
+    html += `</tbody></table></body></html>`;
+
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Diesel_Withdrawals_${company.name}_${new Date().toISOString().split('T')[0]}.xls`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
+
+  const handleExportWithdrawalsPDF = (company) => {
+    window.print();
+  };
+
+  const selectedCompany = companies.find(c => c.id === selectedCompanyId);
+  const selectedCompanyWithdrawals = selectedCompany
+    ? invoices.filter(inv => {
+        const pumpObj = pumps.find(p => p.id === inv.petrol_pump_id);
+        return pumpObj && pumpObj.fuel_company_id === selectedCompany.id;
+      })
+    : [];
 
   // Calculations
   const totalPrepaidReserves = companies.reduce((sum, c) => sum + c.balance, 0);
@@ -200,7 +274,7 @@ export default function Diesel() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '2rem' }}>
+      <div className="no-print" style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '2rem' }}>
         <button 
           onClick={() => setActiveTab('overview')} 
           style={{ background: 'transparent', border: 'none', color: activeTab === 'overview' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'overview' ? '2px solid var(--primary)' : 'none', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.95rem' }}
@@ -240,22 +314,36 @@ export default function Diesel() {
                   <th>Prepaid Balance</th>
                   <th>Cumulative Deposits</th>
                   <th>Associated Petrol Pumps</th>
+                  <th>Bank Details / PAN</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {companies.length === 0 ? (
                   <tr>
-                    <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                    <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
                       No fuel companies registered yet. Go to "Register Fuel Tieups" to get started.
                     </td>
                   </tr>
                 ) : (
                   companies.map(c => (
-                    <tr key={c.id}>
+                    <tr 
+                      key={c.id} 
+                      onClick={() => setSelectedCompanyId(c.id)}
+                      style={{ cursor: 'pointer', background: selectedCompanyId === c.id ? 'rgba(79, 70, 229, 0.05)' : undefined }}
+                    >
                       <td style={{ fontWeight: 600 }}>{c.name}</td>
                       <td style={{ color: 'var(--primary)', fontWeight: 700 }}>₹{c.balance.toLocaleString()}</td>
                       <td>₹{c.total_deposited.toLocaleString()}</td>
                       <td>{c.petrol_pumps?.length || 0} Pumps</td>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {c.bank_name ? `${c.bank_name} (${c.account_no})` : 'N/A'} {c.pan ? `| PAN: ${c.pan}` : ''}
+                      </td>
+                      <td>
+                        <button className="btn" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
+                          View Withdrawals
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -263,42 +351,116 @@ export default function Diesel() {
             </table>
           </div>
 
-          {/* Transactions/Draw ledger */}
-          <div className="glass-panel" style={{ padding: '1.5rem' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-main)' }}>Recent Diesel Withdrawals</h2>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Transaction ID</th>
-                  <th>Project</th>
-                  <th>Petrol Pump</th>
-                  <th>Amount</th>
-                  <th>Date</th>
-                  <th>Remarks / Logs</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.length === 0 ? (
+          {/* Drilldown Withdrawals ledger */}
+          {selectedCompany && (
+            <div className="glass-panel print-full-height print-no-border" style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }} className="no-print">
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                  Withdrawals from {selectedCompany.name}
+                </h2>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => handleExportWithdrawalsExcel(selectedCompany)} className="btn" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', fontSize: '0.8rem', background: '#10b981', color: 'white' }}>
+                    <Download size={14} /> Export Excel
+                  </button>
+                  <button onClick={() => handleExportWithdrawalsPDF(selectedCompany)} className="btn btn-primary" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', fontSize: '0.8rem' }}>
+                    <Printer size={14} /> Print PDF
+                  </button>
+                </div>
+              </div>
+
+              {/* Printable Header */}
+              <div className="only-print" style={{ borderBottom: '2px solid #000', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold' }}>NAAM FOUNDATION</h2>
+                <h3 style={{ fontSize: '14px', color: '#555' }}>Diesel Withdrawal Report: {selectedCompany.name}</h3>
+                <span style={{ fontSize: '12px' }}>Generated Date: {new Date().toLocaleDateString()}</span>
+              </div>
+
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
-                      No diesel draw transactions recorded yet.
-                    </td>
+                    <th>Transaction ID</th>
+                    <th>Project</th>
+                    <th>Petrol Pump</th>
+                    <th>Vendor</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Remarks</th>
                   </tr>
-                ) : (
-                  invoices.map(inv => (
-                    <tr key={inv.id}>
-                      <td style={{ fontWeight: 600 }}>{inv.invoice_id}</td>
-                      <td>{inv.project?.project_id || '—'}</td>
-                      <td>{pumps.find(p => p.id === inv.petrol_pump_id)?.name || 'Petrol Pump'}</td>
-                      <td style={{ fontWeight: 600, color: 'var(--danger)' }}>- ₹{inv.total_amount.toLocaleString()}</td>
-                      <td>{new Date(inv.invoice_date).toLocaleDateString()}</td>
-                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{inv.particulars}</td>
+                </thead>
+                <tbody>
+                  {selectedCompanyWithdrawals.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                        No withdrawals recorded for this fuel company.
+                      </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    selectedCompanyWithdrawals.map(inv => (
+                      <tr key={inv.id}>
+                        <td style={{ fontWeight: 600 }}>{inv.invoice_id}</td>
+                        <td>{inv.project?.project_id || '—'}</td>
+                        <td>{pumps.find(p => p.id === inv.petrol_pump_id)?.name || 'Petrol Pump'}</td>
+                        <td>{vendors.find(v => v.id === inv.vendor_id)?.company_name || '—'}</td>
+                        <td style={{ fontWeight: 600, color: 'var(--danger)' }}>- ₹{inv.total_amount.toLocaleString()}</td>
+                        <td>{new Date(inv.invoice_date).toLocaleDateString()}</td>
+                        <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{inv.particulars}</td>
+                      </tr>
+                    ))
+                  )}
+                  {selectedCompanyWithdrawals.length > 0 && (
+                    <tr style={{ fontWeight: 'bold', background: 'rgba(0,0,0,0.02)' }}>
+                      <td colSpan="4" style={{ textAlign: 'right' }}>Total Withdrawals:</td>
+                      <td style={{ color: 'var(--danger)' }}>
+                        - ₹{selectedCompanyWithdrawals.reduce((sum, inv) => sum + inv.total_amount, 0).toLocaleString()}
+                      </td>
+                      <td colSpan="2"></td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              {/* Show cumulative deposits too */}
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginTop: '2rem', marginBottom: '1rem' }} className="no-print">
+                Deposits Record (Cumulative)
+              </h3>
+              <table className="data-table no-print">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Remarks</th>
+                    <th>Bank Sheet</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {!selectedCompany.deposits || selectedCompany.deposits.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '1rem' }}>No deposits yet.</td>
+                    </tr>
+                  ) : (
+                    selectedCompany.deposits.map(dep => (
+                      <tr key={dep.id}>
+                        <td>{new Date(dep.deposit_date).toLocaleDateString()}</td>
+                        <td style={{ fontWeight: 600, color: 'var(--success)' }}>+ ₹{dep.amount.toLocaleString()}</td>
+                        <td>{dep.remarks}</td>
+                        <td>
+                          {dep.bank_sheet_no ? (
+                            <button 
+                              onClick={() => setSelectedDepositToPrint({ ...dep, fuel_company: selectedCompany })}
+                              className="btn" 
+                              style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', fontSize: '0.75rem', padding: '0.2rem 0.5rem', background: 'rgba(79, 70, 229, 0.08)' }}
+                            >
+                              <FileText size={12} /> View Bank Sheet
+                            </button>
+                          ) : '—'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -320,6 +482,17 @@ export default function Diesel() {
                   <option value="">-- Select Company --</option>
                   {companies.map(c => <option key={c.id} value={c.id}>{c.name} (Balance: ₹{c.balance.toLocaleString()})</option>)}
                 </select>
+              </div>
+
+              <div className="form-group">
+                <label>Deposit Date (Custom)</label>
+                <input 
+                  type="date" 
+                  value={depositDate} 
+                  onChange={e=>setDepositDate(e.target.value)} 
+                  className="input-field" 
+                  required 
+                />
               </div>
 
               <div className="form-group">
@@ -452,6 +625,73 @@ export default function Diesel() {
                   required 
                 />
               </div>
+
+              <div className="form-group">
+                <label>Bank Name</label>
+                <input 
+                  type="text" 
+                  value={newCompanyBankName} 
+                  onChange={e=>setNewCompanyBankName(e.target.value)} 
+                  className="input-field" 
+                  placeholder="e.g. State Bank of India" 
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Bank Branch</label>
+                <input 
+                  type="text" 
+                  value={newCompanyBankBranch} 
+                  onChange={e=>setNewCompanyBankBranch(e.target.value)} 
+                  className="input-field" 
+                  placeholder="e.g. Pune Main Branch" 
+                />
+              </div>
+
+              <div className="form-group">
+                <label>IFSC Code</label>
+                <input 
+                  type="text" 
+                  value={newCompanyIfsc} 
+                  onChange={e=>setNewCompanyIfsc(e.target.value)} 
+                  className="input-field" 
+                  placeholder="e.g. SBIN0001234" 
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Account Number</label>
+                <input 
+                  type="text" 
+                  value={newCompanyAccountNo} 
+                  onChange={e=>setNewCompanyAccountNo(e.target.value)} 
+                  className="input-field" 
+                  placeholder="e.g. 12345678901" 
+                />
+              </div>
+
+              <div className="form-group">
+                <label>PAN Details</label>
+                <input 
+                  type="text" 
+                  value={newCompanyPan} 
+                  onChange={e=>setNewCompanyPan(e.target.value)} 
+                  className="input-field" 
+                  placeholder="e.g. ABCDE1234F" 
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Address</label>
+                <input 
+                  type="text" 
+                  value={newCompanyAddress} 
+                  onChange={e=>setNewCompanyAddress(e.target.value)} 
+                  className="input-field" 
+                  placeholder="Company office address" 
+                />
+              </div>
+
               <button type="submit" className="btn btn-primary" style={{ alignSelf: 'start' }}>Register Company</button>
             </form>
           </div>
@@ -516,7 +756,94 @@ export default function Diesel() {
         </div>
       )}
 
+      {/* PRINTABLE BANK SHEET FOR DEPOSIT MODAL */}
+      {selectedDepositToPrint && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '750px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'white' }}>
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+              <span style={{ fontWeight: 600, color: '#1f2937' }}>Prepaid Diesel Deposit Bank Release Sheet</span>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button onClick={() => window.print()} className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
+                  <Printer size={16} /> Print Sheet
+                </button>
+                <button onClick={() => setSelectedDepositToPrint(null)} className="btn btn-danger" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
+                  Close
+                </button>
+              </div>
+            </div>
 
+            <div id="printable-deposit-bank-sheet" style={{ padding: '2rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
+              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <h1 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>NAAM FOUNDATION</h1>
+                  <p style={{ fontSize: '11px', color: '#555', margin: '4px 0 0 0' }}>Prepaid Diesel Deposit Bank Remittance Order</p>
+                </div>
+                <div style={{ textAlign: 'right', fontSize: '11px' }}>
+                  <strong>Sheet No:</strong> {selectedDepositToPrint.bank_sheet_no || 'N/A'}<br />
+                  <strong>Date:</strong> {new Date(selectedDepositToPrint.deposit_date).toLocaleDateString()}
+                </div>
+              </div>
+
+              <p style={{ fontSize: '12px', lineHeight: 1.6 }}>
+                To,<br />
+                The Branch Manager,<br />
+                State Bank of India (NAAM Foundation Corporate Account)<br />
+                Pune, Maharashtra.
+              </p>
+
+              <p style={{ fontSize: '12px', lineHeight: 1.6, margin: '1rem 0' }}>
+                Please authorize the release of prepaid diesel funds for the registered fuel company tie-up listed below. Deduct the specified amount from the NAAM Foundation budget reserve and credit to the beneficiary's corporate bank account.
+              </p>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1.5rem 0', fontSize: '11px' }}>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px', fontWeight: 'bold', width: '200px' }}>Beneficiary Fuel Company</td>
+                    <td style={{ padding: '8px' }}>{selectedDepositToPrint.fuel_company?.name}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px', fontWeight: 'bold' }}>Bank Name</td>
+                    <td style={{ padding: '8px' }}>{selectedDepositToPrint.fuel_company?.bank_name || 'N/A'}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px', fontWeight: 'bold' }}>Bank Branch</td>
+                    <td style={{ padding: '8px' }}>{selectedDepositToPrint.fuel_company?.branch || 'N/A'}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px', fontWeight: 'bold' }}>Account Number</td>
+                    <td style={{ padding: '8px', fontFamily: 'monospace' }}>{selectedDepositToPrint.fuel_company?.account_no || 'N/A'}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px', fontWeight: 'bold' }}>IFSC Code</td>
+                    <td style={{ padding: '8px', fontFamily: 'monospace' }}>{selectedDepositToPrint.fuel_company?.ifsc || 'N/A'}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px', fontWeight: 'bold' }}>PAN Number</td>
+                    <td style={{ padding: '8px', fontFamily: 'monospace' }}>{selectedDepositToPrint.fuel_company?.pan || 'N/A'}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '2px solid #0f172a', background: '#f8fafc' }}>
+                    <td style={{ padding: '8px', fontWeight: 'bold', fontSize: '12px' }}>Total Payout Amount</td>
+                    <td style={{ padding: '8px', fontWeight: 'bold', fontSize: '12px', color: '#4f46e5' }}>₹{selectedDepositToPrint.amount?.toLocaleString('en-IN')}.00</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p style={{ fontSize: '11px', color: '#666', fontStyle: 'italic', marginTop: '1rem' }}>
+                Remarks: {selectedDepositToPrint.remarks || 'No remarks provided'}
+              </p>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4rem', fontSize: '12px' }}>
+                <div style={{ textAlign: 'center', width: '200px', borderTop: '1px solid #000', paddingTop: '8px' }}>
+                  Prepared By (Operator)
+                </div>
+                <div style={{ textAlign: 'center', width: '200px', borderTop: '1px solid #000', paddingTop: '8px' }}>
+                  Authorized Signatory (Admin)
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

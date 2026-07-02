@@ -30,6 +30,8 @@ const modelMapping = {
   purchaseOrders: 'purchaseOrder',
   workingSheets: 'workingSheet',
   bankStatements: 'bankStatement',
+  fuelCompanies: 'fuelCompany',
+  dieselDeposits: 'dieselDeposit',
   auditLogs: 'auditLog'
 };
 
@@ -45,6 +47,8 @@ router.get('/stats', async (req, res) => {
       purchaseOrders: { count: await prisma.purchaseOrder.count(), label: 'Purchase Orders' },
       workingSheets: { count: await prisma.workingSheet.count(), label: 'Working Sheets' },
       bankStatements: { count: await prisma.bankStatement.count(), label: 'Bank Statements' },
+      fuelCompanies: { count: await prisma.fuelCompany.count(), label: 'Fuel Tieups' },
+      dieselDeposits: { count: await prisma.dieselDeposit.count(), label: 'Diesel Deposits' },
       auditLogs: { count: await prisma.auditLog.count(), label: 'Audit Logs' }
     };
     res.json(stats);
@@ -112,8 +116,13 @@ router.get('/table/:tableName', async (req, res) => {
         include: { working_sheet: { include: { invoices: true } } },
         orderBy: { id: 'desc' }
       });
+    } else if (tableName === 'dieselDeposits') {
+      records = await prisma.dieselDeposit.findMany({
+        include: { fuel_company: true },
+        orderBy: { id: 'desc' }
+      });
     } else {
-      // Default query for vendors, contractors, auditLogs
+      // Default query for vendors, contractors, auditLogs, fuelCompanies
       records = await prisma[prismaModel].findMany({
         orderBy: { id: 'desc' }
       });

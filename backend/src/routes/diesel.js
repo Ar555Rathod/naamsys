@@ -80,7 +80,7 @@ router.post('/budget', async (req, res) => {
 router.get('/companies', async (req, res) => {
   try {
     const companies = await prisma.fuelCompany.findMany({
-      include: { petrol_pumps: true }
+      include: { petrol_pumps: true, deposits: true }
     });
     res.json(companies);
   } catch (error) {
@@ -91,11 +91,21 @@ router.get('/companies', async (req, res) => {
 // Create a new Fuel Company
 router.post('/companies', async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, bank_name, branch, account_no, ifsc, pan, address } = req.body;
     if (!name) return res.status(400).json({ error: 'Name is required' });
 
     const company = await prisma.fuelCompany.create({
-      data: { name, balance: 0, total_deposited: 0 }
+      data: { 
+        name, 
+        balance: 0, 
+        total_deposited: 0,
+        bank_name,
+        branch,
+        account_no,
+        ifsc,
+        pan,
+        address
+      }
     });
 
     // Write Audit Log
@@ -168,7 +178,7 @@ router.post('/pumps', async (req, res) => {
 // Deposit money to a Fuel Company
 router.post('/deposit', async (req, res) => {
   try {
-    const { fuel_company_id, amount, remarks } = req.body;
+    const { fuel_company_id, amount, remarks, deposit_date } = req.body;
     const depAmount = parseFloat(amount);
 
     if (isNaN(depAmount) || depAmount <= 0) {
@@ -205,12 +215,17 @@ router.post('/deposit', async (req, res) => {
         }
       });
 
+      // Generate a bank sheet no for the authorized deposit
+      const bankSheetNo = `FDS-${Date.now()}`;
+
       // Create deposit record
       const dep = await tx.dieselDeposit.create({
         data: {
           fuel_company_id: parseInt(fuel_company_id),
           amount: depAmount,
+          deposit_date: deposit_date ? new Date(deposit_date) : new Date(),
           remarks: remarks || 'Deposit to pre-paid reserves',
+          bank_sheet_no: bankSheetNo,
           created_by: req.user.id
         }
       });

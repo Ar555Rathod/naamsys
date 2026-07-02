@@ -296,7 +296,7 @@ export default function DailyLogs() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div className="form-group">
                       <label style={{ fontSize: '0.8rem' }}>Date *</label>
-                      <input type="date" className="input-field" value={logDate} onChange={e => setLogDate(e.target.value)} required disabled />
+                      <input type="date" className="input-field" value={logDate} onChange={e => setLogDate(e.target.value)} required />
                     </div>
                     <div className="form-group">
                       <label style={{ fontSize: '0.8rem' }}>Daily Hours (Auto)</label>

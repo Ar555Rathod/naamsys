@@ -11,6 +11,8 @@ export default function Invoices() {
   const [vendors, setVendors] = useState([]);
   const [contractors, setContractors] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [workOrders, setWorkOrders] = useState([]);
+  const [work_order_id, setWorkOrderId] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   const [invoice_type, setInvoiceType] = useState('TypeA');
@@ -60,6 +62,7 @@ export default function Invoices() {
       const vRes = await api.get('/vendors'); setVendors(vRes.data);
       const cRes = await api.get('/vendors/contractors'); setContractors(cRes.data);
       const poRes = await api.get('/purchase-orders'); setPurchaseOrders(poRes.data.filter(p => p.status === 'Completed'));
+      const woRes = await api.get('/work-orders'); setWorkOrders(woRes.data.filter(w => w.status === 'Approved' || w.status === 'Completed'));
       const empRes = await api.get('/employees'); setEmployees(empRes.data);
       const dRes = await api.get('/diesel'); if (dRes.data.orgBudget) setAdminCostPool(dRes.data.orgBudget);
     } catch (err) {
@@ -74,6 +77,7 @@ export default function Invoices() {
         invoice_type,
         project_id: (invoice_type === 'TypeC' || invoice_type === 'TypeD') ? null : (project_id ? parseInt(project_id) : null),
         purchase_order_id: (invoice_type === 'TypeA' || invoice_type === 'TypeC') ? (purchase_order_id || null) : null,
+        work_order_id: invoice_type === 'TypeA' ? (work_order_id || null) : null,
         vendor_id: (invoice_type === 'TypeB' || invoice_type === 'TypeC') ? (vendor_id ? parseInt(vendor_id) : null) : null,
         contractor_id: contractor_id ? parseInt(contractor_id) : null,
         employee_id: invoice_type === 'TypeD' ? parseInt(employee_id) : null,
@@ -85,6 +89,7 @@ export default function Invoices() {
       setShowForm(false);
       setTotalAmount('');
       setPurchaseOrderId('');
+      setWorkOrderId('');
       setVendorId('');
       setContractorId('');
       setEmployeeId('');
@@ -559,6 +564,7 @@ export default function Invoices() {
                         Type of Work: {modalDetails.project.type_of_work}<br />
                         Funding Source: {modalDetails.project.source_type} ({(modalDetails.invoice_type === 'TypeA' || modalDetails.invoice_type === 'TypeC') ? 'NAAM Financed' : 'CSR/Govt Receivable'})<br />
                         {modalDetails.purchase_order && <>Linked Purchase Order: <strong>{modalDetails.purchase_order.po_number} (A{modalDetails.purchase_order.version})</strong></>}
+                        {modalDetails.work_order_id && !modalDetails.purchase_order && <>Linked Work Order: <strong>{modalDetails.work_order?.wo_number || `WO ID: ${modalDetails.work_order_id}`}</strong></>}
                       </p>
                     ) : (
                       <p style={{ color: '#475569', marginTop: '0.25rem' }}>
@@ -584,7 +590,9 @@ export default function Invoices() {
                       <strong>{modalDetails.invoice_type === 'TypeC' ? 'General Purchase / Particulars' : `${modalDetails.project?.type_of_work} Operations`}</strong>
                       <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>
                         {modalDetails.invoice_type === 'TypeA' 
-                          ? `Supply and delivery operations completed under Purchase Order ${modalDetails.purchase_order?.po_number || 'N/A'}.`
+                          ? (modalDetails.purchase_order 
+                              ? `Supply and delivery operations completed under Purchase Order ${modalDetails.purchase_order.po_number}.`
+                              : `Operations completed under Work Order ${modalDetails.work_order?.wo_number || `ID: ${modalDetails.work_order_id}`}.`)
                           : modalDetails.invoice_type === 'TypeC'
                           ? `Particulars: ${modalDetails.particulars || 'N/A'}`
                           : `CSR / Govt matching funding call for budget allocation under reference ${modalDetails.project?.proposal_id || 'N/A'}.`
@@ -621,17 +629,17 @@ export default function Invoices() {
               </table>
 
               {/* Payment Info */}
-              {(modalDetails.invoice_type === 'TypeA' || modalDetails.invoice_type === 'TypeC') && (modalDetails.vendor?.bank_name || modalDetails.purchase_order?.vendor?.bank_name) && (
+              {(modalDetails.invoice_type === 'TypeA' || modalDetails.invoice_type === 'TypeC') && (modalDetails.vendor?.bank_name || modalDetails.purchase_order?.vendor?.bank_name || modalDetails.contractor?.bank_name) && (
                 <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '3rem' }}>
                   <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>Beneficiary Remittance Bank Details:</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.8rem' }}>
                     <div>
-                      Bank Name: <strong>{modalDetails.vendor?.bank_name || modalDetails.purchase_order?.vendor?.bank_name}</strong><br />
-                      Branch: <strong>{modalDetails.vendor?.branch || modalDetails.purchase_order?.vendor?.branch || 'Pune main'}</strong>
+                      Bank Name: <strong>{modalDetails.vendor?.bank_name || modalDetails.purchase_order?.vendor?.bank_name || modalDetails.contractor?.bank_name}</strong><br />
+                      Branch: <strong>{modalDetails.vendor?.branch || modalDetails.purchase_order?.vendor?.branch || modalDetails.contractor?.branch || 'Pune main'}</strong>
                     </div>
                     <div>
-                      Account Number: <strong>{modalDetails.vendor?.account_no || modalDetails.purchase_order?.vendor?.account_no || '••••••••••••'}</strong><br />
-                      IFSC Code: <strong>{modalDetails.vendor?.ifsc || modalDetails.purchase_order?.vendor?.ifsc || 'SBIN0007339'}</strong>
+                      Account Number: <strong>{modalDetails.vendor?.account_no || modalDetails.purchase_order?.vendor?.account_no || modalDetails.contractor?.account_no || '••••••••••••'}</strong><br />
+                      IFSC Code: <strong>{modalDetails.vendor?.ifsc || modalDetails.purchase_order?.vendor?.ifsc || modalDetails.contractor?.ifsc || 'SBIN0007339'}</strong>
                     </div>
                   </div>
                 </div>

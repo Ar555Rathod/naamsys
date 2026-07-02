@@ -24,6 +24,8 @@ const AVAILABLE_TABLES = [
   { key: 'purchaseOrders', label: 'Purchase Orders', description: 'Materials procurement agreements' },
   { key: 'workingSheets', label: 'Working Sheets', description: 'Aggregated payroll and payout schedules' },
   { key: 'bankStatements', label: 'Bank Statements', description: 'Reconciled bank statement release orders' },
+  { key: 'fuelCompanies', label: 'Fuel Tieups', description: 'Registered prepaid fuel companies and current balances' },
+  { key: 'dieselDeposits', label: 'Diesel Deposits', description: 'Prepaid diesel deposits and generated bank sheets' },
   { key: 'auditLogs', label: 'Audit Logs', description: 'Traceability and operator action records' }
 ];
 
@@ -140,6 +142,28 @@ const flattenRow = (row, table) => {
       'Created At': new Date(row.created_at).toLocaleDateString()
     };
   }
+  if (table === 'fuelCompanies') {
+    return {
+      'Company Name': row.name,
+      'Prepaid Balance': `₹${row.balance.toLocaleString('en-IN')}`,
+      'Total Deposited': `₹${row.total_deposited.toLocaleString('en-IN')}`,
+      'Bank Name': row.bank_name || 'N/A',
+      'Account Number': row.account_no || 'N/A',
+      'IFSC': row.ifsc || 'N/A',
+      'PAN Details': row.pan || 'N/A',
+      'Created At': new Date(row.created_at).toLocaleDateString()
+    };
+  }
+  if (table === 'dieselDeposits') {
+    return {
+      'Deposit ID': row.id,
+      'Fuel Company': row.fuel_company?.name || 'N/A',
+      'Amount Deposited': `₹${row.amount.toLocaleString('en-IN')}`,
+      'Remarks': row.remarks || 'N/A',
+      'Bank Sheet Reference': row.bank_sheet_no || 'N/A',
+      'Deposit Date': new Date(row.deposit_date).toLocaleDateString()
+    };
+  }
   if (table === 'auditLogs') {
     return {
       'Log ID': row.id,
@@ -167,6 +191,7 @@ const getRowDateValue = (row, table) => {
   if (table === 'auditLogs') return new Date(row.timestamp);
   if (table === 'workOrders') return new Date(row.created_at);
   if (table === 'purchaseOrders') return new Date(row.created_at);
+  if (table === 'dieselDeposits') return new Date(row.deposit_date);
   return new Date(row.created_at);
 };
 

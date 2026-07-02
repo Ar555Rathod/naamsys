@@ -534,6 +534,12 @@ model FuelCompany {
   name            String   @unique
   total_deposited Float    @default(0)
   balance         Float    @default(0)
+  bank_name       String?
+  branch          String?
+  account_no      String?
+  ifsc            String?
+  pan             String?
+  address         String?
   created_at      DateTime @default(now())
 
   petrol_pumps    PetrolPump[]
@@ -562,6 +568,7 @@ model DieselDeposit {
   amount          Float
   deposit_date    DateTime @default(now())
   remarks         String?
+  bank_sheet_no   String?
   created_by      Int
 }
 

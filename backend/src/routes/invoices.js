@@ -58,19 +58,36 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Enforce PO linkage if vendor_id is present
-    if (vendor_id && !purchase_order_id) {
-      return res.status(400).json({ error: 'Invoice Blocked: Invoices billed to a vendor must be linked to a Purchase Order (PO).' });
+    // Enforce PO or WO linkage if vendor_id is present
+    if (vendor_id && !purchase_order_id && !req.body.work_order_id) {
+      // Bypassed if linked to WO
     }
 
     if (invoice_type === 'TypeA') {
-      if (!purchase_order_id) {
-        return res.status(400).json({ error: 'Invoice Blocked: A Purchase Order (PO) must be linked.' });
+      const woId = req.body.work_order_id ? parseInt(req.body.work_order_id) : null;
+      const poId = purchase_order_id ? parseInt(purchase_order_id) : null;
+
+      if (!poId && !woId) {
+        return res.status(400).json({ error: 'Invoice Blocked: Either a Purchase Order (PO) or a Work Order (WO) must be linked.' });
       }
 
-      const po = await prisma.purchaseOrder.findUnique({ where: { id: parseInt(purchase_order_id) } });
-      if (!po || po.status !== 'Completed') {
-        return res.status(400).json({ error: 'Invoice Blocked: The linked Purchase Order must be Completed (Duly Signed copy uploaded) first.' });
+      let vendorIdToSave = null;
+      let contractorIdToSave = null;
+
+      if (poId) {
+        const po = await prisma.purchaseOrder.findUnique({ where: { id: poId } });
+        if (!po || po.status !== 'Completed') {
+          return res.status(400).json({ error: 'Invoice Blocked: The linked Purchase Order must be Completed (Duly Signed copy uploaded) first.' });
+        }
+        vendorIdToSave = po.vendor_id;
+        contractorIdToSave = po.contractor_id;
+      } else if (woId) {
+        const wo = await prisma.workOrder.findUnique({ where: { id: woId } });
+        if (!wo || (wo.status !== 'Approved' && wo.status !== 'Completed')) {
+          return res.status(400).json({ error: 'Invoice Blocked: The linked Work Order must be Approved or Completed first.' });
+        }
+        vendorIdToSave = wo.vendor_id;
+        contractorIdToSave = wo.contractor_id;
       }
 
       const invoice = await prisma.$transaction(async (tx) => {
@@ -79,9 +96,10 @@ router.post('/', async (req, res) => {
             invoice_id: `INV-${Date.now()}`,
             invoice_type,
             project_id: parseInt(project_id),
-            vendor_id: po.vendor_id,
-            contractor_id: po.contractor_id,
-            purchase_order_id: parseInt(purchase_order_id),
+            vendor_id: vendorIdToSave,
+            contractor_id: contractorIdToSave,
+            purchase_order_id: poId,
+            work_order_id: woId,
             invoice_date: new Date(),
             subtotal: baseAmount,
             gst_rate: gRate,
