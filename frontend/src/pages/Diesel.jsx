@@ -898,6 +898,7 @@ export default function Diesel() {
                 <div style={{ textAlign: 'center', width: '200px', borderTop: '1px solid #000', paddingTop: '8px' }}>
                   Authorized Signatory (Admin)
                 </div>
+              </div>
             </div>
           </div>
         </div>
