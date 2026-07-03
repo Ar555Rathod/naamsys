@@ -179,7 +179,7 @@ export default function Diesel() {
       fetchData();
       alert('Funds deposited and Bank Sheet generated successfully!');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to deposit funds');
+      alert((err.response?.data?.error || 'Failed to deposit funds') + (err.response?.data?.details ? '\n\nDetails: ' + err.response?.data?.details : ''));
     }
   };
 
@@ -203,7 +203,7 @@ export default function Diesel() {
       fetchData();
       alert('Diesel drawn successfully! Invoices generated and balances updated.');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to complete transaction');
+      alert((err.response?.data?.error || 'Failed to complete transaction') + (err.response?.data?.details ? '\n\nDetails: ' + err.response?.data?.details : ''));
     }
   };
 

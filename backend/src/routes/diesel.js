@@ -277,8 +277,8 @@ router.post('/deposit', async (req, res) => {
           sheet_number: `WS-${bankSheetNo}`,
           status: 'Approved',
           total_payment: depAmount,
-          created_by: req.user.id,
-          approved_by: req.user.id,
+          created_by: parseInt(req.user.id),
+          approved_by: parseInt(req.user.id),
           approved_at: new Date()
         }
       });
@@ -296,7 +296,7 @@ router.post('/deposit', async (req, res) => {
           amount_paid: depAmount,
           payment_date: new Date(),
           particulars: remarks || `Prepaid diesel deposit to ${updatedCompany.name}`,
-          created_by: req.user.id,
+          created_by: parseInt(req.user.id),
           working_sheet_id: workingSheet.id
         }
       });
@@ -306,7 +306,7 @@ router.post('/deposit', async (req, res) => {
         data: {
           statement_number: `BS-${bankSheetNo.replace('FDS-', '')}`,
           working_sheet_id: workingSheet.id,
-          created_by: req.user.id
+          created_by: parseInt(req.user.id)
         }
       });
 
@@ -318,14 +318,14 @@ router.post('/deposit', async (req, res) => {
           deposit_date: deposit_date ? new Date(deposit_date) : new Date(),
           remarks: remarks || 'Deposit to pre-paid reserves',
           bank_sheet_no: bankSheetNo,
-          created_by: req.user.id
+          created_by: parseInt(req.user.id)
         }
       });
 
       // Write Audit Log
       await tx.auditLog.create({
         data: {
-          user_id: req.user.id,
+          user_id: parseInt(req.user.id),
           action: 'Deposit Diesel Funds',
           module: 'Diesel',
           record_id: String(dep.id),
@@ -423,14 +423,14 @@ router.post('/draw', async (req, res) => {
           amount_paid: drawAmt,
           payment_date: new Date(),
           particulars: `Diesel drawn by vendor from Petrol Pump: ${pump.name} under ${pump.fuel_company.name} tieup`,
-          created_by: req.user.id
+          created_by: parseInt(req.user.id)
         }
       });
 
       // 4. Write Audit Log
       await tx.auditLog.create({
         data: {
-          user_id: req.user.id,
+          user_id: parseInt(req.user.id),
           action: 'Draw Diesel',
           module: 'Diesel',
           record_id: String(invoice.id),
