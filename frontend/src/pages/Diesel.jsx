@@ -907,7 +907,7 @@ export default function Diesel() {
       {/* Edit Company Details Modal */}
       {showEditCompanyModal && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '2rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '2rem', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Landmark size={20} color="var(--primary)" /> Edit Fuel Company Details
