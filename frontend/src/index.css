@@ -416,6 +416,44 @@ label {
   #printable-daily-logs-modal-content {
     page: landscape-sheet !important;
   }
+
+  /* Reduce spacing on printable invoice modal to fit single page */
+  #printable-invoice-modal-content {
+    padding: 0.6cm !important;
+  }
+  #printable-invoice-modal-content > div:first-child {
+    margin-bottom: 0.75rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  #printable-invoice-modal-content > div:first-child h1 {
+    font-size: 1.4rem !important;
+  }
+  #printable-invoice-modal-content > div:first-child h2 {
+    font-size: 1.1rem !important;
+  }
+  #printable-invoice-modal-content > div:nth-child(2) {
+    margin-bottom: 1rem !important;
+    gap: 1rem !important;
+  }
+  #printable-invoice-modal-content table {
+    margin-bottom: 1rem !important;
+  }
+  #printable-invoice-modal-content table td,
+  #printable-invoice-modal-content table th {
+    padding: 0.4rem 0.6rem !important;
+  }
+  #printable-invoice-modal-content div[style*="background"] {
+    margin-bottom: 1rem !important;
+    padding: 0.75rem !important;
+  }
+  #printable-invoice-modal-content div[style*="margin-top"],
+  #printable-invoice-modal-content div[style*="marginTop"],
+  #printable-invoice-modal-content > div:last-child {
+    margin-top: 1.5rem !important;
+  }
+  #printable-invoice-modal-content div[style*="height"] {
+    height: 20px !important;
+  }
 }
 
 /* Responsive Mobile Layout Rules */
