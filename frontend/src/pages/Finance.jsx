@@ -174,11 +174,11 @@ export default function Finance() {
   };
 
   const getRemittanceBeneficiaryName = (inv) => {
-    return inv.purchase_order?.vendor?.company_name || inv.vendor?.company_name || inv.contractor?.full_name || 'N/A';
+    return inv.purchase_order?.vendor?.company_name || inv.vendor?.company_name || inv.contractor?.full_name || inv.petrol_pump?.fuel_company?.name || 'N/A';
   };
 
   const getRemittanceBankDetails = (inv) => {
-    const vendorObj = inv.purchase_order?.vendor || inv.vendor || inv.contractor;
+    const vendorObj = inv.purchase_order?.vendor || inv.vendor || inv.contractor || inv.petrol_pump?.fuel_company;
     if (vendorObj && vendorObj.bank_name) {
       return {
         bankName: vendorObj.bank_name,

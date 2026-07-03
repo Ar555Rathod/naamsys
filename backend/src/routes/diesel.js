@@ -255,6 +255,61 @@ router.post('/deposit', async (req, res) => {
       // Generate a bank sheet no for the authorized deposit
       const bankSheetNo = `FDS-${Date.now()}`;
 
+      // Find or create a petrol pump for this fuel company to link the invoice
+      let pump = await tx.petrolPump.findFirst({
+        where: { fuel_company_id: parseInt(fuel_company_id) }
+      });
+
+      if (!pump) {
+        pump = await tx.petrolPump.create({
+          data: {
+            pump_id: `PUMP-DSL-${Date.now()}`,
+            name: `${updatedCompany.name} Deposit Head`,
+            fuel_company_id: parseInt(fuel_company_id),
+            address: updatedCompany.address || 'Tieup HQ'
+          }
+        });
+      }
+
+      // Create Working Sheet
+      const workingSheet = await tx.workingSheet.create({
+        data: {
+          sheet_number: `WS-${bankSheetNo}`,
+          status: 'Approved',
+          total_payment: depAmount,
+          created_by: req.user.id,
+          approved_by: req.user.id,
+          approved_at: new Date()
+        }
+      });
+
+      // Create Invoice
+      await tx.invoice.create({
+        data: {
+          invoice_id: `INV-${bankSheetNo}`,
+          invoice_type: 'TypeC', // General Invoice
+          petrol_pump_id: pump.id,
+          invoice_date: new Date(),
+          subtotal: depAmount,
+          total_amount: depAmount,
+          payment_status: 'Paid',
+          amount_paid: depAmount,
+          payment_date: new Date(),
+          particulars: remarks || `Prepaid diesel deposit to ${updatedCompany.name}`,
+          created_by: req.user.id,
+          working_sheet_id: workingSheet.id
+        }
+      });
+
+      // Create Bank Statement
+      await tx.bankStatement.create({
+        data: {
+          statement_number: `BS-${bankSheetNo.replace('FDS-', '')}`,
+          working_sheet_id: workingSheet.id,
+          created_by: req.user.id
+        }
+      });
+
       // Create deposit record
       const dep = await tx.dieselDeposit.create({
         data: {

@@ -1,0 +1,233 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{color}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+% Define color palette
+\definecolor{primary}{RGB}{43, 108, 176}
+\definecolor{secondary}{RGB}{74, 85, 104}
+\definecolor{accent}{RGB}{229, 62, 62}
+\definecolor{lightgray}{RGB}{247, 250, 252}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    filecolor=accent,      
+    urlcolor=primary,
+    pdftitle={NAAM Project Management System - Documentation},
+}
+
+\titleformat{\section}{\large\bfseries\color{primary}}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{secondary}}{\thesubsection}{1em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\color{secondary}NAAM Project Management System}
+\lfoot{\color{secondary}System Documentation \& Workflow Manual}
+\rfoot{\thepage}
+
+\begin{document}
+
+% --- TITLE PAGE ---
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\Huge \bfseries \color{primary} NAAM Project Management System}\\[0.5cm]
+    {\large \bfseries \color{secondary} Comprehensive System Documentation \& Workflow Manual}\\[1.5cm]
+    
+    \vfill
+    
+    \begin{minipage}{0.8\textwidth}
+        \centering
+        \textbf{Author:} NAAM Development Team\\
+        \textbf{Version:} 1.0.0\\
+        \textbf{Date:} July 1, 2026\\
+        \textbf{Status:} Seeding \& Deployment Complete\\
+    \end{minipage}
+    
+    \vfill
+    \vspace*{2cm}
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+% --- SECTION 1 ---
+\section{Executive Summary \& Architecture}
+The \textbf{NAAM Project Management System} is a comprehensive custom enterprise resource planning (ERP) and project management web application built for the NAAM Foundation. The platform serves to manage developmental projects, allocate funding from multiple sources (CSR, Government Schemes, and Individual Donors), dispatch work/purchase orders to vendors, verify work completion via certificates (WCC) and daily machinery logs, process invoices, generate banking working sheets, and maintain audit logs.
+
+\subsection{Technology Stack}
+\begin{itemize}
+    \item \textbf{Frontend:} React.js (Vite), React Router, Tailwind CSS/Custom Glassmorphism styling, and Lucide React icons.
+    \item \textbf{Backend:} Node.js (Express framework), Prisma ORM.
+    \item \textbf{Database:} MySQL (relational structure optimized for transactional integrity).
+    \item \textbf{File Storage:} Integrated Binary Large Object (BLOB) storage in the database (\texttt{UploadedFile} model) for zero-dependency local cloud document compliance.
+\end{itemize}
+
+% --- SECTION 2 ---
+\section{User Roles \& Seed Credentials}
+The application enforces role-based access control (RBAC) via JSON Web Tokens (JWT) signed by a secure server-side key.
+
+\subsection{System Roles}
+\begin{table}[h]
+\centering
+\begin{tabular}{l p{11cm}}
+\toprule
+\textbf{Role} & \textbf{Capabilities \& Access Level} \\
+\midrule
+\textbf{Admin} & Full access to the entire application. Configures GST/TDS rates, manages financial years, seeds districts/talukas/villages, runs backups/restores, manages system users, registers employees, and conducts budgeting approvals. \\
+\textbf{Manager} & Performs project setup, registers vendors, issues work orders and purchase orders, processes invoices, prepares working sheets, and downloads reports. Cannot manage users, system settings, or database backups. \\
+\textbf{Operator} & Data entry role. Can view and create projects, vendors, work orders, purchase orders, invoices, and daily logs. Cannot perform financial approvals, edit configurations, or access the backup/finance panels. \\
+\textbf{Vendor} & Restricted access. Can only view work orders assigned to their vendor account and submit/edit Daily Logs for machinery hourly operations and fuel usage. \\
+\bottomrule
+\end{tabular}
+\caption{System Roles and Permissions Grid}
+\end{table}
+
+\subsection{Default Seed Credentials}
+The database initialization script installs a default super-administrator account:
+\begin{itemize}
+    \item \textbf{Login Email:} \texttt{admin@naammh.org}
+    \item \textbf{Default Password:} \texttt{admin123}
+    \item \textbf{Alternate Setup Admin (Auto-Generated via \texttt{/setup}):} \texttt{admin@naam.org} / \texttt{admin123}
+    \item \textbf{Vendor Accounts:} When a vendor is registered, an active user account is auto-created with the role \texttt{Vendor} using their \textbf{email address} as the username and their \textbf{PAN card number} (in uppercase) as the default password (falls back to \texttt{VENDOR123} if no PAN is supplied).
+\end{itemize}
+
+\newpage
+% --- SECTION 3 ---
+\section{Module Features \& Functionality}
+
+\subsection{Dashboard \& Analytics}
+Provides real-time financial charts and key performance indicators (KPIs) including:
+\begin{itemize}
+    \item Total Organizational Budget vs. Remaining Balance.
+    \item Total Admin Cost Pool vs. Remaining Admin Balance.
+    \item Project summaries grouped by Status (Active, Completed, OnHold, BudgetExhausted).
+    \item Recent activity feeds pulling directly from audit logs.
+\end{itemize}
+
+\subsection{Funding \& Budgeting Source Management}
+Allows tracking of incoming funds before allocating them to local developmental projects:
+\begin{itemize}
+    \item \textbf{CSR Companies:} Tracks corporate donor names, total budgets, administrative cost rules (percentage or flat fee deductions), remaining available budgets, and contracts (MOU uploads).
+    \item \textbf{Government Schemes \& Departments:} Manages department budgets, scheme details, regional work orders from the government, and MOU documents.
+    \item \textbf{Individual Donors:} Logs donor details, PAN info, total donations, and dynamically updates available budgets.
+\end{itemize}
+
+\subsection{Project Registry \& Unified Allocation}
+Projects are the core entity of the system, representing developmental works (e.g., water conservation, infrastructure):
+\begin{itemize}
+    \item Multi-source funding allocation (a project can be co-funded by multiple CSR, Government, or Individual donor pots).
+    \item Geo-location tagging down to the District, Taluka, and Village level.
+    \item Real-time remaining budget calculations: \texttt{budget\_remaining} is decremented automatically when work orders, purchase orders, or direct expenses are approved.
+\end{itemize}
+
+\subsection{Vendor \& Contractor Directory}
+Manages construction vendors, machinery rental suppliers, and contractors:
+\begin{itemize}
+    \item Logs bank details (account numbers, branch, IFSC codes) and collects cancelled cheque PDFs.
+    \item Stores specific equipment details (machines owned, operators assigned).
+    \item Automatically provisions a matching system login when a new vendor record is saved.
+\end{itemize}
+
+\subsection{Work Orders \& Daily Logs (Machinery Operations)}
+For projects involving heavy machinery (e.g., excavators, loaders):
+\begin{itemize}
+    \item \textbf{Work Orders (WO):} Details description of work, budget cap, assigned vendor, machine names, and completion timelines. Generates version history if modifications occur.
+    \item \textbf{Daily Logs:} Submitted directly by operators/vendors. Logs date, starting reading, ending reading, daily hours worked, diesel quantity issued, and photo uploads of the site.
+\end{itemize}
+
+\subsection{Diesel \& Petrol Pump Infrastructure}
+Tracks fuel supply lines and advance payments to oil/pump companies:
+\begin{itemize}
+    \item Logs deposits paid to major Fuel Companies (advance accounts).
+    \item Tracks individual Petrol Pumps associated with each fuel company.
+    \item Correlates diesel quantity logs with pump invoices to prevent fuel pilferage.
+\end{itemize}
+
+\subsection{Invoicing \& Payment System}
+The invoice system separates expenses into four distinct types to match financial auditing rules:
+\begin{itemize}
+    \item \textbf{Type A (WCC Linked):} Invoices linked directly to approved Work Completion Certificates.
+    \item \textbf{Type B (Work Order Linked):} Invoices generated from tracked daily logs or work orders.
+    \item \textbf{Type C (Purchase Order Linked):} Material procurement invoices linked to purchase orders.
+    \item \textbf{Type D (Salaries \& General Expense):} Direct employee payroll, regional operations, or miscellaneous administration costs.
+\end{itemize}
+Invoices automatically perform line-item tax additions (GST) and tax deductions at source (TDS) according to active configurations.
+
+\subsection{Financial Processing (Working Sheets \& Bank Statements)}
+Prevents manual banking errors through an approval queue:
+\begin{itemize}
+    \item Approved invoices are batched into a \textbf{Working Sheet}.
+    \item Once the Working Sheet is approved by an Admin, a corresponding \textbf{Bank Statement} record is created.
+    \item Enables export of bulk payment instructions for bank uploads.
+\end{itemize}
+
+\subsection{Backup, Restore \& Audit Logs}
+\begin{itemize}
+    \item \textbf{One-Click Backups:} Exports all tables into a single JSON file.
+    \item \textbf{Restore System:} Rebuilds the database from backup files, automatically handling relational keys.
+    \item \textbf{Audit Logging:} Every state mutation (creation, deletion, edit, password reset) creates an entry recording the user ID, timestamp, module name, modified record ID, and JSON-serialized old vs. new values.
+\end{itemize}
+
+\newpage
+% --- SECTION 4 ---
+\section{System Workflow Diagrams}
+
+\subsection{Project Funding and Registration Workflow}
+The following sequence details how funds enter the organization and get allocated:
+\begin{enumerate}
+    \item \textbf{Fund Ingestion:} The Admin registers a funding source (e.g., a CSR Company with a ₹50,000,000 budget, setting an Admin Cost rule of 5\%).
+    \item \textbf{Admin Pool Deduction:} The system deducts the Admin Cost (e.g., ₹2,500,000) and routes it to the organization's general admin cost pool. The remaining available budget (₹47,500,000) is placed in the donor's available budget.
+    \item \textbf{Project Registration:} The Manager registers a new project (e.g., "Water Conservation Phase 1") specifying a budget of ₹10,000,000.
+    \item \textbf{Funding Allocation:} The system maps ₹10,000,000 from the donor's available budget to the project. The donor's available budget drops to ₹37,500,000.
+\end{enumerate}
+
+\subsection{Work Order, Daily Log, and Invoicing Workflow}
+The lifecycle of a machine operation project:
+\begin{enumerate}
+    \item \textbf{Work Order Creation:} The Operator creates a Work Order (WO-001) for Vendor X to clear land on Project Y, capped at ₹500,000.
+    \item \textbf{Vendor Work execution:} Vendor X logs in using their credentials. Each evening, they submit a \textbf{Daily Log} (date, hours run, start/stop readings, and upload a site photo).
+    \item \textbf{WCC Submission:} When the work is done, the vendor or operator requests a Work Completion Certificate (WCC). Once verified by the field supervisor and approved by the Manager, the WCC status changes to \texttt{Approved}.
+    \item \textbf{Invoice Generation:} The Vendor or Operator generates a \textbf{Type A Invoice} pointing to the approved WCC.
+    \item \textbf{Tax Deductions:} The invoice system calculates GST additions (e.g., +18\%) and TDS deductions (e.g., -2\%) based on configuration.
+    \item \textbf{NGO Approvals:} The Invoice goes through a dual-approval check: approved by Vendor, then approved by NAAM Admin/Manager.
+    \item \textbf{Payment Processing:} Approved invoices are compiled into a \textbf{Working Sheet}. When the Working Sheet is approved, it generates a \textbf{Bank Statement} transaction, and the invoice status is marked as \texttt{Paid}.
+\end{enumerate}
+
+\newpage
+% --- SECTION 5 ---
+\section{Database Schema Mapping}
+Below is a simplified reference diagram mapping the relational links in the database:
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize, frame=single, backgroundcolor=\color{lightgray}]
++------------------+           +------------------+
+|    CsrCompany    |<----------|  ProjectFunding  |
++------------------+           +------------------+
+                                        |
++------------------+                    |
+|    GovtEntry     |                    v
++------------------+           +------------------+
+        |                      |     Project      |
+        v                      +------------------+
++------------------+             |    |     |    |
+|  GovtWorkOrder   |<------------+    |     |    |
++------------------+                  |     |    |
+                                      v     |    v
++------------------+           +---------+  |  +---------+
+|      Vendor      |<----------|WorkOrder|  |  |Invoice  |
++------------------+           +---------+  |  +---------+
+         ^                          |       |       |
+         |                          v       v       v
+         +---------------------> |   DailyLogs & WCCs   |
+                                 +----------------------+
+\end{lstlisting}
+
+\end{document}

@@ -818,86 +818,63 @@ export default function Diesel() {
       {/* PRINTABLE BANK SHEET FOR DEPOSIT MODAL */}
       {selectedDepositToPrint && (
         <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '750px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'white' }}>
-            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
-              <span style={{ fontWeight: 600, color: '#1f2937' }}>Prepaid Diesel Deposit Bank Release Sheet</span>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '850px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'white' }}>
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', position: 'sticky', top: 0, zIndex: 10 }}>
+              <span style={{ fontWeight: 600, color: '#1f2937' }}>Bank Remittance Clearance Sheet (1 Selected)</span>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button onClick={() => window.print()} className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
-                  <Printer size={16} /> Print Sheet
+                  <Printer size={16} /> Print Release Order
                 </button>
-                <button onClick={() => setSelectedDepositToPrint(null)} className="btn btn-danger" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
+                <button onClick={() => setSelectedDepositToPrint(null)} className="btn btn-danger" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', gap: '0.25rem' }}>
                   Close
                 </button>
               </div>
             </div>
 
-            <div id="printable-deposit-bank-sheet" style={{ padding: '2rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <h1 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>NAAM FOUNDATION</h1>
-                  <p style={{ fontSize: '11px', color: '#555', margin: '4px 0 0 0' }}>Prepaid Diesel Deposit Bank Remittance Order</p>
+            {/* Printable Bank Remittance Area */}
+            <div id="printable-bank-statement-modal-content" style={{ padding: '0.5rem', fontFamily: 'Inter, sans-serif', color: '#1e293b', background: 'white', textAlign: 'left' }}>
+              <div>
+                {/* Simplified Header */}
+                <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h1 style={{ fontSize: '12px', fontWeight: 'normal', color: '#0f172a', margin: 0 }}>
+                    Naam Foundation - Bank Statement
+                  </h1>
+                  <div style={{ textAlign: 'right', fontSize: '10px', color: '#0f172a', fontWeight: 'normal' }}>
+                    Date: {new Date(selectedDepositToPrint.deposit_date).toLocaleDateString()} &nbsp;|&nbsp; Ref: {selectedDepositToPrint.bank_sheet_no || 'N/A'}
+                  </div>
                 </div>
-                <div style={{ textAlign: 'right', fontSize: '11px' }}>
-                  <strong>Sheet No:</strong> {selectedDepositToPrint.bank_sheet_no || 'N/A'}<br />
-                  <strong>Date:</strong> {new Date(selectedDepositToPrint.deposit_date).toLocaleDateString()}
-                </div>
-              </div>
 
-              <p style={{ fontSize: '12px', lineHeight: 1.6 }}>
-                To,<br />
-                The Branch Manager,<br />
-                State Bank of India (NAAM Foundation Corporate Account)<br />
-                Pune, Maharashtra.
-              </p>
-
-              <p style={{ fontSize: '12px', lineHeight: 1.6, margin: '1rem 0' }}>
-                Please authorize the release of prepaid diesel funds for the registered fuel company tie-up listed below. Deduct the specified amount from the NAAM Foundation budget reserve and credit to the beneficiary's corporate bank account.
-              </p>
-
-              <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1.5rem 0', fontSize: '11px' }}>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '8px', fontWeight: 'bold', width: '200px' }}>Beneficiary Fuel Company</td>
-                    <td style={{ padding: '8px' }}>{selectedDepositToPrint.fuel_company?.name}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '8px', fontWeight: 'bold' }}>Bank Name</td>
-                    <td style={{ padding: '8px' }}>{selectedDepositToPrint.fuel_company?.bank_name || 'N/A'}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '8px', fontWeight: 'bold' }}>Bank Branch</td>
-                    <td style={{ padding: '8px' }}>{selectedDepositToPrint.fuel_company?.branch || 'N/A'}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '8px', fontWeight: 'bold' }}>Account Number</td>
-                    <td style={{ padding: '8px', fontFamily: 'monospace' }}>{selectedDepositToPrint.fuel_company?.account_no || 'N/A'}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '8px', fontWeight: 'bold' }}>IFSC Code</td>
-                    <td style={{ padding: '8px', fontFamily: 'monospace' }}>{selectedDepositToPrint.fuel_company?.ifsc || 'N/A'}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '8px', fontWeight: 'bold' }}>PAN Number</td>
-                    <td style={{ padding: '8px', fontFamily: 'monospace' }}>{selectedDepositToPrint.fuel_company?.pan || 'N/A'}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '2px solid #0f172a', background: '#f8fafc' }}>
-                    <td style={{ padding: '8px', fontWeight: 'bold', fontSize: '12px' }}>Total Payout Amount</td>
-                    <td style={{ padding: '8px', fontWeight: 'bold', fontSize: '12px', color: '#4f46e5' }}>₹{selectedDepositToPrint.amount?.toLocaleString('en-IN')}.00</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <p style={{ fontSize: '11px', color: '#666', fontStyle: 'italic', marginTop: '1rem' }}>
-                Remarks: {selectedDepositToPrint.remarks || 'No remarks provided'}
-              </p>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4rem', fontSize: '12px' }}>
-                <div style={{ textAlign: 'center', width: '200px', borderTop: '1px solid #000', paddingTop: '8px' }}>
-                  Prepared By (Operator)
-                </div>
-                <div style={{ textAlign: 'center', width: '200px', borderTop: '1px solid #000', paddingTop: '8px' }}>
-                  Authorized Signatory (Admin)
-                </div>
+                {/* Beneficiaries Table */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '9px' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', borderTop: '1px solid #0f172a', borderBottom: '1px solid #0f172a' }}>
+                      <th style={{ padding: '2px 4px', textAlign: 'center', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Sr. No.</th>
+                      <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Beneficiary Name</th>
+                      <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Bank Name</th>
+                      <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Branch</th>
+                      <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Account No.</th>
+                      <th style={{ padding: '2px 4px', textAlign: 'left', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>IFSC Code</th>
+                      <th style={{ padding: '2px 4px', textAlign: 'right', color: '#0f172a', fontWeight: 'normal', border: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>Payment</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '2px 4px', textAlign: 'center', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>1</td>
+                      <td style={{ padding: '2px 4px', fontWeight: 'normal', color: '#0f172a', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{selectedDepositToPrint.fuel_company?.name}</td>
+                      <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{selectedDepositToPrint.fuel_company?.bank_name || 'N/A'}</td>
+                      <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{selectedDepositToPrint.fuel_company?.branch || 'N/A'}</td>
+                      <td style={{ padding: '2px 4px', fontFamily: 'monospace', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{selectedDepositToPrint.fuel_company?.account_no || 'N/A'}</td>
+                      <td style={{ padding: '2px 4px', fontFamily: 'monospace', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{selectedDepositToPrint.fuel_company?.ifsc || 'N/A'}</td>
+                      <td style={{ padding: '2px 4px', textAlign: 'right', fontWeight: 'normal', color: '#0f172a', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
+                        ₹{selectedDepositToPrint.amount?.toLocaleString('en-IN')}.00
+                      </td>
+                    </tr>
+                    <tr style={{ fontWeight: 'bold', background: '#f8fafc' }}>
+                      <td colSpan="6" style={{ padding: '4px', textAlign: 'right', border: '1px solid #cbd5e1' }}>Grand Total:</td>
+                      <td style={{ padding: '4px', textAlign: 'right', border: '1px solid #cbd5e1' }}>₹{selectedDepositToPrint.amount?.toLocaleString('en-IN')}.00</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
