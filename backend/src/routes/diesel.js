@@ -334,7 +334,7 @@ router.post('/deposit', async (req, res) => {
       });
 
       return dep;
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     res.json(transaction);
   } catch (error) {
@@ -439,7 +439,7 @@ router.post('/draw', async (req, res) => {
       });
 
       return invoice;
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     res.json(transaction);
   } catch (error) {
