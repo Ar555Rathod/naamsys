@@ -272,8 +272,9 @@ export default function Diesel() {
 
   return (
     <div className="main-content">
-      {/* Beginner-friendly Header */}
-      <div className="page-header" style={{ marginBottom: '1.5rem' }}>
+      <div className="no-print">
+        {/* Beginner-friendly Header */}
+        <div className="page-header" style={{ marginBottom: '1.5rem' }}>
         <div>
           <h1 className="page-title">Diesel & Fuel Management</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
@@ -814,6 +815,7 @@ export default function Diesel() {
           </div>
         </div>
       )}
+      </div>
 
       {/* PRINTABLE BANK SHEET FOR DEPOSIT MODAL */}
       {selectedDepositToPrint && (
